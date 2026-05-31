@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -68,12 +68,15 @@ export function SubscriptionSheet({
   const [error, setError] = useState<string>();
   const [v, setV] = useState<SubFormValue>(initial ?? defaults());
 
-  useEffect(() => {
+  // open 切替時にフォームを初期化（描画中の状態調整）
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
       setV(initial ?? defaults());
       setError(undefined);
     }
-  }, [open, initial]);
+  }
 
   function onName(name: string) {
     const match = SERVICE_CATALOG.find((s) => s.name === name);

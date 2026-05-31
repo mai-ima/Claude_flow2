@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -47,32 +47,25 @@ export function TransactionSheet({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string>();
-  const [v, setV] = useState<TxnFormValue>(
-    initial ?? {
-      type: "EXPENSE",
-      amount: 0,
-      occurredAt: todayStr(),
-      categoryId: "",
-      paymentMethodId: "",
-      memo: "",
-    },
-  );
+  const blank = (): TxnFormValue => ({
+    type: "EXPENSE",
+    amount: 0,
+    occurredAt: todayStr(),
+    categoryId: "",
+    paymentMethodId: "",
+    memo: "",
+  });
+  const [v, setV] = useState<TxnFormValue>(initial ?? blank());
 
-  useEffect(() => {
+  // open が切り替わった瞬間にフォームを初期化（描画中の状態調整＝React 推奨パターン）
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
-      setV(
-        initial ?? {
-          type: "EXPENSE",
-          amount: 0,
-          occurredAt: todayStr(),
-          categoryId: "",
-          paymentMethodId: "",
-          memo: "",
-        },
-      );
+      setV(initial ?? blank());
       setError(undefined);
     }
-  }, [open, initial]);
+  }
 
   const cats = categories.filter((c) => c.type === v.type);
 

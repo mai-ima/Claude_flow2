@@ -17,8 +17,10 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<Theme>("system");
 
   useEffect(() => {
+    // localStorage（外部の永続ストア）からマウント時に初期同期する正当なケース。
     const saved = (localStorage.getItem("tsumiki-theme") as Theme) || "system";
-    setTheme(saved);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme((prev) => (prev === saved ? prev : saved));
   }, []);
 
   function change(next: Theme) {
