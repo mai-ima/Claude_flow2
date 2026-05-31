@@ -108,7 +108,7 @@ export default async function ReportsPage() {
                 {tier !== "PRO" && <Badge tone="pod" size="sm">PRO</Badge>}
               </div>
               <a
-                href={tier === "PRO" ? "/api/export/transactions" : "/pricing"}
+                href={tier === "PRO" ? "/api/export/transactions" : "/billing"}
                 className="mt-2 inline-block text-[14px] font-medium text-accent"
               >
                 {tier === "PRO" ? "ダウンロード" : "PROで利用可能"}

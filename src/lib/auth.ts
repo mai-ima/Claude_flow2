@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
 import { db } from "./db";
 import { DEFAULT_CATEGORIES } from "./default-categories";
+import { hashPassword, verifyPassword } from "./password";
 
 const SESSION_COOKIE = "tsumiki_session";
 const SESSION_DAYS = 30;
@@ -45,13 +46,39 @@ async function bootstrapUser(userId: string, name: string | null) {
   });
 }
 
-/** メールでログイン（無ければ作成）。dev はパスワードレス。 */
-export async function signInWithEmail(email: string, name?: string) {
+export type AuthError = "INVALID_PASSWORD" | "WEAK_PASSWORD";
+
+/**
+ * メール + パスワードでサインイン / 新規登録。
+ * - 未登録: そのパスワードで新規作成
+ * - 登録済み(パスワード有): 照合。一致しなければ throw
+ * - 登録済み(パスワード無=レガシー): 初回ログインでそのパスワードを設定
+ */
+export async function signInWithEmail(email: string, password: string, name?: string) {
   const normalized = email.trim().toLowerCase();
+  if (password.length < 8) {
+    const err = new Error("WEAK_PASSWORD");
+    throw err;
+  }
+
   let user = await db.user.findUnique({ where: { email: normalized } });
   if (!user) {
     user = await db.user.create({
-      data: { email: normalized, name: name?.trim() || normalized.split("@")[0] },
+      data: {
+        email: normalized,
+        name: name?.trim() || normalized.split("@")[0],
+        passwordHash: hashPassword(password),
+      },
+    });
+  } else if (user.passwordHash) {
+    if (!verifyPassword(password, user.passwordHash)) {
+      throw new Error("INVALID_PASSWORD");
+    }
+  } else {
+    // レガシー（パスワード未設定）アカウントを保護: 初回ログインで設定
+    await db.user.update({
+      where: { id: user.id },
+      data: { passwordHash: hashPassword(password) },
     });
   }
   await bootstrapUser(user.id, user.name);

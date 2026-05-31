@@ -161,7 +161,7 @@ export function SubscriptionsClient({
             始める
           </Button>
         ) : (
-          <ButtonLink href="/pricing" size="sm" variant="tinted">
+          <ButtonLink href="/billing" size="sm" variant="tinted">
             PROにする
           </ButtonLink>
         )}

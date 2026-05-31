@@ -75,7 +75,7 @@ export function FamilySharing({
         <span className="flex-1 text-[14px] text-text-secondary">
           ファミリー共有はプラス以上で利用できます。
         </span>
-        <ButtonLink href="/pricing" size="sm" variant="tinted">
+        <ButtonLink href="/billing" size="sm" variant="tinted">
           アップグレード
         </ButtonLink>
       </div>

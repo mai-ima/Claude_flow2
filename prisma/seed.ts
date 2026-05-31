@@ -1,7 +1,16 @@
+import { scryptSync, randomBytes } from "node:crypto";
 import { PrismaClient } from "../src/generated/prisma";
 import { DEFAULT_CATEGORIES } from "../src/lib/default-categories";
 
 const db = new PrismaClient();
+
+const DEMO_PASSWORD = "demo1234";
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16);
+  const hash = scryptSync(password, salt, 64);
+  return `${salt.toString("hex")}:${hash.toString("hex")}`;
+}
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -19,7 +28,13 @@ async function main() {
   await db.user.deleteMany({ where: { email } });
 
   const user = await db.user.create({
-    data: { email, name: "山田 太郎", assumedHourlyWage: 2000, currency: "JPY" },
+    data: {
+      email,
+      name: "山田 太郎",
+      assumedHourlyWage: 2000,
+      currency: "JPY",
+      passwordHash: hashPassword(DEMO_PASSWORD),
+    },
   });
   await db.billingProfile.create({ data: { userId: user.id, tier: "PRO" } });
 
@@ -111,7 +126,7 @@ async function main() {
     data: { ledgerId: ledger.id, isTotalBudget: true, period: "MONTHLY", amount: 250000, startMonth: monthStart },
   });
 
-  console.log(`Seeded demo user: ${email}`);
+  console.log(`Seeded demo user: ${email} / password: ${DEMO_PASSWORD}`);
 }
 
 main()

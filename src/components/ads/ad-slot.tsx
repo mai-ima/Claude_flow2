@@ -71,7 +71,7 @@ export function AdSlot({
           />
         ) : (
           <Link
-            href="/pricing"
+            href="/billing"
             className="flex h-full min-h-[140px] items-center gap-4 rounded-xl bg-gradient-to-br from-accent/8 to-pod/8 px-5 py-4 transition hover:from-accent/12 hover:to-pod/12"
           >
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent text-white">

@@ -38,7 +38,7 @@ export function BillingCard({
         <p className="mt-0.5 text-[13px] text-text-secondary">{plan.tagline}</p>
       </div>
       {tier === "FREE" ? (
-        <ButtonLink href="/pricing" size="sm">
+        <ButtonLink href="/billing" size="sm">
           アップグレード
         </ButtonLink>
       ) : stripeEnabled ? (
@@ -46,7 +46,7 @@ export function BillingCard({
           {loading ? "…" : "請求を管理"}
         </Button>
       ) : (
-        <ButtonLink href="/pricing" size="sm" variant="gray">
+        <ButtonLink href="/billing" size="sm" variant="gray">
           プランを見る
         </ButtonLink>
       )}
