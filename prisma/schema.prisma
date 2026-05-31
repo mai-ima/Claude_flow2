@@ -1,6 +1,6 @@
 // Tsumiki — 家計簿 + サブスク管理
-// SQLite(dev) / PostgreSQL(prod) を DATABASE_URL と provider で切替。
-// SQLite は Prisma enum 非対応のため、列挙値は String + アプリ層(Zod/TS union)で担保する。
+// PostgreSQL を使用（Vercel/Neon 等。DATABASE_URL で接続）。
+// 列挙値は String + アプリ層(Zod/TS union)で担保（DB 非依存・移行容易）。
 
 generator client {
   provider = "prisma-client-js"
@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

@@ -22,20 +22,33 @@
 
 ## 技術スタック
 
-Next.js 16 (App Router) / React 19 / TypeScript / Prisma (SQLite→PostgreSQL) /
+Next.js 16 (App Router) / React 19 / TypeScript / Prisma + PostgreSQL /
 独自セッション認証 / Tailwind CSS v4 + CSS 変数トークン / Recharts / Zod / Stripe / Vitest
 
-## セットアップ
+## セットアップ（ローカル開発）
+
+PostgreSQL が必要です（無料の [Neon](https://neon.tech) などの接続URLを `DATABASE_URL` に設定）。
 
 ```bash
 npm install
-cp .env.example .env          # 実キーが無くても起動します
-npx prisma migrate dev        # DB 作成・マイグレーション
-npx prisma db seed            # デモデータ投入（demo@tsumiki.app / PRO）
+cp .env.example .env          # DATABASE_URL を PostgreSQL の接続URLに設定
+npx prisma db push            # スキーマを DB に反映
+npx prisma db seed            # （任意）デモデータ投入（demo@tsumiki.app / PRO）
 npm run dev                   # http://localhost:3000
 ```
 
-ログインはメールアドレスのみ（dev はパスワードレス）。デモを見るには `demo@tsumiki.app` でログインしてください。
+ログインはメールアドレスのみ（dev はパスワードレス）。
+
+## ネット公開（Vercel — ブラウザだけで完結）
+
+1. [vercel.com](https://vercel.com) に GitHub でサインイン
+2. 「Add New… → Project」で本リポジトリを Import（本番ブランチに `claude/budget-subscription-app-ZVkJO` を指定）
+3. プロジェクトの **Storage → Create Database → Postgres** を追加（`DATABASE_URL` が自動で設定されます）
+4. Settings → Environment Variables に `NEXT_PUBLIC_APP_URL`（公開URL）を追加し、**Redeploy**
+5. 発行された URL を iPhone / Windows のブラウザで開く
+
+ビルド時に `vercel-build`（`prisma db push` + `next build`）が走り、スキーマが自動反映されます。
+Stripe/AdSense/Resend のキーは未設定でも完全動作します（必要になったら環境変数に追加）。
 
 ## 主なスクリプト
 
@@ -62,7 +75,7 @@ npm run dev                   # http://localhost:3000
 共有は `src/lib`、UI 原子は `src/components/ui`。詳細は各モジュールの
 `actions.ts` / `queries.ts` / `schema.ts` を参照してください。
 
-## 本番 DB（PostgreSQL）への切替
+## データベースについて
 
-`prisma/schema.prisma` の `datasource` を `postgresql` に変更し `DATABASE_URL` を差し替えるだけ。
-列挙は String + Zod で実装しているため、SQLite/PostgreSQL 共通で動作します。
+PostgreSQL を使用します（`DATABASE_URL` で接続）。列挙は String + Zod で実装しているため
+DB に依存せず、別の DB への移行も容易です。スキーマ変更は `prisma db push`（または `migrate`）で反映します。
