@@ -1,0 +1,113 @@
+import "server-only";
+import { cookies } from "next/headers";
+import { randomBytes } from "node:crypto";
+import { db } from "./db";
+import { DEFAULT_CATEGORIES } from "./default-categories";
+
+const SESSION_COOKIE = "tsumiki_session";
+const SESSION_DAYS = 30;
+
+export type SessionUser = {
+  id: string;
+  email: string | null;
+  name: string | null;
+  image: string | null;
+  themePref: string;
+  currency: string;
+  assumedHourlyWage: number | null;
+  tier: string;
+};
+
+/** 新規ユーザーの初期データ（個人帳簿・メンバー・課金プロフィール・既定カテゴリ）を用意。 */
+async function bootstrapUser(userId: string, name: string | null) {
+  const existing = await db.ledger.findFirst({
+    where: { ownerId: userId, type: "PERSONAL" },
+  });
+  if (existing) return;
+
+  const ledger = await db.ledger.create({
+    data: {
+      name: name ? `${name}の家計簿` : "わたしの家計簿",
+      type: "PERSONAL",
+      ownerId: userId,
+      members: { create: { userId, role: "OWNER" } },
+    },
+  });
+
+  await db.category.createMany({
+    data: DEFAULT_CATEGORIES.map((c) => ({ ...c, ledgerId: ledger.id })),
+  });
+
+  await db.billingProfile.upsert({
+    where: { userId },
+    create: { userId, tier: "FREE" },
+    update: {},
+  });
+}
+
+/** メールでログイン（無ければ作成）。dev はパスワードレス。 */
+export async function signInWithEmail(email: string, name?: string) {
+  const normalized = email.trim().toLowerCase();
+  let user = await db.user.findUnique({ where: { email: normalized } });
+  if (!user) {
+    user = await db.user.create({
+      data: { email: normalized, name: name?.trim() || normalized.split("@")[0] },
+    });
+  }
+  await bootstrapUser(user.id, user.name);
+
+  const token = randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  await db.session.create({ data: { sessionToken: token, userId: user.id, expires } });
+
+  const store = await cookies();
+  store.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    expires,
+    path: "/",
+  });
+  return user;
+}
+
+export async function signOut() {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (token) {
+    await db.session.deleteMany({ where: { sessionToken: token } });
+    store.delete(SESSION_COOKIE);
+  }
+}
+
+/** 現在のログインユーザー。未ログインは null。 */
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+
+  const session = await db.session.findUnique({
+    where: { sessionToken: token },
+    include: { user: { include: { billing: true } } },
+  });
+  if (!session || session.expires < new Date()) return null;
+
+  const u = session.user;
+  return {
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    image: u.image,
+    themePref: u.themePref,
+    currency: u.currency,
+    assumedHourlyWage: u.assumedHourlyWage,
+    tier: u.billing?.tier ?? "FREE",
+  };
+}
+
+/** 認証必須箇所で使用。未ログインは throw。 */
+export async function requireUser(): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("UNAUTHORIZED");
+  return user;
+}

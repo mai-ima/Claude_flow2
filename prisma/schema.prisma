@@ -1,0 +1,243 @@
+// Tsumiki — 家計簿 + サブスク管理
+// SQLite(dev) / PostgreSQL(prod) を DATABASE_URL と provider で切替。
+// SQLite は Prisma enum 非対応のため、列挙値は String + アプリ層(Zod/TS union)で担保する。
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// 認証 (Auth.js 互換スキーマ — 将来の移行を見据える)
+// ─────────────────────────────────────────────
+model User {
+  id               String    @id @default(cuid())
+  name             String?
+  email            String?   @unique
+  emailVerified    DateTime?
+  image            String?
+  // 設定
+  locale           String    @default("ja")
+  currency         String    @default("JPY")
+  themePref        String    @default("system") // system | light | dark
+  assumedHourlyWage Int?     // コストタイム用の想定時給(円)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  memberships     LedgerMember[]
+  ownedLedgers    Ledger[]        @relation("LedgerOwner")
+  createdTxns     Transaction[]   @relation("TxnCreatedBy")
+  ownedSubs       Subscription[]  @relation("SubOwner")
+  billing         BillingProfile?
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────
+// 帳簿(データ所有境界) — 複数帳簿・ファミリー共有の土台
+// ─────────────────────────────────────────────
+model Ledger {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   @default("PERSONAL") // PERSONAL | POD
+  currency  String   @default("JPY")
+  ownerId   String
+  owner     User     @relation("LedgerOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members        LedgerMember[]
+  categories     Category[]
+  transactions   Transaction[]
+  budgets        Budget[]
+  subscriptions  Subscription[]
+  paymentMethods PaymentMethod[]
+
+  @@index([ownerId])
+}
+
+model LedgerMember {
+  id        String   @id @default(cuid())
+  ledgerId  String
+  ledger    Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("OWNER") // OWNER | EDITOR | VIEWER
+  createdAt DateTime @default(now())
+
+  @@unique([ledgerId, userId])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// 決済手段 — サブスク・スタックの土台
+// ─────────────────────────────────────────────
+model PaymentMethod {
+  id        String   @id @default(cuid())
+  ledgerId  String
+  ledger    Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  name      String
+  type      String   @default("CARD") // CARD | BANK | CASH | EMONEY
+  brand     String?
+  last4     String?
+  color     String   @default("blue")
+  icon      String   @default("card")
+  createdAt DateTime @default(now())
+
+  transactions  Transaction[]
+  subscriptions Subscription[]
+
+  @@index([ledgerId])
+}
+
+// ─────────────────────────────────────────────
+// 家計簿ドメイン
+// ─────────────────────────────────────────────
+model Category {
+  id         String   @id @default(cuid())
+  ledgerId   String
+  ledger     Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  name       String
+  type       String // INCOME | EXPENSE
+  icon       String   @default("tag")
+  color      String   @default("gray")
+  parentId   String?
+  parent     Category?  @relation("CatTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Category[] @relation("CatTree")
+  isArchived Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  transactions Transaction[]
+  budgets      Budget[]
+  subscriptions Subscription[]
+
+  @@index([ledgerId, type])
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  ledgerId        String
+  ledger          Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  createdByUserId String
+  createdBy       User     @relation("TxnCreatedBy", fields: [createdByUserId], references: [id])
+  type            String // INCOME | EXPENSE
+  amount          Int // 最小単位(JPY=円)
+  currency        String   @default("JPY")
+  occurredAt      DateTime
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  subscriptionId  String?
+  subscription    Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  memo            String?
+  createdAt       DateTime @default(now())
+
+  @@index([ledgerId, occurredAt])
+  @@index([ledgerId, categoryId])
+  @@index([subscriptionId])
+}
+
+model Budget {
+  id            String   @id @default(cuid())
+  ledgerId      String
+  ledger        Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  isTotalBudget Boolean  @default(false)
+  period        String   @default("MONTHLY") // MONTHLY | YEARLY
+  amount        Int
+  currency      String   @default("JPY")
+  startMonth    DateTime
+  createdAt     DateTime @default(now())
+
+  // カテゴリ予算の一意性。全体予算(categoryId=null)はアプリ層 Zod + 別制約で担保。
+  @@unique([ledgerId, categoryId, period, startMonth])
+  @@unique([ledgerId, isTotalBudget, period, startMonth])
+}
+
+model Subscription {
+  id                  String   @id @default(cuid())
+  ledgerId            String
+  ledger              Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  ownerUserId         String
+  owner               User     @relation("SubOwner", fields: [ownerUserId], references: [id])
+  name                String
+  amount              Int
+  currency            String   @default("JPY")
+  cycle               String   @default("MONTHLY") // MONTHLY | YEARLY | WEEKLY | QUARTERLY
+  status              String   @default("ACTIVE")  // ACTIVE | PAUSED | CANCELED | TRIAL
+  nextRenewalAt       DateTime
+  startedAt           DateTime?
+  categoryId          String?
+  category            Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  paymentMethodId     String?
+  paymentMethod       PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  reminderDaysBefore  Int      @default(3)
+  autoPostTransaction Boolean  @default(true)
+  lastUsedAt          DateTime?
+  lastReviewedAt      DateTime?
+  serviceKey          String?  // lib/service-catalog.ts のキー
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@index([ledgerId, nextRenewalAt])
+  @@index([ledgerId, status])
+}
+
+// ─────────────────────────────────────────────
+// 収益化
+// ─────────────────────────────────────────────
+model BillingProfile {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  tier                 String    @default("FREE") // FREE | PLUS | PRO
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  updatedAt            DateTime  @updatedAt
+}
