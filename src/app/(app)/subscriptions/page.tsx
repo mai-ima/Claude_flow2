@@ -1,0 +1,117 @@
+import type { Metadata } from "next";
+import { getAppContext } from "@/lib/app-context";
+import {
+  listSubscriptions,
+  subscriptionTotals,
+  subscriptionsByPaymentMethod,
+} from "@/modules/subscriptions/queries";
+import { listCategories, listPaymentMethods } from "@/modules/transactions/queries";
+import { detectWaste, wasteMessage } from "@/modules/subscriptions/waste-detect";
+import {
+  SubscriptionsClient,
+  type SubItem,
+  type StackGroup,
+} from "@/modules/subscriptions/components/subscriptions-client";
+import { PageHeader, PageContainer } from "@/components/app/page-header";
+import { formatDate, daysUntil, daysSince } from "@/lib/date";
+import { formatMoney, toMonthlyAmount, toYearlyAmount } from "@/lib/money";
+import { CYCLE_LABEL, STATUS_LABEL, type BillingCycle } from "@/lib/enums";
+import { findService } from "@/lib/service-catalog";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({ title: "サブスク管理", noindex: true });
+
+export default async function SubscriptionsPage() {
+  const { ledgerId, canEdit, tier } = await getAppContext();
+
+  const [subs, totals, byPayment, categories, paymentMethods] = await Promise.all([
+    listSubscriptions(ledgerId),
+    subscriptionTotals(ledgerId),
+    subscriptionsByPaymentMethod(ledgerId),
+    listCategories(ledgerId),
+    listPaymentMethods(ledgerId),
+  ]);
+
+  const items: SubItem[] = subs.map((s) => {
+    const cycle = s.cycle as BillingCycle;
+    const svc = findService(s.serviceKey);
+    const wasteLevel = detectWaste(s.lastUsedAt, s.status);
+    return {
+      id: s.id,
+      name: s.name,
+      icon: s.category?.icon ?? svc?.icon ?? "repeat",
+      monthly: toMonthlyAmount(s.amount, cycle),
+      yearly: toYearlyAmount(s.amount, cycle),
+      cycleLabel: CYCLE_LABEL[cycle],
+      statusLabel: STATUS_LABEL[s.status as keyof typeof STATUS_LABEL],
+      status: s.status,
+      nextRenewalLabel: formatDate(s.nextRenewalAt, "M月d日"),
+      daysUntil: daysUntil(s.nextRenewalAt),
+      categoryName: s.category?.name ?? "未分類",
+      paymentName: s.paymentMethod?.name ?? null,
+      wasteLevel,
+      wasteMessage: wasteMessage(s.lastUsedAt),
+      daysSinceUsed: daysSince(s.lastUsedAt),
+      cancelUrl: svc?.cancelUrl ?? null,
+      cancelSteps: svc?.cancelSteps ?? [],
+      edit: {
+        id: s.id,
+        name: s.name,
+        amount: s.amount,
+        cycle,
+        status: s.status as SubItem["edit"]["status"],
+        nextRenewalAt: s.nextRenewalAt.toISOString().slice(0, 10),
+        categoryId: s.categoryId ?? "",
+        paymentMethodId: s.paymentMethodId ?? "",
+        reminderDaysBefore: s.reminderDaysBefore,
+        autoPostTransaction: s.autoPostTransaction,
+        serviceKey: s.serviceKey ?? "",
+        notes: s.notes ?? "",
+      },
+    };
+  });
+
+  const groups: StackGroup[] = byPayment.groups.map((g) => ({
+    name: g.method.name,
+    color: g.method.color,
+    monthly: g.monthly,
+    subs: g.subs.map((s) => ({
+      id: s.id,
+      name: s.name,
+      icon: findService(s.serviceKey)?.icon ?? "repeat",
+      label: `${formatMoney(toMonthlyAmount(s.amount, s.cycle as BillingCycle))}/月`,
+    })),
+  }));
+  const unassigned: StackGroup | null =
+    byPayment.unassigned.length > 0
+      ? {
+          name: "未設定",
+          color: "gray",
+          monthly: byPayment.unassigned.reduce(
+            (sum, s) => sum + toMonthlyAmount(s.amount, s.cycle as BillingCycle),
+            0,
+          ),
+          subs: byPayment.unassigned.map((s) => ({
+            id: s.id,
+            name: s.name,
+            icon: findService(s.serviceKey)?.icon ?? "repeat",
+            label: `${formatMoney(toMonthlyAmount(s.amount, s.cycle as BillingCycle))}/月`,
+          })),
+        }
+      : null;
+
+  return (
+    <PageContainer>
+      <PageHeader title="サブスク" subtitle="毎月の固定費を、ひと目で。" />
+      <SubscriptionsClient
+        items={items}
+        stack={{ groups, unassigned }}
+        totals={totals}
+        categories={categories.map((c) => ({ id: c.id, name: c.name, type: c.type }))}
+        paymentMethods={paymentMethods.map((p) => ({ id: p.id, name: p.name }))}
+        canEdit={canEdit}
+        isPro={tier === "PRO"}
+      />
+    </PageContainer>
+  );
+}
