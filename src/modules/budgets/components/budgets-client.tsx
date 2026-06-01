@@ -1,0 +1,254 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Sheet } from "@/components/ui/sheet";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Field, Input, Select } from "@/components/ui/field";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CategoryIcon, TargetIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { formatMoney } from "@/lib/money";
+import { colorOf } from "@/lib/colors";
+import { setBudget, deleteBudget } from "../actions";
+import { cn } from "@/lib/cn";
+
+export interface BudgetItem {
+  id: string;
+  categoryId: string | null;
+  isTotalBudget: boolean;
+  name: string;
+  icon: string;
+  color: string;
+  amount: number;
+  spent: number;
+}
+
+interface Option {
+  id: string;
+  name: string;
+}
+
+function ProgressBar({ spent, amount, color }: { spent: number; amount: number; color: string }) {
+  const ratio = amount > 0 ? spent / amount : 0;
+  const over = ratio > 1;
+  const pct = Math.min(ratio, 1) * 100;
+  return (
+    <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+      <div
+        className="h-full rounded-full transition-all duration-500"
+        style={{
+          width: `${pct}%`,
+          background: over ? "var(--color-expense)" : colorOf(color),
+        }}
+      />
+    </div>
+  );
+}
+
+function BudgetCard({
+  item,
+  canEdit,
+  onEdit,
+  onDelete,
+}: {
+  item: BudgetItem;
+  canEdit: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const remaining = item.amount - item.spent;
+  const over = remaining < 0;
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-3">
+        <span
+          className={cn(
+            "grid h-10 w-10 shrink-0 place-items-center rounded-xl",
+            item.isTotalBudget ? "bg-accent/10 text-accent" : "bg-surface-2 text-text-secondary",
+          )}
+        >
+          {item.isTotalBudget ? <TargetIcon size={20} /> : <CategoryIcon name={item.icon} size={20} />}
+        </span>
+        <div className="min-w-0 flex-1">
+          <button onClick={onEdit} className="block w-full text-left">
+            <span className="text-[15px] font-semibold">{item.name}</span>
+          </button>
+        </div>
+        {canEdit && (
+          <button
+            onClick={onDelete}
+            aria-label="削除"
+            className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+          >
+            <TrashIcon size={16} />
+          </button>
+        )}
+      </div>
+      <ProgressBar spent={item.spent} amount={item.amount} color={item.color} />
+      <div className="mt-2 flex items-center justify-between text-[13px]">
+        <span className="text-text-secondary tabular-nums">
+          {formatMoney(item.spent)} / {formatMoney(item.amount)}
+        </span>
+        <span className={cn("font-semibold tabular-nums", over ? "text-expense" : "text-income")}>
+          {over ? `${formatMoney(-remaining)} 超過` : `残り ${formatMoney(remaining)}`}
+        </span>
+      </div>
+    </Card>
+  );
+}
+
+export function BudgetsClient({
+  total,
+  categories,
+  allCategories,
+  canEdit,
+}: {
+  total: BudgetItem | null;
+  categories: BudgetItem[];
+  allCategories: Option[];
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [, start] = useTransition();
+  const [error, setError] = useState<string>();
+  const [form, setForm] = useState<{ categoryId: string; amount: number }>({
+    categoryId: "",
+    amount: 0,
+  });
+
+  function openNew() {
+    setForm({ categoryId: "", amount: 0 });
+    setError(undefined);
+    setSheetOpen(true);
+  }
+  function openEdit(item: BudgetItem) {
+    setForm({ categoryId: item.categoryId ?? "", amount: item.amount });
+    setError(undefined);
+    setSheetOpen(true);
+  }
+  function save() {
+    setError(undefined);
+    start(async () => {
+      const res = await setBudget({
+        categoryId: form.categoryId || null,
+        amount: form.amount,
+      });
+      if (res.ok) {
+        setSheetOpen(false);
+        router.refresh();
+      } else {
+        setError(res.error);
+      }
+    });
+  }
+  function remove(id: string) {
+    if (!confirm("この予算を削除しますか？")) return;
+    start(async () => {
+      await deleteBudget({ id });
+      router.refresh();
+    });
+  }
+
+  const hasAny = total || categories.length > 0;
+
+  // すでに予算があるカテゴリを除外
+  const usedCatIds = new Set(categories.map((c) => c.categoryId));
+  const selectableCats = allCategories.filter(
+    (c) => !usedCatIds.has(c.id) || c.id === form.categoryId,
+  );
+
+  return (
+    <div>
+      {!hasAny ? (
+        <EmptyState
+          icon={<TargetIcon size={28} />}
+          title="予算を設定しましょう"
+          description="全体やカテゴリごとに月の予算を決めると、使いすぎを早めに防げます。"
+          action={
+            canEdit ? (
+              <Button onClick={openNew}>
+                <PlusIcon size={18} /> 予算を設定
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <div className="space-y-3">
+          {total && (
+            <BudgetCard
+              item={total}
+              canEdit={canEdit}
+              onEdit={() => openEdit(total)}
+              onDelete={() => remove(total.id)}
+            />
+          )}
+          {categories.length > 0 && (
+            <div className="px-1 pt-2 text-[13px] font-medium text-text-tertiary">カテゴリ別</div>
+          )}
+          {categories.map((c) => (
+            <BudgetCard
+              key={c.id}
+              item={c}
+              canEdit={canEdit}
+              onEdit={() => openEdit(c)}
+              onDelete={() => remove(c.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {canEdit && (
+        <button
+          onClick={openNew}
+          aria-label="予算を追加"
+          className="fixed bottom-24 right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
+        >
+          <PlusIcon size={26} />
+        </button>
+      )}
+
+      <Sheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title="予算を設定"
+        footer={
+          <Button full size="lg" onClick={save} disabled={form.amount <= 0}>
+            保存する
+          </Button>
+        }
+      >
+        <div className="space-y-4">
+          <Field label="対象">
+            <Select
+              value={form.categoryId}
+              onChange={(e) => setForm((s) => ({ ...s, categoryId: e.target.value }))}
+            >
+              <option value="">全体予算</option>
+              {selectableCats.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="月の予算額">
+            <Input
+              inputMode="numeric"
+              value={form.amount ? String(form.amount) : ""}
+              onChange={(e) =>
+                setForm((s) => ({
+                  ...s,
+                  amount: Math.max(0, parseInt(e.target.value.replace(/\D/g, "") || "0", 10)),
+                }))
+              }
+              placeholder="例: 50000"
+            />
+          </Field>
+          {error && <p className="text-[13px] text-expense">{error}</p>}
+        </div>
+      </Sheet>
+    </div>
+  );
+}

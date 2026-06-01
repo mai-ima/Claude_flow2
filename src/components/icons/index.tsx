@@ -307,6 +307,27 @@ export const SwapIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const TargetIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+export const MenuIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+  </Icon>
+);
+
+export const ArchiveIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="5" rx="1.5" />
+    <path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4" />
+  </Icon>
+);
+
 /** ロゴマーク（積み重なる「積み木」= Tsumiki） */
 export const LogoMark = (p: IconProps) => (
   <Icon {...p} strokeWidth={1.6}>

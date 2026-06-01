@@ -1,0 +1,73 @@
+import "server-only";
+import { db } from "@/lib/db";
+import { monthRange } from "@/lib/date";
+
+export interface BudgetRow {
+  id: string;
+  categoryId: string | null;
+  isTotalBudget: boolean;
+  name: string;
+  icon: string;
+  color: string;
+  amount: number;
+  spent: number;
+}
+
+/** 予算一覧（全体 + カテゴリ別）に当月の実支出を付与して返す。 */
+export async function listBudgetsWithSpending(
+  ledgerId: string,
+  month: Date = new Date(),
+): Promise<{ total: BudgetRow | null; categories: BudgetRow[] }> {
+  const { start, end } = monthRange(month);
+
+  const [budgets, categories, expenseByCat, totalExpenseAgg] = await Promise.all([
+    db.budget.findMany({ where: { ledgerId } }),
+    db.category.findMany({ where: { ledgerId } }),
+    db.transaction.groupBy({
+      by: ["categoryId"],
+      where: { ledgerId, type: "EXPENSE", occurredAt: { gte: start, lte: end } },
+      _sum: { amount: true },
+    }),
+    db.transaction.aggregate({
+      where: { ledgerId, type: "EXPENSE", occurredAt: { gte: start, lte: end } },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const catMap = new Map(categories.map((c) => [c.id, c]));
+  const spentMap = new Map(expenseByCat.map((r) => [r.categoryId, r._sum.amount ?? 0]));
+  const totalSpent = totalExpenseAgg._sum.amount ?? 0;
+
+  let total: BudgetRow | null = null;
+  const categoryRows: BudgetRow[] = [];
+
+  for (const b of budgets) {
+    if (b.isTotalBudget || !b.categoryId) {
+      total = {
+        id: b.id,
+        categoryId: null,
+        isTotalBudget: true,
+        name: "全体予算",
+        icon: "target",
+        color: "blue",
+        amount: b.amount,
+        spent: totalSpent,
+      };
+    } else {
+      const c = catMap.get(b.categoryId);
+      categoryRows.push({
+        id: b.id,
+        categoryId: b.categoryId,
+        isTotalBudget: false,
+        name: c?.name ?? "不明なカテゴリ",
+        icon: c?.icon ?? "tag",
+        color: c?.color ?? "gray",
+        amount: b.amount,
+        spent: spentMap.get(b.categoryId) ?? 0,
+      });
+    }
+  }
+
+  categoryRows.sort((a, b) => b.spent / b.amount - a.spent / a.amount);
+  return { total, categories: categoryRows };
+}

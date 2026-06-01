@@ -2,8 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { MobileDrawer } from "./mobile-drawer";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDownIcon, UsersIcon, WalletIcon, SwapIcon, LogoutIcon } from "@/components/icons";
+import {
+  ChevronDownIcon,
+  UsersIcon,
+  WalletIcon,
+  SwapIcon,
+  LogoutIcon,
+  MenuIcon,
+} from "@/components/icons";
 import { switchLedger } from "@/modules/ledgers/actions";
 import { logoutAction } from "@/app/(auth)/actions";
 import { cn } from "@/lib/cn";
@@ -27,6 +35,7 @@ export function AppHeader({
   userName: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [pending, start] = useTransition();
   const active = ledgers.find((l) => l.id === activeId) ?? ledgers[0];
 
@@ -39,7 +48,20 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border-subtle bg-glass px-4 backdrop-blur-xl backdrop-saturate-150">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border-subtle bg-glass px-4 backdrop-blur-xl backdrop-saturate-150">
+      <button
+        onClick={() => setDrawerOpen(true)}
+        aria-label="メニューを開く"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary md:hidden"
+      >
+        <MenuIcon size={22} />
+      </button>
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        userName={userName}
+        tier={tier}
+      />
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}

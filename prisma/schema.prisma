@@ -191,9 +191,10 @@ model Budget {
   startMonth    DateTime
   createdAt     DateTime @default(now())
 
-  // カテゴリ予算の一意性。全体予算(categoryId=null)はアプリ層 Zod + 別制約で担保。
+  // カテゴリ予算の一意性。全体予算(isTotalBudget=true, categoryId=null)が
+  // 各帳簿で1件であることはアプリ層(upsert by lookup)で担保する。
   @@unique([ledgerId, categoryId, period, startMonth])
-  @@unique([ledgerId, isTotalBudget, period, startMonth])
+  @@index([ledgerId])
 }
 
 model Subscription {

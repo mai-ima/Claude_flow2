@@ -1,22 +1,27 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
-import { listPaymentMethods } from "@/modules/transactions/queries";
+import { listPaymentMethods, listAllCategories } from "@/modules/transactions/queries";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { ProfileForm } from "@/modules/account/components/profile-form";
 import { PaymentMethodsManager } from "@/modules/account/components/payment-methods-manager";
+import { CategoryManager } from "@/modules/account/components/category-manager";
+import { DangerZone } from "@/modules/account/components/danger-zone";
 import { FamilySharing } from "@/modules/ledgers/components/family-sharing";
 import { BillingCard } from "@/modules/billing/components/billing-card";
 import { PLANS } from "@/lib/plans";
 import { isStripeEnabled } from "@/lib/env";
-import { pageMetadata } from "@/lib/seo";
+import { SITE, pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true });
 
 export default async function SettingsPage() {
   const ctx = await getAppContext();
-  const methods = await listPaymentMethods(ctx.ledgerId);
+  const [methods, categories] = await Promise.all([
+    listPaymentMethods(ctx.ledgerId),
+    listAllCategories(ctx.ledgerId),
+  ]);
 
   const members = ctx.ledger.members.map((m) => ({
     userId: m.userId,
@@ -91,6 +96,43 @@ export default async function SettingsPage() {
             />
           </CardBody>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>カテゴリ管理</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <CategoryManager
+              categories={categories.map((c) => ({
+                id: c.id,
+                name: c.name,
+                type: c.type,
+                icon: c.icon,
+                color: c.color,
+                isArchived: c.isArchived,
+              }))}
+            />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>アカウント</CardTitle>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[14px] text-text-secondary">メールアドレス</span>
+              <span className="text-[14px] font-medium">{ctx.user.email}</span>
+            </div>
+            <div className="border-t border-border-subtle pt-4">
+              <DangerZone />
+            </div>
+          </CardBody>
+        </Card>
+
+        <p className="pt-2 text-center text-[12px] text-text-tertiary">
+          {SITE.name} ・ バージョン 1.0.0
+        </p>
       </div>
     </PageContainer>
   );

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_ITEMS } from "./nav-items";
+import { BOTTOM_ITEMS } from "./nav-items";
 import { cn } from "@/lib/cn";
 
 export function BottomBar() {
@@ -13,7 +13,7 @@ export function BottomBar() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="grid grid-cols-5">
-        {NAV_ITEMS.map((item) => {
+        {BOTTOM_ITEMS.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(item.href + "/");
           return (

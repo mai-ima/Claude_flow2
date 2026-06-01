@@ -87,3 +87,8 @@ export function listCategories(ledgerId: string) {
 export function listPaymentMethods(ledgerId: string) {
   return db.paymentMethod.findMany({ where: { ledgerId }, orderBy: { createdAt: "asc" } });
 }
+
+/** アーカイブ済みも含む全カテゴリ（カテゴリ管理用）。 */
+export function listAllCategories(ledgerId: string) {
+  return db.category.findMany({ where: { ledgerId }, orderBy: { createdAt: "asc" } });
+}

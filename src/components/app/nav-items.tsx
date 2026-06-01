@@ -2,6 +2,7 @@ import {
   HomeIcon,
   WalletIcon,
   RepeatIcon,
+  TargetIcon,
   ChartIcon,
   GearIcon,
   type IconProps,
@@ -13,7 +14,18 @@ export interface NavItem {
   icon: (p: IconProps) => React.ReactElement;
 }
 
+/** 全ナビ項目（PC サイドバー・スマホのドロワー用） */
 export const NAV_ITEMS: NavItem[] = [
+  { href: "/dashboard", label: "ホーム", icon: HomeIcon },
+  { href: "/transactions", label: "家計簿", icon: WalletIcon },
+  { href: "/subscriptions", label: "サブスク", icon: RepeatIcon },
+  { href: "/budgets", label: "予算", icon: TargetIcon },
+  { href: "/reports", label: "分析", icon: ChartIcon },
+  { href: "/settings", label: "設定", icon: GearIcon },
+];
+
+/** スマホ下タブ用（よく使う5つに厳選） */
+export const BOTTOM_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "ホーム", icon: HomeIcon },
   { href: "/transactions", label: "家計簿", icon: WalletIcon },
   { href: "/subscriptions", label: "サブスク", icon: RepeatIcon },
