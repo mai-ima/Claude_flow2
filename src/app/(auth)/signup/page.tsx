@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LoginForm } from "./login-form";
+import { SignupForm } from "./signup-form";
 import { Card } from "@/components/ui/card";
 import { LogoMark } from "@/components/icons";
 import { pageMetadata, SITE } from "@/lib/seo";
 import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = pageMetadata({
-  title: "ログイン",
-  path: "/login",
+  title: "新規登録",
+  path: "/signup",
   noindex: true,
 });
 
-export default async function LoginPage() {
+export default async function SignupPage() {
   const user = await getCurrentUser();
   if (user) redirect("/dashboard");
 
@@ -28,12 +28,12 @@ export default async function LoginPage() {
           <span className="text-[19px]">{SITE.name}</span>
         </Link>
         <Card className="p-7">
-          <h1 className="text-center text-[22px] font-bold tracking-tight">ログイン</h1>
+          <h1 className="text-center text-[22px] font-bold tracking-tight">新規登録</h1>
           <p className="mt-1.5 mb-6 text-center text-[14px] text-text-secondary">
-            おかえりなさい。アカウントにサインインします。
+            無料でアカウントを作成して、今日から始めましょう。
           </p>
           <Suspense>
-            <LoginForm />
+            <SignupForm />
           </Suspense>
         </Card>
         <p className="mt-6 text-center text-[13px] text-text-tertiary">

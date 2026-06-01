@@ -107,7 +107,7 @@ export default function FeaturesPage() {
       </div>
 
       <div className="mt-20 text-center">
-        <ButtonLink href="/login" size="lg">
+        <ButtonLink href="/signup" size="lg">
           無料で始める
         </ButtonLink>
       </div>

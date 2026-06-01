@@ -6,21 +6,21 @@
 /* ───────────── デザイントークン ───────────── */
 :root {
   /* surface 階層（奥行き） */
-  --surface-0: #f5f5f7; /* ページ背景（Apple グレー） */
+  --surface-0: #f2f2f6; /* ページ背景（Apple システムグレー） */
   --surface-1: #ffffff; /* カード */
-  --surface-2: #ffffff;
-  --surface-3: #ffffff;
-  --glass: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(0, 0, 0, 0.08);
+  --surface-2: #eceef2; /* チップ/入力/トラック（淡い段差） */
+  --surface-3: #e3e5ea;
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.06);
 
   /* テキスト */
   --text-primary: #1d1d1f;
   --text-secondary: #6e6e73;
-  --text-tertiary: #8e8e93;
+  --text-tertiary: #9a9aa0;
 
   /* 罫線 */
-  --border: rgba(0, 0, 0, 0.1);
-  --border-strong: rgba(0, 0, 0, 0.16);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
 
   /* アクセント / セマンティック */
   --accent: #007aff; /* Apple ブルー */
@@ -32,15 +32,15 @@
   --success: #34c759;
 
   /* 角丸 */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
 
-  /* 影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  /* 影（Apple 風にごく繊細に） */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
 
   /* モーション */
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);

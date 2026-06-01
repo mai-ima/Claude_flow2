@@ -38,7 +38,7 @@ export function SiteHeader() {
           >
             ログイン
           </Link>
-          <ButtonLink href="/login" size="sm">
+          <ButtonLink href="/signup" size="sm">
             無料で始める
           </ButtonLink>
         </div>

@@ -77,7 +77,7 @@ export default function LandingPage() {
             洗練された体験で、家計の最適化を当たり前に。
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <ButtonLink href="/login" size="lg">
+            <ButtonLink href="/signup" size="lg">
               無料で始める
             </ButtonLink>
             <ButtonLink href="/features" size="lg" variant="gray">
@@ -186,7 +186,7 @@ export default function LandingPage() {
           無料で始めて、必要になったらアップグレード。
         </p>
         <div className="mt-8">
-          <ButtonLink href="/login" size="lg">
+          <ButtonLink href="/signup" size="lg">
             無料で始める
           </ButtonLink>
         </div>

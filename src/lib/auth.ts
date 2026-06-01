@@ -46,23 +46,33 @@ async function bootstrapUser(userId: string, name: string | null) {
   });
 }
 
-export type AuthError = "INVALID_PASSWORD" | "WEAK_PASSWORD";
+export type AuthError =
+  | "INVALID_PASSWORD"
+  | "WEAK_PASSWORD"
+  | "EMAIL_TAKEN"
+  | "NO_ACCOUNT";
 
 /**
  * メール + パスワードでサインイン / 新規登録。
- * - 未登録: そのパスワードで新規作成
- * - 登録済み(パスワード有): 照合。一致しなければ throw
- * - 登録済み(パスワード無=レガシー): 初回ログインでそのパスワードを設定
+ * - mode "signup": 既存メールは EMAIL_TAKEN。新規作成。
+ * - mode "login":  未登録は NO_ACCOUNT。パスワード照合（不一致は INVALID_PASSWORD）。
+ *   レガシー(パスワード未設定)アカウントは初回ログインでパスワードを設定。
  */
-export async function signInWithEmail(email: string, password: string, name?: string) {
+export async function signInWithEmail(
+  email: string,
+  password: string,
+  opts: { name?: string; mode?: "login" | "signup" } = {},
+) {
+  const { name, mode = "login" } = opts;
   const normalized = email.trim().toLowerCase();
   if (password.length < 8) {
-    const err = new Error("WEAK_PASSWORD");
-    throw err;
+    throw new Error("WEAK_PASSWORD");
   }
 
   let user = await db.user.findUnique({ where: { email: normalized } });
-  if (!user) {
+
+  if (mode === "signup") {
+    if (user) throw new Error("EMAIL_TAKEN");
     user = await db.user.create({
       data: {
         email: normalized,
@@ -70,16 +80,18 @@ export async function signInWithEmail(email: string, password: string, name?: st
         passwordHash: hashPassword(password),
       },
     });
-  } else if (user.passwordHash) {
-    if (!verifyPassword(password, user.passwordHash)) {
-      throw new Error("INVALID_PASSWORD");
-    }
   } else {
-    // レガシー（パスワード未設定）アカウントを保護: 初回ログインで設定
-    await db.user.update({
-      where: { id: user.id },
-      data: { passwordHash: hashPassword(password) },
-    });
+    if (!user) throw new Error("NO_ACCOUNT");
+    if (user.passwordHash) {
+      if (!verifyPassword(password, user.passwordHash)) {
+        throw new Error("INVALID_PASSWORD");
+      }
+    } else {
+      await db.user.update({
+        where: { id: user.id },
+        data: { passwordHash: hashPassword(password) },
+      });
+    }
   }
   await bootstrapUser(user.id, user.name);
 

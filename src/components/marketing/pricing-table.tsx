@@ -91,7 +91,7 @@ export function PricingTable({
 
               <div className="mt-6">
                 {isFree ? (
-                  <ButtonLink href="/login" full variant="gray">
+                  <ButtonLink href="/signup" full variant="gray">
                     無料で始める
                   </ButtonLink>
                 ) : stripeEnabled ? (
