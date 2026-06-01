@@ -49,20 +49,32 @@ export async function expenseByCategory(ledgerId: string, month: Date) {
     .sort((a, b) => b.amount - a.amount);
 }
 
-/** 直近 N ヶ月の収支推移。 */
+/** 直近 N ヶ月の収支推移（1クエリで取得し JS で月別集計）。 */
 export async function monthlyTrend(ledgerId: string, months: number) {
   const now = new Date();
-  const result: { label: string; income: number; expense: number }[] = [];
-  for (let i = months - 1; i >= 0; i--) {
-    const anchor = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const s = await monthSummary(ledgerId, anchor);
-    result.push({
-      label: `${anchor.getMonth() + 1}月`,
-      income: s.income,
-      expense: s.expense,
-    });
+  const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+  const buckets = Array.from({ length: months }, (_, idx) => {
+    const i = months - 1 - idx;
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    return { y: d.getFullYear(), m: d.getMonth(), label: `${d.getMonth() + 1}月`, income: 0, expense: 0 };
+  });
+
+  const rows = await db.transaction.findMany({
+    where: { ledgerId, occurredAt: { gte: start } },
+    select: { type: true, amount: true, occurredAt: true },
+  });
+
+  for (const t of rows) {
+    const b = buckets.find(
+      (b) => b.y === t.occurredAt.getFullYear() && b.m === t.occurredAt.getMonth(),
+    );
+    if (!b) continue;
+    if (t.type === "INCOME") b.income += t.amount;
+    else b.expense += t.amount;
   }
-  return result;
+
+  return buckets.map((b) => ({ label: b.label, income: b.income, expense: b.expense }));
 }
 
 export function listCategories(ledgerId: string) {

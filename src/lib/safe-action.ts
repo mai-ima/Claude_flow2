@@ -16,6 +16,17 @@ export function fail(
   return { ok: false, error, fieldErrors };
 }
 
+/** ドメイン固有エラーコード → 日本語メッセージ（クライアントはそのまま表示できる）。 */
+const ERROR_MESSAGES: Record<string, string> = {
+  FORBIDDEN: "この操作を行う権限がありません。",
+  MEMBER_LIMIT: "現在のプランの人数上限に達しています。",
+  USER_NOT_FOUND: "そのメールのユーザーが見つかりません（先に登録が必要です）。",
+  CANNOT_REMOVE_OWNER: "オーナーは削除できません。",
+  PLAN_REQUIRED: "この機能はプランのアップグレードが必要です。",
+  SUB_LIMIT: "フリープランの登録上限です。プラスにすると無制限になります。",
+  STRIPE_ACTIVE: "決済が有効なため、この操作はできません。",
+};
+
 /**
  * 認証 + Zod 検証 + ランタイム例外捕捉を一元化した Server Action ラッパー。
  * これで各 action のボイラープレートと catch 漏れを排除する。
@@ -43,10 +54,9 @@ export function authedAction<TSchema extends z.ZodType, TResult>(
       return ok(data);
     } catch (err) {
       console.error("[action error]", err);
+      const code = err instanceof Error ? err.message : "";
       const message =
-        err instanceof Error && err.message === "FORBIDDEN"
-          ? "この操作を行う権限がありません。"
-          : "処理に失敗しました。時間をおいて再度お試しください。";
+        ERROR_MESSAGES[code] ?? "処理に失敗しました。時間をおいて再度お試しください。";
       return fail(message);
     }
   };

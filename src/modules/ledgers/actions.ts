@@ -5,8 +5,13 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
 import { requireLedgerMember, setActiveLedger } from "@/lib/ledger-access";
-import { PLANS } from "@/lib/plans";
+import { PLANS, canUse } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
+
+async function userTier(userId: string): Promise<PlanTier> {
+  const b = await db.billingProfile.findUnique({ where: { userId } });
+  return (b?.tier ?? "FREE") as PlanTier;
+}
 
 export const switchLedger = authedAction(
   z.object({ ledgerId: z.string() }),
@@ -21,6 +26,10 @@ export const switchLedger = authedAction(
 export const createPod = authedAction(
   z.object({ name: z.string().min(1, "名前を入力してください。").max(40) }),
   async ({ name }, user) => {
+    // ファミリー共有は PLUS 以上の機能（サーバー側でも認可）
+    if (!canUse(await userTier(user.id), "familySharing")) {
+      throw new Error("PLAN_REQUIRED");
+    }
     const ledger = await db.ledger.create({
       data: {
         name,
@@ -44,21 +53,26 @@ export const inviteMember = authedAction(
   async ({ ledgerId, email, role }, user) => {
     await requireLedgerMember(ledgerId, user.id, "OWNER");
 
-    // 人数上限はオーナーのプランで判定
-    const owner = await db.billingProfile.findUnique({ where: { userId: user.id } });
-    const tier = (owner?.tier ?? "FREE") as PlanTier;
-    const max = PLANS[tier].maxMembers;
-    const count = await db.ledgerMember.count({ where: { ledgerId } });
-    if (count >= max) {
-      throw new Error("MEMBER_LIMIT");
-    }
-
     const normalized = email.trim().toLowerCase();
     const invitee = await db.user.findUnique({ where: { email: normalized } });
     if (!invitee) {
       // 簡易招待: 既存ユーザーのみ。未登録は招待レコードを作らずエラー表示。
       throw new Error("USER_NOT_FOUND");
     }
+
+    const existing = await db.ledgerMember.findUnique({
+      where: { ledgerId_userId: { ledgerId, userId: invitee.id } },
+    });
+
+    // 新規追加時のみ人数上限を判定（既存メンバーの役割変更は対象外）
+    if (!existing) {
+      const max = PLANS[await userTier(user.id)].maxMembers;
+      const count = await db.ledgerMember.count({ where: { ledgerId } });
+      if (count >= max) {
+        throw new Error("MEMBER_LIMIT");
+      }
+    }
+
     await db.ledgerMember.upsert({
       where: { ledgerId_userId: { ledgerId, userId: invitee.id } },
       create: { ledgerId, userId: invitee.id, role },

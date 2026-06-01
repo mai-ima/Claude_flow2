@@ -95,6 +95,11 @@ export async function signInWithEmail(
   }
   await bootstrapUser(user.id, user.name);
 
+  // 期限切れセッションを掃除（無制限な蓄積を防ぐ）
+  await db.session.deleteMany({
+    where: { userId: user.id, expires: { lt: new Date() } },
+  });
+
   const token = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
   await db.session.create({ data: { sessionToken: token, userId: user.id, expires } });
@@ -129,7 +134,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     where: { sessionToken: token },
     include: { user: { include: { billing: true } } },
   });
-  if (!session || session.expires < new Date()) return null;
+  if (!session) return null;
+  if (session.expires < new Date()) {
+    // 期限切れセッションは破棄
+    await db.session.deleteMany({ where: { sessionToken: token } });
+    return null;
+  }
 
   const u = session.user;
   return {
