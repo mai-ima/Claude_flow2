@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
+import { Reveal } from "@/components/marketing/reveal";
 import {
   ClockIcon,
   CardIcon,
@@ -72,7 +73,8 @@ export default function FeaturesPage() {
 
       <div className="mt-16 space-y-6">
         {SECTIONS.map((s, i) => (
-          <Card key={s.tag} className="grid items-center gap-8 p-8 sm:p-12 md:grid-cols-2">
+          <Reveal key={s.tag}>
+          <Card className="grid items-center gap-8 p-8 sm:p-12 md:grid-cols-2 hover-lift">
             <div className={i % 2 === 1 ? "md:order-2" : ""}>
               <div className="flex items-center gap-2">
                 <Badge tone="accent" size="md">
@@ -93,12 +95,13 @@ export default function FeaturesPage() {
               </div>
             </div>
           </Card>
+          </Reveal>
         ))}
       </div>
 
       <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {MORE.map((m) => (
-          <Card key={m.title} className="p-6">
+          <Card key={m.title} className="p-6 hover-lift">
             <m.icon size={26} className="text-accent" />
             <h3 className="mt-3 text-[16px] font-semibold">{m.title}</h3>
             <p className="mt-1.5 text-[13px] leading-relaxed text-text-secondary">{m.body}</p>

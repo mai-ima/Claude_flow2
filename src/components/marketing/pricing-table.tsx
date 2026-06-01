@@ -63,7 +63,7 @@ export function PricingTable({
             <Card
               key={plan.tier}
               className={cn(
-                "relative flex flex-col p-7",
+                "relative flex flex-col p-7 hover-lift",
                 plan.featured && "ring-2 ring-accent",
               )}
             >

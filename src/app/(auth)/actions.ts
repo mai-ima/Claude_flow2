@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { signInWithEmail, signOut } from "@/lib/auth";
+import { signInWithEmail, signOut, loginAsDemo } from "@/lib/auth";
 
 const baseSchema = {
   email: z.string().email("メールアドレスの形式が正しくありません。"),
@@ -84,6 +84,16 @@ export async function signupAction(
     return { error: "登録に失敗しました。時間をおいて再度お試しください。" };
   }
   redirect(safeNext(parsed.data.next));
+}
+
+export async function demoLoginAction() {
+  try {
+    await loginAsDemo();
+  } catch (err) {
+    console.error("[demo-login]", err);
+    redirect("/login?error=demo");
+  }
+  redirect("/dashboard");
 }
 
 export async function logoutAction() {

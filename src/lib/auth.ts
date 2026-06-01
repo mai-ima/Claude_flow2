@@ -94,15 +94,18 @@ export async function signInWithEmail(
     }
   }
   await bootstrapUser(user.id, user.name);
+  await establishSession(user.id);
+  return user;
+}
 
-  // 期限切れセッションを掃除（無制限な蓄積を防ぐ）
+/** セッション発行 + Cookie 設定（期限切れの掃除込み）。 */
+export async function establishSession(userId: string) {
   await db.session.deleteMany({
-    where: { userId: user.id, expires: { lt: new Date() } },
+    where: { userId, expires: { lt: new Date() } },
   });
-
   const token = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  await db.session.create({ data: { sessionToken: token, userId: user.id, expires } });
+  await db.session.create({ data: { sessionToken: token, userId, expires } });
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -112,7 +115,18 @@ export async function signInWithEmail(
     expires,
     path: "/",
   });
-  return user;
+}
+
+/** デモアカウントでログイン（データが無ければ自動で投入）。 */
+export async function loginAsDemo() {
+  const { seedDemo, DEMO_EMAIL } = await import("./seed-demo");
+  let user = await db.user.findUnique({ where: { email: DEMO_EMAIL } });
+  if (!user) {
+    await seedDemo();
+    user = await db.user.findUnique({ where: { email: DEMO_EMAIL } });
+  }
+  if (!user) throw new Error("DEMO_SEED_FAILED");
+  await establishSession(user.id);
 }
 
 export async function signOut() {

@@ -3,8 +3,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "./login-form";
+import { demoLoginAction } from "../actions";
 import { Card } from "@/components/ui/card";
-import { LogoMark } from "@/components/icons";
+import { LogoMark, SparklesIcon } from "@/components/icons";
 import { pageMetadata, SITE } from "@/lib/seo";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -35,6 +36,25 @@ export default async function LoginPage() {
           <Suspense>
             <LoginForm />
           </Suspense>
+
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border-subtle" />
+            <span className="text-[12px] text-text-tertiary">または</span>
+            <span className="h-px flex-1 bg-border-subtle" />
+          </div>
+
+          <form action={demoLoginAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-2 px-5 py-3 text-[15px] font-medium transition hover:opacity-80"
+            >
+              <SparklesIcon size={18} className="text-accent" />
+              デモを試す（サンプルデータ入り）
+            </button>
+          </form>
+          <p className="mt-2 text-center text-[12px] text-text-tertiary">
+            登録不要。山田太郎さんの家計簿をそのまま体験できます。
+          </p>
         </Card>
         <p className="mt-6 text-center text-[13px] text-text-tertiary">
           <Link href="/" className="hover:text-text-secondary">

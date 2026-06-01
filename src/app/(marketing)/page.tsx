@@ -3,6 +3,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { Reveal } from "@/components/marketing/reveal";
+import { demoLoginAction } from "@/app/(auth)/actions";
 import {
   RepeatIcon,
   ChartIcon,
@@ -119,7 +120,15 @@ export default function LandingPage() {
               機能を見る
             </ButtonLink>
           </div>
-          <p className="mt-4 text-[13px] text-text-tertiary">
+          <form action={demoLoginAction} className="mt-4">
+            <button
+              type="submit"
+              className="text-[14px] font-medium text-accent transition hover:opacity-70"
+            >
+              または、登録なしでデモを試す →
+            </button>
+          </form>
+          <p className="mt-3 text-[13px] text-text-tertiary">
             クレジットカード登録不要・いつでも解約可能
           </p>
         </div>
