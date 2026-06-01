@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { LogoMark } from "@/components/icons";
+import { MobileNav } from "./mobile-nav";
 import { SITE } from "@/lib/seo";
 
 const NAV = [
@@ -34,13 +35,14 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="rounded-lg px-3 py-1.5 text-[14px] font-medium text-text-secondary transition hover:text-text-primary"
+            className="hidden rounded-lg px-3 py-1.5 text-[14px] font-medium text-text-secondary transition hover:text-text-primary sm:block"
           >
             ログイン
           </Link>
-          <ButtonLink href="/signup" size="sm">
+          <ButtonLink href="/signup" size="sm" className="hidden sm:inline-flex">
             無料で始める
           </ButtonLink>
+          <MobileNav />
         </div>
       </div>
     </header>

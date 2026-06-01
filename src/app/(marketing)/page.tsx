@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ActivityRing } from "@/components/ui/activity-ring";
+import { Reveal } from "@/components/marketing/reveal";
 import {
   RepeatIcon,
   ChartIcon,
@@ -11,9 +12,32 @@ import {
   WalletIcon,
   ClockIcon,
   ShieldIcon,
+  StarIcon,
 } from "@/components/icons";
-import { pageMetadata, SITE } from "@/lib/seo";
+import { pageMetadata, SITE, jsonLd } from "@/lib/seo";
 import { formatMoney } from "@/lib/money";
+
+const VOICES = [
+  {
+    quote: "サブスクの更新日がひと目で分かるのが本当に便利。気づけば固定費が3,000円も減りました。",
+    name: "28歳・会社員",
+  },
+  {
+    quote: "コストタイムで「この出費は2時間ぶん」と分かると、無駄遣いが自然と減りました。",
+    name: "34歳・フリーランス",
+  },
+  {
+    quote: "家族で共有して、誰が何に払っているか丸わかり。ムダな重複契約を解約できました。",
+    name: "41歳・主婦",
+  },
+];
+
+const FAQS = [
+  { q: "無料でどこまで使えますか？", a: "収支記録は無制限、サブスクは5件まで登録できます。基本のダッシュボードやコストタイムも無料でご利用いただけます。" },
+  { q: "銀行口座やカードと連携できますか？", a: "あえて自動連携には対応せず、手動入力に特化しています。そのぶん情報の安全性が高く、必要なものだけを軽快に管理できます。" },
+  { q: "スマホでも使えますか？", a: "はい。スマホ・タブレット・PC すべてに最適化。ホーム画面に追加すればアプリのように使えます。" },
+  { q: "解約はかんたんですか？", a: "いつでも解約できます。解約後も次回更新日まではプランの機能をご利用いただけます。" },
+];
 
 export const metadata: Metadata = pageMetadata({ path: "/" });
 
@@ -51,8 +75,19 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
+  const faqLd = jsonLd({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  });
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div
@@ -146,14 +181,16 @@ export default function LandingPage() {
           </p>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <Card key={f.title} className="p-6">
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent/10 text-accent">
-                <f.icon size={22} />
-              </div>
-              <h3 className="mt-4 text-[18px] font-semibold tracking-tight">{f.title}</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">{f.body}</p>
-            </Card>
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={(i % 3) * 80}>
+              <Card className="h-full p-6 hover-lift">
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent/10 text-accent">
+                  <f.icon size={22} />
+                </div>
+                <h3 className="mt-4 text-[18px] font-semibold tracking-tight">{f.title}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">{f.body}</p>
+              </Card>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -174,7 +211,7 @@ export default function LandingPage() {
             { n: "02", icon: ChartIcon, title: "見える化", body: "コストタイムやグラフで、お金の流れが一目で。" },
             { n: "03", icon: SparklesIcon, title: "見直す", body: "無駄なサブスクを発見して、固定費を最適化。" },
           ].map((s) => (
-            <Card key={s.n} className="relative p-7">
+            <Card key={s.n} className="relative p-7 hover-lift">
               <span className="text-[13px] font-bold text-accent">{s.n}</span>
               <div className="mt-3 grid h-12 w-12 place-items-center rounded-2xl bg-accent/10 text-accent">
                 <s.icon size={24} />
@@ -225,6 +262,53 @@ export default function LandingPage() {
             プライバシー
           </ButtonLink>
         </Card>
+      </section>
+
+      {/* Testimonials */}
+      <section className="mx-auto max-w-6xl px-5 py-16">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <h2 className="text-[clamp(1.8rem,4vw,2.6rem)] font-bold tracking-tight">
+            使う人の、声。
+          </h2>
+          <p className="mt-4 text-[17px] text-text-secondary">
+            毎日の家計に、小さな変化を。
+          </p>
+        </Reveal>
+        <div className="mt-12 grid gap-5 sm:grid-cols-3">
+          {VOICES.map((v, i) => (
+            <Reveal key={v.name} delay={i * 80}>
+              <Card className="h-full p-6 hover-lift">
+                <div className="flex gap-0.5 text-accent">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <StarIcon key={j} size={16} />
+                  ))}
+                </div>
+                <p className="mt-4 text-[15px] leading-relaxed">{v.quote}</p>
+                <p className="mt-4 text-[13px] text-text-tertiary">{v.name}</p>
+              </Card>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="mx-auto max-w-3xl px-5 py-12">
+        <Reveal className="text-center">
+          <h2 className="text-[clamp(1.6rem,4vw,2.2rem)] font-bold tracking-tight">よくある質問</h2>
+        </Reveal>
+        <Reveal className="mt-8 divide-y divide-border-subtle overflow-hidden rounded-2xl border border-border-subtle bg-surface-1">
+          {FAQS.map((f) => (
+            <details key={f.q} className="group px-6 py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between text-[16px] font-semibold">
+                {f.q}
+                <span className="ml-3 text-text-tertiary transition-transform duration-300 group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">{f.a}</p>
+            </details>
+          ))}
+        </Reveal>
       </section>
 
       {/* CTA */}

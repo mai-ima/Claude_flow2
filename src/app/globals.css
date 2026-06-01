@@ -185,6 +185,35 @@ body {
   animation: page-in 0.34s var(--ease-spring) both;
 }
 
+/* スクロール出現（マーケティング） */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s var(--ease-spring),
+    transform 0.7s var(--ease-spring);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* カードのホバー浮き上がり */
+.hover-lift {
+  transition:
+    transform 0.3s var(--ease-spring),
+    box-shadow 0.3s var(--ease-spring);
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 ::selection {
   background: color-mix(in srgb, var(--accent) 24%, transparent);
 }
