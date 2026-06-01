@@ -92,3 +92,13 @@ export function listPaymentMethods(ledgerId: string) {
 export function listAllCategories(ledgerId: string) {
   return db.category.findMany({ where: { ledgerId }, orderBy: { createdAt: "asc" } });
 }
+
+/** 直近の取引（ダッシュボード用）。 */
+export function recentTransactions(ledgerId: string, limit = 5) {
+  return db.transaction.findMany({
+    where: { ledgerId },
+    include: { category: true },
+    orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+  });
+}

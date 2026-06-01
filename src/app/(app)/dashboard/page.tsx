@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAppContext } from "@/lib/app-context";
-import { monthSummary } from "@/modules/transactions/queries";
+import { monthSummary, recentTransactions } from "@/modules/transactions/queries";
 import { listSubscriptions, subscriptionTotals } from "@/modules/subscriptions/queries";
+import { listBudgetsWithSpending } from "@/modules/budgets/queries";
 import { detectWaste } from "@/modules/subscriptions/waste-detect";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
@@ -18,10 +19,13 @@ import {
   ChevronRightIcon,
   SparklesIcon,
   BellIcon,
+  WalletIcon,
+  TargetIcon,
 } from "@/components/icons";
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
 import { formatMonth, formatDate, daysUntil } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
+import { canUse } from "@/lib/plans";
 import { clientEnv } from "@/lib/env";
 import { pageMetadata, SITE } from "@/lib/seo";
 
@@ -31,11 +35,15 @@ export default async function DashboardPage() {
   const { ledgerId, user, tier, isPod } = await getAppContext();
   const now = new Date();
 
-  const [summary, subTotals, subs] = await Promise.all([
+  const showBudget = canUse(tier, "budgets");
+  const [summary, subTotals, subs, recent, budgetData] = await Promise.all([
     monthSummary(ledgerId, now),
     subscriptionTotals(ledgerId),
     listSubscriptions(ledgerId),
+    recentTransactions(ledgerId, 5),
+    showBudget ? listBudgetsWithSpending(ledgerId, now) : Promise.resolve(null),
   ]);
+  const totalBudget = budgetData?.total ?? null;
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
@@ -55,6 +63,24 @@ export default async function DashboardPage() {
         title={`こんにちは${user.name ? `、${user.name}さん` : ""}`}
         subtitle={`${formatMonth(now)}${isPod ? " ・ 共有帳簿" : ""}`}
       />
+
+      {/* クイック操作 */}
+      <div className="mb-5 grid grid-cols-3 gap-3">
+        {[
+          { href: "/transactions", icon: WalletIcon, label: "記録する" },
+          { href: "/subscriptions", icon: RepeatIcon, label: "サブスク" },
+          { href: showBudget ? "/budgets" : "/billing", icon: TargetIcon, label: "予算" },
+        ].map((q) => (
+          <Link
+            key={q.label}
+            href={q.href}
+            className="flex flex-col items-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-1 py-4 text-[13px] font-medium shadow-sm transition hover:bg-surface-2"
+          >
+            <q.icon size={22} className="text-accent" />
+            {q.label}
+          </Link>
+        ))}
+      </div>
 
       {/* コストタイム */}
       <Card className="mb-5">
@@ -137,6 +163,50 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* 予算の進捗（PLUS 以上・全体予算が設定済みの場合） */}
+      {totalBudget && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>今月の予算</CardTitle>
+              <Link href="/budgets" className="text-[13px] text-accent">
+                予算を見る
+              </Link>
+            </div>
+          </CardHeader>
+          <CardBody>
+            {(() => {
+              const ratio = totalBudget.amount > 0 ? totalBudget.spent / totalBudget.amount : 0;
+              const over = ratio > 1;
+              const remaining = totalBudget.amount - totalBudget.spent;
+              return (
+                <>
+                  <div className="h-3 w-full overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(ratio, 1) * 100}%`,
+                        background: over ? "var(--color-expense)" : "var(--color-accent)",
+                      }}
+                    />
+                  </div>
+                  <div className="mt-2.5 flex items-center justify-between text-[14px]">
+                    <span className="text-text-secondary tabular-nums">
+                      {formatMoney(totalBudget.spent)} / {formatMoney(totalBudget.amount)}
+                    </span>
+                    <span
+                      className={`font-semibold tabular-nums ${over ? "text-expense" : "text-income"}`}
+                    >
+                      {over ? `${formatMoney(-remaining)} 超過` : `残り ${formatMoney(remaining)}`}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
+          </CardBody>
+        </Card>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-2">
         {/* 近づく更新 */}
         <Card>
@@ -210,6 +280,60 @@ export default async function DashboardPage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* 最近の取引 */}
+      <Card className="mt-5">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>最近の取引</CardTitle>
+            <Link href="/transactions" className="text-[13px] text-accent">
+              すべて見る
+            </Link>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {recent.length === 0 ? (
+            <EmptyState
+              icon={<WalletIcon size={24} />}
+              title="まだ記録がありません"
+              className="border-0 bg-transparent py-8"
+            />
+          ) : (
+            <div className="-mx-1 space-y-0.5">
+              {recent.map((t) => (
+                <div key={t.id} className="flex items-center gap-3 rounded-xl px-1 py-2">
+                  <span
+                    className={`grid h-9 w-9 place-items-center rounded-full ${
+                      t.type === "INCOME" ? "bg-income/12 text-income" : "bg-surface-2 text-text-secondary"
+                    }`}
+                  >
+                    <CategoryIcon name={t.category?.icon ?? "tag"} size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-medium">
+                      {t.category?.name ?? "未分類"}
+                      {t.memo ? (
+                        <span className="font-normal text-text-tertiary"> ・ {t.memo}</span>
+                      ) : null}
+                    </span>
+                    <span className="block text-[12px] text-text-tertiary">
+                      {formatDate(t.occurredAt, "M月d日")}
+                    </span>
+                  </span>
+                  <span
+                    className={`shrink-0 text-[14px] font-semibold tabular-nums ${
+                      t.type === "INCOME" ? "text-income" : "text-text-primary"
+                    }`}
+                  >
+                    {t.type === "INCOME" ? "+" : "−"}
+                    {formatMoney(t.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       {/* 広告（FREE のみ／キーが無ければ自社訴求） */}
       <AdSlot

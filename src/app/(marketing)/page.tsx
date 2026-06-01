@@ -158,6 +158,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* How it works */}
+      <section className="mx-auto max-w-6xl px-5 py-16">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-[clamp(1.8rem,4vw,2.6rem)] font-bold tracking-tight">
+            3ステップで、すぐに。
+          </h2>
+          <p className="mt-4 text-[17px] text-text-secondary">
+            むずかしい設定はいりません。今日から始められます。
+          </p>
+        </div>
+        <div className="mt-12 grid gap-5 sm:grid-cols-3">
+          {[
+            { n: "01", icon: WalletIcon, title: "記録する", body: "収支とサブスクを、ハーフシートからサッと入力。" },
+            { n: "02", icon: ChartIcon, title: "見える化", body: "コストタイムやグラフで、お金の流れが一目で。" },
+            { n: "03", icon: SparklesIcon, title: "見直す", body: "無駄なサブスクを発見して、固定費を最適化。" },
+          ].map((s) => (
+            <Card key={s.n} className="relative p-7">
+              <span className="text-[13px] font-bold text-accent">{s.n}</span>
+              <div className="mt-3 grid h-12 w-12 place-items-center rounded-2xl bg-accent/10 text-accent">
+                <s.icon size={24} />
+              </div>
+              <h3 className="mt-4 text-[18px] font-semibold tracking-tight">{s.title}</h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">{s.body}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Why Tsumiki */}
+      <section className="mx-auto max-w-6xl px-5 py-12">
+        <Card className="overflow-hidden p-8 sm:p-12">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-[clamp(1.6rem,4vw,2.2rem)] font-bold tracking-tight">
+              なぜ、Tsumiki なのか。
+            </h2>
+          </div>
+          <div className="mt-10 grid gap-8 sm:grid-cols-3">
+            {[
+              { title: "美しさは、続く力。", body: "毎日ひらきたくなる UI。だから記録が習慣になります。" },
+              { title: "サブスクに、強い。", body: "更新日・年額・無駄検出まで。固定費の管理は群を抜きます。" },
+              { title: "プライバシー第一。", body: "口座連携に頼らない設計。データを広告に売りません。" },
+            ].map((v) => (
+              <div key={v.title}>
+                <h3 className="text-[17px] font-semibold tracking-tight">{v.title}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">{v.body}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
+
       {/* Privacy band */}
       <section className="mx-auto max-w-6xl px-5 py-10">
         <Card className="flex flex-col items-center gap-4 p-10 text-center sm:flex-row sm:text-left">
