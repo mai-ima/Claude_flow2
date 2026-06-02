@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
 import { listPaymentMethods, listAllCategories } from "@/modules/transactions/queries";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
-import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
+import { ListGroup } from "@/components/ui/list";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { ProfileForm } from "@/modules/account/components/profile-form";
 import { PaymentMethodsManager } from "@/modules/account/components/payment-methods-manager";
@@ -35,110 +35,65 @@ export default async function SettingsPage() {
     <PageContainer>
       <PageHeader title="設定" />
 
-      <div className="space-y-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>プロフィール</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <ProfileForm name={ctx.user.name ?? ""} wage={ctx.user.assumedHourlyWage} />
-          </CardBody>
-        </Card>
+      <div className="space-y-6">
+        <ListGroup title="プロフィール" padded>
+          <ProfileForm name={ctx.user.name ?? ""} wage={ctx.user.assumedHourlyWage} />
+        </ListGroup>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>外観</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] text-text-secondary">テーマ</span>
-              <ThemeToggle />
-            </div>
-          </CardBody>
-        </Card>
+        <ListGroup title="外観" padded>
+          <div className="flex items-center justify-between">
+            <span className="text-[14px] text-text-secondary">テーマ</span>
+            <ThemeToggle />
+          </div>
+        </ListGroup>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>プラン</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <BillingCard tier={ctx.tier} stripeEnabled={isStripeEnabled} />
-          </CardBody>
-        </Card>
+        <ListGroup title="プラン" padded>
+          <BillingCard tier={ctx.tier} stripeEnabled={isStripeEnabled} />
+        </ListGroup>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>ファミリー共有</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <FamilySharing
-              ledgerId={ctx.ledgerId}
-              isPod={ctx.isPod}
-              isOwner={ctx.role === "OWNER"}
-              members={members}
-              maxMembers={PLANS[ctx.tier].maxMembers}
-              tier={ctx.tier}
-            />
-          </CardBody>
-        </Card>
+        <ListGroup title="ファミリー共有" padded>
+          <FamilySharing
+            ledgerId={ctx.ledgerId}
+            isPod={ctx.isPod}
+            isOwner={ctx.role === "OWNER"}
+            members={members}
+            maxMembers={PLANS[ctx.tier].maxMembers}
+            tier={ctx.tier}
+          />
+        </ListGroup>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>支払い方法</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <PaymentMethodsManager
-              methods={methods.map((m) => ({
-                id: m.id,
-                name: m.name,
-                type: m.type,
-                color: m.color,
-              }))}
-            />
-          </CardBody>
-        </Card>
+        <ListGroup title="支払い方法" padded>
+          <PaymentMethodsManager
+            methods={methods.map((m) => ({ id: m.id, name: m.name, type: m.type, color: m.color }))}
+          />
+        </ListGroup>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>カテゴリ管理</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <CategoryManager
-              categories={categories.map((c) => ({
-                id: c.id,
-                name: c.name,
-                type: c.type,
-                icon: c.icon,
-                color: c.color,
-                isArchived: c.isArchived,
-              }))}
-            />
-          </CardBody>
-        </Card>
+        <ListGroup title="カテゴリ管理" padded>
+          <CategoryManager
+            categories={categories.map((c) => ({
+              id: c.id,
+              name: c.name,
+              type: c.type,
+              icon: c.icon,
+              color: c.color,
+              isArchived: c.isArchived,
+            }))}
+          />
+        </ListGroup>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>データ（CSV）</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <DataTools isPro={tierAtLeast(ctx.tier, "PRO")} />
-          </CardBody>
-        </Card>
+        <ListGroup title="データ（CSV）" padded>
+          <DataTools isPro={tierAtLeast(ctx.tier, "PRO")} />
+        </ListGroup>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>アカウント</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] text-text-secondary">メールアドレス</span>
-              <span className="text-[14px] font-medium">{ctx.user.email}</span>
-            </div>
-            <div className="border-t border-border-subtle pt-4">
-              <DangerZone />
-            </div>
-          </CardBody>
-        </Card>
+        <ListGroup title="アカウント" padded bodyClassName="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[14px] text-text-secondary">メールアドレス</span>
+            <span className="text-[14px] font-medium">{ctx.user.email}</span>
+          </div>
+          <div className="border-t border-border-subtle pt-4">
+            <DangerZone />
+          </div>
+        </ListGroup>
 
         <p className="pt-2 text-center text-[12px] text-text-tertiary">
           {SITE.name} ・ バージョン 1.0.0

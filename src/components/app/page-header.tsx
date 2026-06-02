@@ -10,8 +10,10 @@ export function PageHeader({
   return (
     <div className="mb-6 flex items-end justify-between gap-3">
       <div>
-        <h1 className="text-[26px] font-bold tracking-tight">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-[14px] text-text-secondary">{subtitle}</p>}
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] sm:text-[34px]">
+          {title}
+        </h1>
+        {subtitle && <p className="mt-1 text-[15px] text-text-secondary">{subtitle}</p>}
       </div>
       {action}
     </div>
