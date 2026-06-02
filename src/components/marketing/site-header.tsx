@@ -18,6 +18,9 @@ export function SiteHeader() {
             <LogoMark size={20} />
           </span>
           <span className="text-[17px]">{SITE.name}</span>
+          <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold text-text-tertiary">
+            BETA
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 sm:flex">

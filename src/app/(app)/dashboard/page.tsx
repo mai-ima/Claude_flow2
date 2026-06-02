@@ -21,7 +21,7 @@ import {
   TargetIcon,
 } from "@/components/icons";
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
-import { formatDate } from "@/lib/date";
+import { formatDate, formatMonth } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
 import { clientEnv } from "@/lib/env";
 import { pageMetadata, SITE } from "@/lib/seo";
@@ -74,7 +74,7 @@ export default async function DashboardPage({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>コストタイム</CardTitle>
-            <Badge tone="accent" size="sm">今月</Badge>
+            <Badge tone="accent" size="sm">{formatMonth(month)}</Badge>
           </div>
         </CardHeader>
         <CardBody>
@@ -155,7 +155,7 @@ export default async function DashboardPage({
         <Card className="mb-5">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>今月の予算</CardTitle>
+              <CardTitle>予算</CardTitle>
               <Link href="/budgets" className="text-[13px] text-accent">
                 予算を見る
               </Link>

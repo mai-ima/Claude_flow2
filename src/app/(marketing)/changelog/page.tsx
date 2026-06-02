@@ -11,9 +11,25 @@ export const metadata: Metadata = pageMetadata({
 
 const RELEASES = [
   {
-    version: "v1.0.0",
+    version: "ベータ v1.1",
     date: "2026年6月",
-    tag: "正式版",
+    tag: "Beta",
+    sections: [
+      {
+        h: "改善・修正",
+        items: [
+          "ログイン不具合（管理者列のスキーマ不整合）を修正",
+          "デプロイの安定化（スキーマ同期・アカウント自動投入）",
+          "重大/中/軽度の不具合の総点検と修正、既存機能の調整",
+          "マーケティングサイトの機能紹介をアプリ実装に合わせて整合",
+        ],
+      },
+    ],
+  },
+  {
+    version: "ベータ v1.0",
+    date: "2026年6月",
+    tag: "Beta",
     sections: [
       {
         h: "新機能",

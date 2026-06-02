@@ -1,6 +1,6 @@
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { Badge } from "@/components/ui/badge";
-import { CheckIcon, PlayIcon, MusicIcon, CartIcon, CloudIcon, UsersIcon } from "@/components/icons";
+import { CheckIcon, PlayIcon, UsersIcon, CardIcon, CategoryIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 
 /** 機能紹介用の、実UIを模した軽量モック（純表示・絵文字なし）。 */
@@ -32,13 +32,13 @@ function CostTimeMock() {
         <div className="flex-1 space-y-2 text-[12px]">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-text-secondary">
-              <span className="h-2 w-2 rounded-full bg-income" />稼いだ
+              <span className="h-2 w-2 rounded-full bg-income" />稼いだ時間
             </span>
             <span className="font-semibold tabular-nums">160時間</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-text-secondary">
-              <span className="h-2 w-2 rounded-full bg-expense" />使った
+              <span className="h-2 w-2 rounded-full bg-expense" />使った時間
             </span>
             <span className="font-semibold tabular-nums">92時間</span>
           </div>
@@ -51,31 +51,39 @@ function CostTimeMock() {
   );
 }
 
-const STACK_CARDS = [
-  { name: "楽天カード", grad: "from-[#ff2d55] to-[#ff6482]", total: 8590 },
-  { name: "三井住友銀行", grad: "from-[#34c759] to-[#30d158]", total: 2480 },
-];
+const STACK_CARD = {
+  name: "楽天カード",
+  grad: "from-[#ff2d55] to-[#ff6482]",
+  total: 8590,
+  subs: [
+    { icon: "play", name: "Netflix", label: "1,490円/月" },
+    { icon: "music", name: "Spotify", label: "980円/月" },
+    { icon: "cloud", name: "iCloud+", label: "400円/月" },
+  ],
+};
 
 function StackMock() {
   return (
     <Frame>
-      <div className="space-y-3">
-        {STACK_CARDS.map((c, i) => (
-          <div key={c.name} style={{ marginLeft: i * 10 }}>
-            <div className={`rounded-2xl bg-gradient-to-br ${c.grad} p-4 text-white shadow-sm`}>
-              <div className="text-[11px] opacity-80">{c.name}</div>
-              <div className="text-[18px] font-bold tabular-nums">
-                {formatMoney(c.total)}
-                <span className="text-[10px] opacity-80"> /月</span>
-              </div>
-            </div>
+      <div className="relative">
+        <div className={`rounded-2xl bg-gradient-to-br ${STACK_CARD.grad} p-5 text-white shadow-md`}>
+          <div className="flex items-center justify-between">
+            <CardIcon size={24} />
+            <span className="text-[13px] opacity-80">月額</span>
           </div>
-        ))}
-        <div className="flex gap-2 pl-1">
-          {[PlayIcon, MusicIcon, CartIcon, CloudIcon].map((Icon, i) => (
-            <span key={i} className="grid h-8 w-8 place-items-center rounded-lg bg-surface-2 text-text-secondary">
-              <Icon size={16} />
-            </span>
+          <div className="mt-6 text-[15px] font-medium">{STACK_CARD.name}</div>
+          <div className="text-[22px] font-bold tabular-nums">{formatMoney(STACK_CARD.total)}</div>
+        </div>
+        <div className="mx-3 -mt-2 rounded-b-2xl border border-t-0 border-border-subtle bg-surface-1 px-4 pb-3 pt-4">
+          {STACK_CARD.subs.map((s) => (
+            <div
+              key={s.name}
+              className="flex items-center gap-2.5 border-t border-border-subtle py-2 text-[14px] first:border-t-0"
+            >
+              <CategoryIcon name={s.icon} size={18} className="text-text-secondary" />
+              <span className="flex-1 truncate">{s.name}</span>
+              <span className="tabular-nums text-text-tertiary">{s.label}</span>
+            </div>
           ))}
         </div>
       </div>
