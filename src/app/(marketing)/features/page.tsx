@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
+import { FeatureMock } from "@/components/marketing/feature-mocks";
 import {
   ClockIcon,
   CardIcon,
@@ -90,9 +91,7 @@ export default function FeaturesPage() {
               <p className="mt-3 text-[16px] leading-relaxed text-text-secondary">{s.body}</p>
             </div>
             <div className={i % 2 === 1 ? "md:order-1" : ""}>
-              <div className="grid aspect-[4/3] place-items-center rounded-2xl bg-gradient-to-br from-accent/10 to-pod/10">
-                <s.icon size={72} className="text-accent" />
-              </div>
+              <FeatureMock tag={s.tag} />
             </div>
           </Card>
           </Reveal>

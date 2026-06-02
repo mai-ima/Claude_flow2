@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PricingTable } from "@/components/marketing/pricing-table";
+import { PlanComparison } from "@/components/marketing/plan-comparison";
 import { pageMetadata, jsonLd } from "@/lib/seo";
 import { isStripeEnabled } from "@/lib/env";
 import { getCurrentUser } from "@/lib/auth";
@@ -56,6 +57,16 @@ export default async function PricingPage() {
 
       <div className="mt-14">
         <PricingTable stripeEnabled={isStripeEnabled} isAuthed={Boolean(user)} />
+      </div>
+
+      <div className="mx-auto mt-24 max-w-3xl">
+        <h2 className="text-center text-[26px] font-bold tracking-tight">プランを比較する</h2>
+        <p className="mt-2 text-center text-[15px] text-text-secondary">
+          すべての機能を一覧で。あなたに必要なものを見つけてください。
+        </p>
+        <div className="mt-8">
+          <PlanComparison />
+        </div>
       </div>
 
       <div className="mx-auto mt-24 max-w-2xl">
