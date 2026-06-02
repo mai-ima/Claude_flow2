@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { requireUser, type SessionUser } from "./auth";
+import { logger } from "./logger";
 
 export type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -53,7 +54,7 @@ export function authedAction<TSchema extends z.ZodType, TResult>(
       const data = await handler(parsed.data, user);
       return ok(data);
     } catch (err) {
-      console.error("[action error]", err);
+      logger.error("action error", err);
       const code = err instanceof Error ? err.message : "";
       const message =
         ERROR_MESSAGES[code] ?? "処理に失敗しました。時間をおいて再度お試しください。";

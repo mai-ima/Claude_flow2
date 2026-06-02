@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { signInWithEmail, signOut, loginAsDemo } from "@/lib/auth";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 const baseSchema = {
   email: z.string().email("メールアドレスの形式が正しくありません。"),
@@ -33,6 +34,10 @@ export async function loginAction(
   if (!parsed.success) {
     const f = z.flattenError(parsed.error).fieldErrors;
     return { error: f.password?.[0] ?? f.email?.[0] ?? "入力を確認してください。" };
+  }
+  const rl = await rateLimit(`login:${await clientIp()}`, 12, 60);
+  if (!rl.ok) {
+    return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
   }
   try {
     await signInWithEmail(parsed.data.email, parsed.data.password, { mode: "login" });
@@ -66,6 +71,10 @@ export async function signupAction(
   if (!parsed.success) {
     const f = z.flattenError(parsed.error).fieldErrors;
     return { error: f.password?.[0] ?? f.email?.[0] ?? "入力を確認してください。" };
+  }
+  const rl = await rateLimit(`signup:${await clientIp()}`, 8, 60);
+  if (!rl.ok) {
+    return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
   }
   try {
     await signInWithEmail(parsed.data.email, parsed.data.password, {
