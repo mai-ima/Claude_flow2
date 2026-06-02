@@ -1,0 +1,53 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "ヘルプセンター",
+  description: "Tsumiki の使い方やよくある質問。困ったときはこちら。",
+  path: "/help",
+});
+
+const FAQ = [
+  { q: "はじめ方は？", a: "「無料で始める」からメールアドレスとパスワードで登録するだけ。登録なしで試したい場合はログイン画面の「デモを試す」をご利用ください。" },
+  { q: "サブスクの更新日を自動で家計簿に記録できますか？", a: "はい。サブスク登録時に「更新日に自動で家計簿へ記帳」を有効にすると、更新日が来たら自動で支出として記録されます。" },
+  { q: "コストタイムとは？", a: "設定で想定時給を入力すると、支出を「働いた時間」に換算して表示します。お金の重みを直感的に把握できます。" },
+  { q: "家族と共有できますか？", a: "プラス以上で共有帳簿を作成し、家族を招待できます（プラス2人・プロ5人）。誰が何にいくら払っているかを一覧で把握できます。" },
+  { q: "データのバックアップは？", a: "プロプランでは取引を CSV でエクスポート/インポートできます（設定 → データ）。" },
+  { q: "解約できますか？", a: "いつでも解約できます。解約後も次回更新日まではプランの機能をご利用いただけます。" },
+];
+
+export default function HelpPage() {
+  return (
+    <div className="mx-auto max-w-2xl px-5 py-20">
+      <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight">ヘルプセンター</h1>
+      <p className="mt-4 text-[17px] text-text-secondary">よくある質問をまとめました。</p>
+
+      <div className="mt-10 divide-y divide-border-subtle overflow-hidden rounded-2xl border border-border-subtle bg-surface-1">
+        {FAQ.map((f) => (
+          <details key={f.q} className="group px-6 py-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between text-[16px] font-semibold">
+              {f.q}
+              <span className="ml-3 text-text-tertiary transition-transform duration-300 group-open:rotate-45">
+                +
+              </span>
+            </summary>
+            <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">{f.a}</p>
+          </details>
+        ))}
+      </div>
+
+      <div className="mt-10 rounded-2xl bg-surface-1 p-6 text-center">
+        <p className="text-[15px] text-text-secondary">解決しませんでしたか？</p>
+        <ButtonLink href="/contact" variant="gray" className="mt-3">
+          お問い合わせ
+        </ButtonLink>
+      </div>
+
+      <p className="mt-8 text-center text-[13px] text-text-tertiary">
+        <Link href="/" className="hover:text-text-secondary">← トップにもどる</Link>
+      </p>
+    </div>
+  );
+}

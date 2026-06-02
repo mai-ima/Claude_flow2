@@ -270,25 +270,37 @@ export function SubscriptionsClient({
                 </div>
               </div>
 
-              {(it.wasteMessage || canEdit) && (
+              {(it.wasteMessage || canEdit || it.cancelUrl) && (
                 <div className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle pt-3">
                   <span className="min-w-0 truncate text-[12px] text-warning">
                     {it.wasteMessage}
                   </span>
-                  {canEdit && (
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => used(it.id)}>
-                        <CheckIcon size={16} /> 使った
-                      </Button>
-                      <button
-                        onClick={() => remove(it.id)}
-                        aria-label="削除"
-                        className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                  <div className="flex shrink-0 items-center gap-1">
+                    {it.cancelUrl && (
+                      <a
+                        href={it.cancelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full px-2.5 py-1.5 text-[12px] font-medium text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
                       >
-                        <TrashIcon size={16} />
-                      </button>
-                    </div>
-                  )}
+                        解約アシスト
+                      </a>
+                    )}
+                    {canEdit && (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => used(it.id)}>
+                          <CheckIcon size={16} /> 使った
+                        </Button>
+                        <button
+                          onClick={() => remove(it.id)}
+                          aria-label="削除"
+                          className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                        >
+                          <TrashIcon size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </Card>

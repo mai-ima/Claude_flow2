@@ -15,9 +15,9 @@ const COLUMNS = [
   {
     title: "リソース",
     links: [
-      { href: "/coming-soon", label: "ブログ" },
-      { href: "/coming-soon", label: "ヘルプセンター" },
-      { href: "/coming-soon", label: "お問い合わせ" },
+      { href: "/changelog", label: "リリースノート" },
+      { href: "/help", label: "ヘルプセンター" },
+      { href: "/contact", label: "お問い合わせ" },
     ],
   },
   {
