@@ -92,6 +92,7 @@ model Ledger {
   budgets        Budget[]
   subscriptions  Subscription[]
   paymentMethods PaymentMethod[]
+  goals          Goal[]
 
   @@index([ownerId])
 }
@@ -227,6 +228,26 @@ model Subscription {
 
   @@index([ledgerId, nextRenewalAt])
   @@index([ledgerId, status])
+}
+
+// ─────────────────────────────────────────────
+// 貯金目標
+// ─────────────────────────────────────────────
+model Goal {
+  id            String    @id @default(cuid())
+  ledgerId      String
+  ledger        Ledger    @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  name          String
+  targetAmount  Int
+  currentAmount Int       @default(0)
+  currency      String    @default("JPY")
+  deadline      DateTime?
+  color         String    @default("blue")
+  icon          String    @default("target")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([ledgerId])
 }
 
 // ─────────────────────────────────────────────

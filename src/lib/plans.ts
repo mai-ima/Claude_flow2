@@ -94,10 +94,13 @@ export const FEATURES = {
   subscriptionStack: "PLUS",
   familySharing: "PLUS",
   hideAds: "PLUS",
+  goals: "PLUS",
+  summaryEmail: "PLUS",
   subscriptionReview: "PRO",
   cancelAssist: "PRO",
   advancedAnalytics: "PRO",
   csvExport: "PRO",
+  csvImport: "PRO",
 } as const satisfies Record<string, PlanTier>;
 
 export type FeatureKey = keyof typeof FEATURES;

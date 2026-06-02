@@ -37,12 +37,14 @@ export function TransactionsClient({
   paymentMethods,
   canEdit,
   showOwner = false,
+  currency = "JPY",
 }: {
   items: TxnListItem[];
   categories: Option[];
   paymentMethods: Option[];
   canEdit: boolean;
   showOwner?: boolean;
+  currency?: string;
 }) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -135,7 +137,7 @@ export function TransactionsClient({
                       )}
                     >
                       {it.type === "INCOME" ? "+" : "−"}
-                      {formatMoney(it.amount)}
+                      {formatMoney(it.amount, currency)}
                     </span>
                     {canEdit && (
                       <button

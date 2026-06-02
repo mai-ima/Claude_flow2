@@ -1,4 +1,5 @@
 import "server-only";
+import type { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
 import { monthRange } from "@/lib/date";
 
@@ -15,6 +16,56 @@ export interface MonthSummary {
   income: number;
   expense: number;
   balance: number;
+}
+
+export interface TxnFilter {
+  month?: Date | null;
+  keyword?: string;
+  type?: "INCOME" | "EXPENSE";
+  categoryId?: string;
+  paymentMethodId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+/** 絞り込み + ページネーション + 絞り込み合計を返す取引検索。 */
+export async function searchTransactions(ledgerId: string, f: TxnFilter) {
+  const where: Prisma.TransactionWhereInput = { ledgerId };
+  if (f.month) {
+    const { start, end } = monthRange(f.month);
+    where.occurredAt = { gte: start, lte: end };
+  }
+  if (f.type) where.type = f.type;
+  if (f.categoryId) where.categoryId = f.categoryId;
+  if (f.paymentMethodId) where.paymentMethodId = f.paymentMethodId;
+  if (f.keyword) where.memo = { contains: f.keyword, mode: "insensitive" };
+
+  const page = Math.max(1, f.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, f.pageSize ?? 20));
+
+  const [items, total, grouped] = await Promise.all([
+    db.transaction.findMany({
+      where,
+      include: { category: true, paymentMethod: true, createdBy: true },
+      orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.transaction.count({ where }),
+    db.transaction.groupBy({ by: ["type"], where, _sum: { amount: true } }),
+  ]);
+
+  const income = grouped.find((g) => g.type === "INCOME")?._sum.amount ?? 0;
+  const expense = grouped.find((g) => g.type === "EXPENSE")?._sum.amount ?? 0;
+
+  return {
+    items,
+    total,
+    page,
+    pageSize,
+    pageCount: Math.max(1, Math.ceil(total / pageSize)),
+    summary: { income, expense, balance: income - expense } as MonthSummary,
+  };
 }
 
 export async function monthSummary(ledgerId: string, month: Date): Promise<MonthSummary> {

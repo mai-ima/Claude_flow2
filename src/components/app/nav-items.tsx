@@ -3,6 +3,7 @@ import {
   WalletIcon,
   RepeatIcon,
   TargetIcon,
+  FlagIcon,
   ChartIcon,
   GearIcon,
   type IconProps,
@@ -20,6 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/transactions", label: "家計簿", icon: WalletIcon },
   { href: "/subscriptions", label: "サブスク", icon: RepeatIcon },
   { href: "/budgets", label: "予算", icon: TargetIcon },
+  { href: "/goals", label: "目標", icon: FlagIcon },
   { href: "/reports", label: "分析", icon: ChartIcon },
   { href: "/settings", label: "設定", icon: GearIcon },
 ];
