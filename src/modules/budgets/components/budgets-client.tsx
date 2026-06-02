@@ -49,11 +49,13 @@ function ProgressBar({ spent, amount, color }: { spent: number; amount: number; 
 function BudgetCard({
   item,
   canEdit,
+  currency,
   onEdit,
   onDelete,
 }: {
   item: BudgetItem;
   canEdit: boolean;
+  currency: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -88,10 +90,10 @@ function BudgetCard({
       <ProgressBar spent={item.spent} amount={item.amount} color={item.color} />
       <div className="mt-2 flex items-center justify-between text-[13px]">
         <span className="text-text-secondary tabular-nums">
-          {formatMoney(item.spent)} / {formatMoney(item.amount)}
+          {formatMoney(item.spent, currency)} / {formatMoney(item.amount, currency)}
         </span>
         <span className={cn("font-semibold tabular-nums", over ? "text-expense" : "text-income")}>
-          {over ? `${formatMoney(-remaining)} 超過` : `残り ${formatMoney(remaining)}`}
+          {over ? `${formatMoney(-remaining, currency)} 超過` : `残り ${formatMoney(remaining, currency)}`}
         </span>
       </div>
     </Card>
@@ -103,11 +105,13 @@ export function BudgetsClient({
   categories,
   allCategories,
   canEdit,
+  currency = "JPY",
 }: {
   total: BudgetItem | null;
   categories: BudgetItem[];
   allCategories: Option[];
   canEdit: boolean;
+  currency?: string;
 }) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -180,6 +184,7 @@ export function BudgetsClient({
             <BudgetCard
               item={total}
               canEdit={canEdit}
+              currency={currency}
               onEdit={() => openEdit(total)}
               onDelete={() => remove(total.id)}
             />
@@ -192,6 +197,7 @@ export function BudgetsClient({
               key={c.id}
               item={c}
               canEdit={canEdit}
+              currency={currency}
               onEdit={() => openEdit(c)}
               onDelete={() => remove(c.id)}
             />

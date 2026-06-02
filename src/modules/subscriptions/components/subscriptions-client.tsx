@@ -57,10 +57,18 @@ interface Option {
   type?: string;
 }
 
+export interface CalendarMonth {
+  label: string;
+  total: number;
+  count: number;
+}
+
 export function SubscriptionsClient({
   items,
   stack,
   totals,
+  calendar,
+  currency = "JPY",
   categories,
   paymentMethods,
   canEdit,
@@ -69,6 +77,8 @@ export function SubscriptionsClient({
   items: SubItem[];
   stack: { groups: StackGroup[]; unassigned: StackGroup | null };
   totals: { monthly: number; yearly: number; count: number };
+  calendar: CalendarMonth[];
+  currency?: string;
   categories: Option[];
   paymentMethods: Option[];
   canEdit: boolean;
@@ -76,7 +86,7 @@ export function SubscriptionsClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [view, setView] = useState<"list" | "stack">("list");
+  const [view, setView] = useState<"list" | "stack" | "calendar">("list");
   const [sortBy, setSortBy] = useState<"renewal" | "amount" | "name">("renewal");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "PAUSED" | "CANCELED">("ALL");
   const [sheetOpen, setSheetOpen] = useState(
@@ -136,11 +146,11 @@ export function SubscriptionsClient({
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card className="p-4">
           <div className="text-[12px] text-text-tertiary">月額合計</div>
-          <div className="mt-1 text-[22px] font-bold tabular-nums">{formatMoney(totals.monthly)}</div>
+          <div className="mt-1 text-[22px] font-bold tabular-nums">{formatMoney(totals.monthly, currency)}</div>
         </Card>
         <Card className="p-4">
           <div className="text-[12px] text-text-tertiary">年額換算</div>
-          <div className="mt-1 text-[22px] font-bold tabular-nums">{formatMoney(totals.yearly)}</div>
+          <div className="mt-1 text-[22px] font-bold tabular-nums">{formatMoney(totals.yearly, currency)}</div>
         </Card>
         <Card className="col-span-2 p-4 sm:col-span-1">
           <div className="text-[12px] text-text-tertiary">登録数</div>
@@ -172,12 +182,13 @@ export function SubscriptionsClient({
       </Card>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <Segmented<"list" | "stack">
+        <Segmented<"list" | "stack" | "calendar">
           value={view}
           onChange={setView}
           options={[
             { value: "list", label: "リスト" },
             { value: "stack", label: "スタック" },
+            { value: "calendar", label: "暦" },
           ]}
         />
         {view === "list" && (
@@ -250,11 +261,11 @@ export function SubscriptionsClient({
                 </button>
                 <div className="text-right">
                   <div className="text-[15px] font-semibold tabular-nums">
-                    {formatMoney(it.monthly)}
+                    {formatMoney(it.monthly, currency)}
                     <span className="text-[11px] text-text-tertiary">/月</span>
                   </div>
                   <div className="text-[11px] text-text-tertiary tabular-nums">
-                    年 {formatMoney(it.yearly)}
+                    年 {formatMoney(it.yearly, currency)}
                   </div>
                 </div>
               </div>
@@ -284,6 +295,28 @@ export function SubscriptionsClient({
           ))}
         </div>
         )
+      ) : view === "calendar" ? (
+        <Card className="overflow-hidden">
+          {calendar.map((mo) => (
+            <div
+              key={mo.label}
+              className="flex items-center gap-3 border-t border-border-subtle px-4 py-3 first:border-t-0"
+            >
+              <span className="w-24 text-[14px] font-medium tabular-nums">{mo.label}</span>
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
+                <div
+                  className="h-full rounded-full bg-accent transition-all"
+                  style={{
+                    width: `${Math.min(100, totals.monthly > 0 ? (mo.total / (totals.monthly * 1.5)) * 100 : 0)}%`,
+                  }}
+                />
+              </div>
+              <span className="w-20 shrink-0 text-right text-[14px] font-semibold tabular-nums">
+                {formatMoney(mo.total, currency)}
+              </span>
+            </div>
+          ))}
+        </Card>
       ) : (
         <div className="space-y-4">
           {stack.groups.length === 0 && !stack.unassigned ? (

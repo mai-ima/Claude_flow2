@@ -14,7 +14,7 @@ import {
   type StackGroup,
 } from "@/modules/subscriptions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
-import { formatDate, daysUntil, daysSince } from "@/lib/date";
+import { formatDate, daysUntil, daysSince, advanceRenewal } from "@/lib/date";
 import { formatMoney, toMonthlyAmount, toYearlyAmount } from "@/lib/money";
 import { CYCLE_LABEL, STATUS_LABEL, type BillingCycle } from "@/lib/enums";
 import { findService } from "@/lib/service-catalog";
@@ -23,7 +23,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({ title: "サブスク管理", noindex: true });
 
 export default async function SubscriptionsPage() {
-  const { ledgerId, canEdit, tier } = await getAppContext();
+  const { ledgerId, canEdit, tier, currency } = await getAppContext();
 
   const [subs, totals, byPayment, categories, paymentMethods] = await Promise.all([
     listSubscriptions(ledgerId),
@@ -101,6 +101,34 @@ export default async function SubscriptionsPage() {
         }
       : null;
 
+  // 今後12ヶ月の支払い予定（各サブスクの更新をシミュレート）
+  const calStart = new Date();
+  calStart.setDate(1);
+  calStart.setHours(0, 0, 0, 0);
+  const calEnd = new Date(calStart.getFullYear(), calStart.getMonth() + 12, 1);
+  const buckets = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(calStart.getFullYear(), calStart.getMonth() + i, 1);
+    return { key: `${d.getFullYear()}-${d.getMonth()}`, label: formatDate(d, "yyyy年M月"), total: 0, count: 0 };
+  });
+  const bucketMap = new Map(buckets.map((b) => [b.key, b]));
+  for (const s of subs) {
+    if (s.status !== "ACTIVE" && s.status !== "TRIAL") continue;
+    let next = new Date(s.nextRenewalAt);
+    let guard = 0;
+    while (next < calEnd && guard < 600) {
+      if (next >= calStart) {
+        const b = bucketMap.get(`${next.getFullYear()}-${next.getMonth()}`);
+        if (b) {
+          b.total += s.amount;
+          b.count++;
+        }
+      }
+      next = advanceRenewal(next, s.cycle as BillingCycle);
+      guard++;
+    }
+  }
+  const calendar = buckets.map((b) => ({ label: b.label, total: b.total, count: b.count }));
+
   return (
     <PageContainer>
       <PageHeader title="サブスク" subtitle="毎月の固定費を、ひと目で。" />
@@ -108,6 +136,8 @@ export default async function SubscriptionsPage() {
         items={items}
         stack={{ groups, unassigned }}
         totals={totals}
+        calendar={calendar}
+        currency={currency}
         categories={categories.map((c) => ({ id: c.id, name: c.name, type: c.type }))}
         paymentMethods={paymentMethods.map((p) => ({ id: p.id, name: p.name }))}
         canEdit={canEdit}
