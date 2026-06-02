@@ -13,6 +13,7 @@ import {
   BellIcon,
   ChartIcon,
   ShieldIcon,
+  TargetIcon,
 } from "@/components/icons";
 import { pageMetadata } from "@/lib/seo";
 
@@ -34,14 +35,14 @@ const SECTIONS = [
     icon: CardIcon,
     tag: "サブスク・スタック",
     title: "どのカードから、何が引き落とされる？",
-    body: "決済手段ごとにサブスクを多層のガラスカードで整理。眠ったカードに眠ったままのサブスクが、ひと目で見つかります。",
+    body: "決済手段ごとにサブスクをカードで束ねて整理。眠ったカードに眠ったままのサブスクが、ひと目で見つかります。",
     tier: "PLUS",
   },
   {
     icon: SparklesIcon,
     tag: "サブスク・レビュー",
     title: "1件ずつ、心地よく仕分け。",
-    body: "登録中のサブスクを大きなカードで1つずつ提示。「必要」か「見直す」かをスワイプで選ぶだけ。最後に年間の節約候補額をお知らせします。",
+    body: "登録中のサブスクを大きなカードで1つずつ提示。「必要」か「見直す」かをワンタップで選ぶだけ。最後に年間の節約候補額をお知らせします。",
     tier: "PRO",
   },
   {
@@ -56,7 +57,9 @@ const SECTIONS = [
 const MORE = [
   { icon: RepeatIcon, title: "自動記帳", body: "更新日が来たら、サブスクの支出を自動で家計簿へ。" },
   { icon: BellIcon, title: "更新リマインダー", body: "請求の数日前に、静かにお知らせ。" },
+  { icon: TargetIcon, title: "予算・貯金目標", body: "予算と目標で、使いすぎを防ぎ、貯める力に。" },
   { icon: ChartIcon, title: "分析・レポート", body: "収支の推移やカテゴリ内訳を、美しいグラフで。" },
+  { icon: SparklesIcon, title: "スマート解約アシスト", body: "主要サービスの解約ページへ最短で。" },
   { icon: ShieldIcon, title: "プライバシー", body: "データはあなたのもの。広告のために売りません。" },
 ];
 
