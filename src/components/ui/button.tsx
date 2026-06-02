@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 font-medium select-none transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+  "inline-flex items-center justify-center gap-2 font-semibold tracking-[-0.01em] select-none transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
   {
     variants: {
       variant: {
@@ -12,14 +12,14 @@ const buttonVariants = cva(
         tinted:
           "bg-accent/10 text-accent hover:bg-accent/15 dark:bg-accent/20 dark:hover:bg-accent/25",
         plain: "text-accent hover:bg-accent/8",
-        gray: "bg-surface-2 text-text-primary hover:opacity-80 border border-border-subtle",
+        gray: "bg-surface-2 text-text-primary hover:bg-surface-3 border border-border-subtle",
         destructive: "bg-expense text-white hover:opacity-90 shadow-sm",
         ghost: "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
       },
       size: {
-        sm: "h-9 px-3.5 text-[13px] rounded-[10px]",
-        md: "h-11 px-5 text-[15px] rounded-xl",
-        lg: "h-[52px] px-7 text-[17px] rounded-2xl",
+        sm: "h-9 px-4 text-[13px] rounded-full",
+        md: "h-11 px-5 text-[15px] rounded-[14px]",
+        lg: "h-[54px] px-7 text-[17px] rounded-2xl",
         icon: "h-10 w-10 rounded-full",
       },
       full: { true: "w-full" },

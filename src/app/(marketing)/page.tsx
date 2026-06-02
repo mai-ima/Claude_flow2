@@ -103,7 +103,7 @@ export default function LandingPage() {
             <SparklesIcon size={15} className="text-accent" />
             家計簿とサブスク管理を、ひとつに。
           </div>
-          <h1 className="text-[clamp(2.4rem,6vw,4rem)] font-bold leading-[1.05] tracking-tight">
+          <h1 className="text-[clamp(2.8rem,7.5vw,4.75rem)] font-bold leading-[1.02] tracking-[-0.03em]">
             お金の全体像を、
             <br />
             美しく積み上げる。
