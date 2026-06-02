@@ -69,7 +69,7 @@ export function TransactionSheet({
 
   const cats = categories.filter((c) => c.type === v.type);
 
-  function submit() {
+  function submit(keepOpen = false) {
     setError(undefined);
     start(async () => {
       const payload = {
@@ -85,8 +85,13 @@ export function TransactionSheet({
         ? await updateTransaction(payload)
         : await createTransaction(payload);
       if (res.ok) {
-        onClose();
         router.refresh();
+        if (keepOpen && !v.id) {
+          // 連続入力: 金額とメモだけ初期化し、種別/カテゴリ/日付は維持
+          setV((s) => ({ ...s, amount: 0, memo: "" }));
+        } else {
+          onClose();
+        }
       } else {
         setError(res.error);
       }
@@ -99,9 +104,21 @@ export function TransactionSheet({
       onClose={onClose}
       title={v.id ? "記録を編集" : "記録を追加"}
       footer={
-        <Button full size="lg" onClick={submit} disabled={pending || v.amount <= 0}>
-          {pending ? "保存中…" : "保存する"}
-        </Button>
+        <div className="flex gap-2">
+          {!v.id && (
+            <Button
+              size="lg"
+              variant="gray"
+              onClick={() => submit(true)}
+              disabled={pending || v.amount <= 0}
+            >
+              続けて追加
+            </Button>
+          )}
+          <Button full size="lg" onClick={() => submit(false)} disabled={pending || v.amount <= 0}>
+            {pending ? "保存中…" : "保存する"}
+          </Button>
+        </div>
       }
     >
       <div className="space-y-4">

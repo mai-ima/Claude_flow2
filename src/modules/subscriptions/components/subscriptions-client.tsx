@@ -86,6 +86,8 @@ export function SubscriptionsClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [view, setView] = useState<"list" | "stack">("list");
+  const [sortBy, setSortBy] = useState<"renewal" | "amount" | "name">("renewal");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "PAUSED" | "CANCELED">("ALL");
   const [sheetOpen, setSheetOpen] = useState(
     () => canEdit && searchParams.get("new") === "1",
   );
@@ -115,6 +117,14 @@ export function SubscriptionsClient({
       router.refresh();
     });
   }
+
+  const listItems = items
+    .filter((it) => statusFilter === "ALL" || it.status === statusFilter)
+    .sort((a, b) => {
+      if (sortBy === "amount") return b.monthly - a.monthly;
+      if (sortBy === "name") return a.name.localeCompare(b.name, "ja");
+      return a.daysUntil - b.daysUntil; // renewal（近い順）
+    });
 
   const reviewItems: ReviewItem[] = items
     .filter((it) => it.status === "ACTIVE" || it.status === "TRIAL")
@@ -170,7 +180,7 @@ export function SubscriptionsClient({
         )}
       </Card>
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <Segmented<"list" | "stack">
           value={view}
           onChange={setView}
@@ -179,6 +189,31 @@ export function SubscriptionsClient({
             { value: "stack", label: "スタック" },
           ]}
         />
+        {view === "list" && (
+          <div className="flex items-center gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+              aria-label="ステータスで絞り込み"
+              className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2.5 text-[13px]"
+            >
+              <option value="ALL">すべて</option>
+              <option value="ACTIVE">利用中</option>
+              <option value="PAUSED">一時停止</option>
+              <option value="CANCELED">解約済み</option>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              aria-label="並び替え"
+              className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2.5 text-[13px]"
+            >
+              <option value="renewal">更新が近い順</option>
+              <option value="amount">金額が高い順</option>
+              <option value="name">名前順</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {items.length === 0 ? (
@@ -188,8 +223,15 @@ export function SubscriptionsClient({
           description="毎月の固定費をまとめて管理。更新日も自動で記帳されます。"
         />
       ) : view === "list" ? (
+        listItems.length === 0 ? (
+          <EmptyState
+            icon={<RepeatIcon size={28} />}
+            title="該当するサブスクがありません"
+            description="絞り込み条件を変えてお試しください。"
+          />
+        ) : (
         <div className="space-y-3">
-          {items.map((it) => (
+          {listItems.map((it) => (
             <Card
               key={it.id}
               className={cn("p-4", it.wasteLevel === "waste" && "ambient")}
@@ -250,6 +292,7 @@ export function SubscriptionsClient({
             </Card>
           ))}
         </div>
+        )
       ) : (
         <div className="space-y-4">
           {stack.groups.length === 0 && !stack.unassigned ? (

@@ -18,17 +18,24 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({ title: "分析", noindex: true });
 
 export default async function ReportsPage() {
-  const { ledgerId, tier } = await getAppContext();
+  const { ledgerId, tier, currency } = await getAppContext();
   const now = new Date();
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  const [trend, byCat, summary] = await Promise.all([
+  const [trend, byCat, summary, prev] = await Promise.all([
     monthlyTrend(ledgerId, 6),
     expenseByCategory(ledgerId, now),
     monthSummary(ledgerId, now),
+    monthSummary(ledgerId, lastMonth),
   ]);
 
   const totalExpense = byCat.reduce((s, c) => s + c.amount, 0);
   const hasData = trend.some((t) => t.income > 0 || t.expense > 0);
+
+  // 前月比（支出）
+  const expenseDelta = summary.expense - prev.expense;
+  const expensePct =
+    prev.expense > 0 ? Math.round((expenseDelta / prev.expense) * 100) : null;
 
   return (
     <PageContainer>
@@ -81,7 +88,7 @@ export default async function ReportsPage() {
                           {totalExpense > 0 ? Math.round((c.amount / totalExpense) * 100) : 0}%
                         </span>
                         <span className="w-20 text-right text-[14px] font-semibold tabular-nums">
-                          {formatMoney(c.amount)}
+                          {formatMoney(c.amount, currency)}
                         </span>
                       </div>
                     ))}
@@ -91,7 +98,7 @@ export default async function ReportsPage() {
             </CardBody>
           </Card>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Card className="p-5">
               <div className="text-[12px] text-text-tertiary">今月の収支</div>
               <div
@@ -99,10 +106,28 @@ export default async function ReportsPage() {
                   summary.balance >= 0 ? "text-income" : "text-expense"
                 }`}
               >
-                {formatMoney(summary.balance)}
+                {formatMoney(summary.balance, currency)}
               </div>
             </Card>
             <Card className="p-5">
+              <div className="text-[12px] text-text-tertiary">支出の前月比</div>
+              {expensePct === null ? (
+                <div className="mt-1 text-[22px] font-bold tabular-nums text-text-tertiary">—</div>
+              ) : (
+                <div
+                  className={`mt-1 text-[22px] font-bold tabular-nums ${
+                    expenseDelta > 0 ? "text-expense" : "text-income"
+                  }`}
+                >
+                  {expenseDelta > 0 ? "+" : ""}
+                  {expensePct}%
+                </div>
+              )}
+              <div className="mt-0.5 text-[11px] text-text-tertiary tabular-nums">
+                前月 {formatMoney(prev.expense, currency)}
+              </div>
+            </Card>
+            <Card className="col-span-2 p-5 sm:col-span-1">
               <div className="flex items-center justify-between">
                 <div className="text-[12px] text-text-tertiary">CSV エクスポート</div>
                 {tier !== "PRO" && <Badge tone="pod" size="sm">PRO</Badge>}
