@@ -6,6 +6,7 @@
 
 ## 設計の原則
 - **機能別モジュラーモノリス**: `src/app` はルーティング/合成のみ。ロジックは `src/modules/<feature>/`（`actions.ts` / `queries.ts` / `schema.ts` / `components/`）。共有は `src/lib`、UI 原子は `src/components/ui`。
+- **公開 API は `index.ts`（barrel）**: 型・schema・actions・components を再 export。`queries.ts` 等 `server-only` は barrel に含めず、サーバー側から直接 import（client が server-only を巻き込まない）。
 - **モジュール相互 import 禁止**: 横断連携は `src/lib/orchestrator.ts` に集約。
 - **Server Action は必ず `src/lib/safe-action.ts` の `authedAction` で包む**（認証 + Zod 検証 + 例外捕捉を一元化、`{ ok, data | fieldErrors }` を返す）。
 - **データ層で認可**: 全ドメインクエリは `ledgerId` でスコープし、`requireLedgerMember` で権限検証。

@@ -4,7 +4,7 @@ import { getAppContext } from "@/lib/app-context";
 import { monthSummary, recentTransactions } from "@/modules/transactions/queries";
 import { listSubscriptions, subscriptionTotals } from "@/modules/subscriptions/queries";
 import { listBudgetsWithSpending } from "@/modules/budgets/queries";
-import { detectWaste } from "@/modules/subscriptions/waste-detect";
+import { detectWaste } from "@/modules/subscriptions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

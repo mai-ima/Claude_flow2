@@ -8,11 +8,9 @@ import {
 import {
   TransactionsClient,
   type TxnListItem,
-} from "@/modules/transactions/components/transactions-client";
-import {
   TransactionFilters,
   Pagination,
-} from "@/modules/transactions/components/transaction-filters";
+} from "@/modules/transactions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { MonthSwitcher } from "@/components/app/month-switcher";
 import { Card } from "@/components/ui/card";

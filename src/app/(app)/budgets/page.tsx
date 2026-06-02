@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
 import { listBudgetsWithSpending } from "@/modules/budgets/queries";
 import { listCategories } from "@/modules/transactions/queries";
-import { BudgetsClient, type BudgetItem } from "@/modules/budgets/components/budgets-client";
+import { BudgetsClient, type BudgetItem } from "@/modules/budgets";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";

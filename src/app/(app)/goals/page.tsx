@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
 import { listGoals } from "@/modules/goals/queries";
-import { GoalsClient, type GoalItem } from "@/modules/goals/components/goals-client";
+import { GoalsClient, type GoalItem } from "@/modules/goals";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";

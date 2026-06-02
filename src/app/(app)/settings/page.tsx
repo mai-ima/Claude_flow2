@@ -4,13 +4,15 @@ import { listPaymentMethods, listAllCategories } from "@/modules/transactions/qu
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { ListGroup } from "@/components/ui/list";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { ProfileForm } from "@/modules/account/components/profile-form";
-import { PaymentMethodsManager } from "@/modules/account/components/payment-methods-manager";
-import { CategoryManager } from "@/modules/account/components/category-manager";
-import { DangerZone } from "@/modules/account/components/danger-zone";
-import { DataTools } from "@/modules/account/components/data-tools";
-import { FamilySharing } from "@/modules/ledgers/components/family-sharing";
-import { BillingCard } from "@/modules/billing/components/billing-card";
+import {
+  ProfileForm,
+  PaymentMethodsManager,
+  CategoryManager,
+  DangerZone,
+  DataTools,
+} from "@/modules/account";
+import { FamilySharing } from "@/modules/ledgers";
+import { BillingCard } from "@/modules/billing";
 import { PLANS, tierAtLeast } from "@/lib/plans";
 import { isStripeEnabled } from "@/lib/env";
 import { SITE, pageMetadata } from "@/lib/seo";

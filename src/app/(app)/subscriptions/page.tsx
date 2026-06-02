@@ -6,12 +6,13 @@ import {
   subscriptionsByPaymentMethod,
 } from "@/modules/subscriptions/queries";
 import { listCategories, listPaymentMethods } from "@/modules/transactions/queries";
-import { detectWaste, wasteMessage } from "@/modules/subscriptions/waste-detect";
 import {
+  detectWaste,
+  wasteMessage,
   SubscriptionsClient,
   type SubItem,
   type StackGroup,
-} from "@/modules/subscriptions/components/subscriptions-client";
+} from "@/modules/subscriptions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { formatDate, daysUntil, daysSince } from "@/lib/date";
 import { formatMoney, toMonthlyAmount, toYearlyAmount } from "@/lib/money";
