@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { seedDemo, DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/seed-demo";
+import { seedDemo } from "@/lib/seed-demo";
 import { env } from "@/lib/env";
 
 /**
@@ -19,11 +19,11 @@ async function handle(req: Request) {
     }
   }
   try {
-    await seedDemo();
+    const result = await seedDemo();
     return NextResponse.json({
       ok: true,
-      message: "デモデータを投入しました。",
-      login: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
+      message: "デモ + 管理者データを投入しました。",
+      ...result,
     });
   } catch (err) {
     console.error("[seed-demo]", err);

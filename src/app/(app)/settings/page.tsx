@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
 import { listPaymentMethods, listAllCategories } from "@/modules/transactions/queries";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
-import { ListGroup } from "@/components/ui/list";
+import { ListGroup, ListRow } from "@/components/ui/list";
+import { ShieldIcon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
   ProfileForm,
@@ -86,6 +87,18 @@ export default async function SettingsPage() {
         <ListGroup title="データ（CSV）" padded>
           <DataTools isPro={tierAtLeast(ctx.tier, "PRO")} />
         </ListGroup>
+
+        {ctx.user.isAdmin && (
+          <ListGroup title="管理者">
+            <ListRow
+              href="/admin"
+              icon={<ShieldIcon size={18} />}
+              iconBg="bg-pod"
+              label="管理コンソール"
+              sublabel="アプリ全体の監視・管理"
+            />
+          </ListGroup>
+        )}
 
         <ListGroup title="アカウント" padded bodyClassName="space-y-4">
           <div className="flex items-center justify-between">

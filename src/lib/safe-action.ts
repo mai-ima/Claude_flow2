@@ -26,6 +26,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   PLAN_REQUIRED: "この機能はプランのアップグレードが必要です。",
   SUB_LIMIT: "フリープランの登録上限です。プラスにすると無制限になります。",
   STRIPE_ACTIVE: "決済が有効なため、この操作はできません。",
+  SELF_FORBIDDEN: "自分自身に対しては実行できません。",
+  NOT_FOUND: "対象が見つかりません。",
 };
 
 /**

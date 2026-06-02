@@ -17,6 +17,7 @@ export type SessionUser = {
   currency: string;
   assumedHourlyWage: number | null;
   tier: string;
+  isAdmin: boolean;
 };
 
 /** 新規ユーザーの初期データ（個人帳簿・メンバー・課金プロフィール・既定カテゴリ）を用意。 */
@@ -165,6 +166,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     currency: u.currency,
     assumedHourlyWage: u.assumedHourlyWage,
     tier: u.billing?.tier ?? "FREE",
+    isAdmin: u.isAdmin,
   };
 }
 
@@ -172,5 +174,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 export async function requireUser(): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) throw new Error("UNAUTHORIZED");
+  return user;
+}
+
+/** 管理者必須。未ログイン/非管理者は throw。 */
+export async function requireAdmin(): Promise<SessionUser> {
+  const user = await requireUser();
+  if (!user.isAdmin) throw new Error("FORBIDDEN");
   return user;
 }

@@ -6,6 +6,39 @@ import { DEFAULT_CATEGORIES } from "./default-categories";
 export const DEMO_EMAIL = "demo@tsumiki.app";
 export const DEMO_PASSWORD = "demo1234";
 
+export const ADMIN_ACCOUNTS = [
+  { email: "admin@tsumiki.app", password: "admin1234", name: "管理者", tier: "PRO" as const },
+  { email: "staff@tsumiki.app", password: "staff1234", name: "管理者（動作確認用）", tier: "PLUS" as const },
+];
+
+/** 管理者アカウントを作成（個人帳簿 + 既定カテゴリ付き）。べき等。 */
+async function seedAdmins() {
+  for (const a of ADMIN_ACCOUNTS) {
+    await db.user.deleteMany({ where: { email: a.email } });
+    const u = await db.user.create({
+      data: {
+        email: a.email,
+        name: a.name,
+        isAdmin: true,
+        currency: "JPY",
+        passwordHash: hashPassword(a.password),
+      },
+    });
+    await db.billingProfile.create({ data: { userId: u.id, tier: a.tier } });
+    const l = await db.ledger.create({
+      data: {
+        name: `${a.name}の家計簿`,
+        type: "PERSONAL",
+        ownerId: u.id,
+        members: { create: { userId: u.id, role: "OWNER" } },
+      },
+    });
+    await db.category.createMany({
+      data: DEFAULT_CATEGORIES.map((c) => ({ ...c, ledgerId: l.id })),
+    });
+  }
+}
+
 function daysAgo(n: number): Date {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -19,6 +52,7 @@ function daysAhead(n: number): Date {
 
 /** デモアカウント（山田太郎）のデータを作り直す。べき等。 */
 export async function seedDemo() {
+  await seedAdmins();
   await db.user.deleteMany({ where: { email: DEMO_EMAIL } });
 
   const user = await db.user.create({
@@ -126,5 +160,8 @@ export async function seedDemo() {
     ],
   });
 
-  return { email: DEMO_EMAIL, password: DEMO_PASSWORD };
+  return {
+    demo: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
+    admins: ADMIN_ACCOUNTS.map((a) => ({ email: a.email, password: a.password, name: a.name })),
+  };
 }
