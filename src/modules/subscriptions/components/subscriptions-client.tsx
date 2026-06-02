@@ -20,6 +20,7 @@ import {
   CardIcon,
 } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
+import { gradientOf } from "@/lib/colors";
 import { cn } from "@/lib/cn";
 
 export interface SubItem {
@@ -55,16 +56,6 @@ interface Option {
   name: string;
   type?: string;
 }
-
-const COLOR_BG: Record<string, string> = {
-  blue: "from-[#007aff] to-[#0a84ff]",
-  purple: "from-[#5856d6] to-[#7d7aff]",
-  pink: "from-[#ff2d55] to-[#ff6482]",
-  teal: "from-[#30b0c7] to-[#40c8e0]",
-  green: "from-[#34c759] to-[#30d158]",
-  orange: "from-[#ff9500] to-[#ffb340]",
-  gray: "from-[#8e8e93] to-[#aeaeb2]",
-};
 
 export function SubscriptionsClient({
   items,
@@ -338,7 +329,7 @@ export function SubscriptionsClient({
 }
 
 function StackCard({ group }: { group: StackGroup }) {
-  const grad = COLOR_BG[group.color] ?? COLOR_BG.gray;
+  const grad = gradientOf(group.color);
   return (
     <div className="relative">
       <div className={cn("rounded-2xl bg-gradient-to-br p-5 text-white shadow-md", grad)}>

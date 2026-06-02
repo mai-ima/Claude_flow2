@@ -7,6 +7,10 @@ import { env } from "@/lib/env";
  * CRON_SECRET を設定した場合は ?token=... 一致を要求。未設定なら誰でも実行可（作るのは固定のデモのみ）。
  */
 async function handle(req: Request) {
+  // 本番では既定で無効。ALLOW_DEMO_SEED か CRON_SECRET 設定時のみ許可。
+  if (env.NODE_ENV === "production" && !env.ALLOW_DEMO_SEED && !env.CRON_SECRET) {
+    return NextResponse.json({ error: "disabled" }, { status: 403 });
+  }
   const token = env.CRON_SECRET;
   if (token) {
     const url = new URL(req.url);
