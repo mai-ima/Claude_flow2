@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
-import { advanceRenewal, daysUntil } from "./date";
+import { daysUntil } from "./date";
+import { renewalCatchup } from "@/modules/subscriptions/renewal";
 import type { BillingCycle } from "./enums";
 
 /**
@@ -19,11 +20,13 @@ export async function processRenewals(now: Date = new Date()): Promise<number> {
 
   let created = 0;
   for (const sub of due) {
-    let next = sub.nextRenewalAt;
-    // 取りこぼした周期分をまとめて記帳（最大24回でガード）
-    let guard = 0;
-    while (next <= now && guard < 24) {
-      if (sub.autoPostTransaction) {
+    const { occurrences, nextRenewalAt } = renewalCatchup(
+      sub.nextRenewalAt,
+      sub.cycle as BillingCycle,
+      now,
+    );
+    if (sub.autoPostTransaction) {
+      for (const occurredAt of occurrences) {
         await db.transaction.create({
           data: {
             ledgerId: sub.ledgerId,
@@ -31,7 +34,7 @@ export async function processRenewals(now: Date = new Date()): Promise<number> {
             type: "EXPENSE",
             amount: sub.amount,
             currency: sub.currency,
-            occurredAt: next,
+            occurredAt,
             categoryId: sub.categoryId,
             paymentMethodId: sub.paymentMethodId,
             subscriptionId: sub.id,
@@ -40,13 +43,11 @@ export async function processRenewals(now: Date = new Date()): Promise<number> {
         });
         created++;
       }
-      next = advanceRenewal(next, sub.cycle as BillingCycle);
-      guard++;
     }
-    if (next.getTime() !== sub.nextRenewalAt.getTime()) {
+    if (nextRenewalAt.getTime() !== sub.nextRenewalAt.getTime()) {
       await db.subscription.update({
         where: { id: sub.id },
-        data: { nextRenewalAt: next },
+        data: { nextRenewalAt },
       });
     }
   }

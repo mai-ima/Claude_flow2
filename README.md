@@ -32,10 +32,12 @@ PostgreSQL が必要です（無料の [Neon](https://neon.tech) などの接続
 ```bash
 npm install
 cp .env.example .env          # DATABASE_URL を PostgreSQL の接続URLに設定
-npx prisma db push            # スキーマを DB に反映
+npx prisma migrate deploy     # マイグレーションを適用（新規 DB）
 npx prisma db seed            # （任意）デモデータ投入（demo@tsumiki.app / PRO）
 npm run dev                   # http://localhost:3000
 ```
+
+スキーマ変更時は `npm run db:migrate`（`prisma migrate dev`）で新しいマイグレーションを作成します。
 
 ログインはメールアドレスのみ（dev はパスワードレス）。
 
@@ -47,8 +49,12 @@ npm run dev                   # http://localhost:3000
 4. Settings → Environment Variables に `NEXT_PUBLIC_APP_URL`（公開URL）を追加し、**Redeploy**
 5. 発行された URL を iPhone / Windows のブラウザで開く
 
-ビルド時に `vercel-build`（`prisma db push` + `next build`）が走り、スキーマが自動反映されます。
-Stripe/AdSense/Resend のキーは未設定でも完全動作します（必要になったら環境変数に追加）。
+ビルド時に `vercel-build`（`prisma generate && prisma migrate deploy && next build`）が走り、マイグレーションが自動適用されます。
+Stripe/AdSense/Resend/Upstash/Sentry のキーは未設定でも完全動作します（必要になったら環境変数に追加）。
+
+> **既存DBからの移行（重要）**: 以前 `db push` で作成した DB を使い続ける場合、マイグレーション履歴が無いため初回の `migrate deploy` が失敗します。次のいずれかを一度だけ実施してください。
+> - 新しい DB を作り直す（デモデータは `/api/seed-demo` で再投入）。
+> - または既存 DB に対して `npx prisma migrate resolve --applied 20260602090930_init` を実行してベースライン化。
 
 ## 主なスクリプト
 
