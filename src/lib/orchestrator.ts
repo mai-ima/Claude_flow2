@@ -58,8 +58,43 @@ export interface ReminderItem {
   name: string;
   amount: number;
   daysUntil: number;
+  ownerUserId: string;
   ownerEmail: string | null;
   ownerName: string | null;
+}
+
+/**
+ * リマインダー対象に対して、アプリ内通知(RENEWAL)を作成する。
+ * 同一サブスクで直近5日以内の通知があれば重複作成しない。生成件数を返す。
+ */
+export async function notifyDueRenewals(now: Date = new Date()): Promise<number> {
+  const reminders = await dueReminders(now);
+  let created = 0;
+  for (const r of reminders) {
+    const recent = await db.notification.findFirst({
+      where: {
+        userId: r.ownerUserId,
+        type: "RENEWAL",
+        body: { contains: r.name },
+        createdAt: { gte: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000) },
+      },
+    });
+    if (recent) continue;
+    await db.notification.create({
+      data: {
+        userId: r.ownerUserId,
+        type: "RENEWAL",
+        title: "サブスクの更新が近づいています",
+        body:
+          r.daysUntil === 0
+            ? `${r.name} は本日更新されます。`
+            : `${r.name} はあと${r.daysUntil}日で更新されます。`,
+        href: "/subscriptions",
+      },
+    });
+    created++;
+  }
+  return created;
 }
 
 /** リマインダー対象（更新が reminderDaysBefore 以内）を列挙。 */
@@ -77,6 +112,7 @@ export async function dueReminders(now: Date = new Date()): Promise<ReminderItem
         name: s.name,
         amount: s.amount,
         daysUntil: d,
+        ownerUserId: s.ownerUserId,
         ownerEmail: s.owner.email,
         ownerName: s.owner.name,
       });

@@ -109,5 +109,22 @@ export async function seedDemo() {
     data: { ledgerId: ledger.id, isTotalBudget: true, period: "MONTHLY", amount: 250000, startMonth: monthStart },
   });
 
+  // 貯金目標のサンプル
+  await db.goal.createMany({
+    data: [
+      { ledgerId: ledger.id, name: "沖縄旅行", targetAmount: 200000, currentAmount: 84000, color: "teal", deadline: daysAhead(120) },
+      { ledgerId: ledger.id, name: "新しい iPhone", targetAmount: 150000, currentAmount: 45000, color: "blue", deadline: daysAhead(200) },
+    ],
+  });
+
+  // アプリ内通知のサンプル
+  await db.notification.createMany({
+    data: [
+      { userId: user.id, type: "RENEWAL", title: "サブスクの更新が近づいています", body: "Netflix はあと3日で更新されます。", href: "/subscriptions" },
+      { userId: user.id, type: "WASTE", title: "見直しのヒント", body: "Adobe Creative Cloud をしばらく利用していません。", href: "/subscriptions" },
+      { userId: user.id, type: "SUMMARY", title: "今月のサマリー", body: "今月の支出は ¥184,200。予算の74%です。", href: "/reports", readAt: new Date() },
+    ],
+  });
+
   return { email: DEMO_EMAIL, password: DEMO_PASSWORD };
 }

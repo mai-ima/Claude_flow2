@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { MobileDrawer } from "./mobile-drawer";
+import { NotificationBell, type NotifItem } from "./notification-bell";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDownIcon,
@@ -28,11 +29,15 @@ export function AppHeader({
   activeId,
   tier,
   userName,
+  notifications,
+  unread,
 }: {
   ledgers: LedgerOption[];
   activeId: string;
   tier: string;
   userName: string;
+  notifications: NotifItem[];
+  unread: number;
 }) {
   const [open, setOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -115,6 +120,7 @@ export function AppHeader({
             {tier}
           </Badge>
         )}
+        <NotificationBell items={notifications} unread={unread} />
         <ThemeToggle compact />
         <form action={logoutAction}>
           <button

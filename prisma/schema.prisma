@@ -37,6 +37,7 @@ model User {
   createdTxns     Transaction[]   @relation("TxnCreatedBy")
   ownedSubs       Subscription[]  @relation("SubOwner")
   billing         BillingProfile?
+  notifications   Notification[]
 }
 
 model Account {
@@ -248,6 +249,24 @@ model Goal {
   updatedAt     DateTime  @updatedAt
 
   @@index([ledgerId])
+}
+
+// ─────────────────────────────────────────────
+// アプリ内通知
+// ─────────────────────────────────────────────
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ledgerId  String?
+  type      String // RENEWAL | SUMMARY | WASTE | SYSTEM
+  title     String
+  body      String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }
 
 // ─────────────────────────────────────────────

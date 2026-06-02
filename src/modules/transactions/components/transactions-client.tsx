@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { TransactionSheet, type TxnFormValue } from "./transaction-sheet";
 import { deleteTransaction } from "../actions";
 import { Card } from "@/components/ui/card";
@@ -47,7 +47,10 @@ export function TransactionsClient({
   currency?: string;
 }) {
   const router = useRouter();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const [sheetOpen, setSheetOpen] = useState(
+    () => canEdit && searchParams.get("new") === "1",
+  );
   const [editing, setEditing] = useState<TxnFormValue | undefined>();
   const [pending, start] = useTransition();
 

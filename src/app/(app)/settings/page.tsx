@@ -8,9 +8,10 @@ import { ProfileForm } from "@/modules/account/components/profile-form";
 import { PaymentMethodsManager } from "@/modules/account/components/payment-methods-manager";
 import { CategoryManager } from "@/modules/account/components/category-manager";
 import { DangerZone } from "@/modules/account/components/danger-zone";
+import { DataTools } from "@/modules/account/components/data-tools";
 import { FamilySharing } from "@/modules/ledgers/components/family-sharing";
 import { BillingCard } from "@/modules/billing/components/billing-card";
-import { PLANS } from "@/lib/plans";
+import { PLANS, tierAtLeast } from "@/lib/plans";
 import { isStripeEnabled } from "@/lib/env";
 import { SITE, pageMetadata } from "@/lib/seo";
 
@@ -112,6 +113,15 @@ export default async function SettingsPage() {
                 isArchived: c.isArchived,
               }))}
             />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>データ（CSV）</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <DataTools isPro={tierAtLeast(ctx.tier, "PRO")} />
           </CardBody>
         </Card>
 

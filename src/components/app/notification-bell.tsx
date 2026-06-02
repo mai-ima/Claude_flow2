@@ -1,0 +1,121 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { BellIcon, RepeatIcon, ChartIcon, SparklesIcon } from "@/components/icons";
+import { markAllRead, markRead } from "@/modules/notifications/actions";
+import { cn } from "@/lib/cn";
+
+export interface NotifItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  href: string | null;
+  read: boolean;
+  timeLabel: string;
+}
+
+function iconFor(type: string) {
+  if (type === "RENEWAL") return RepeatIcon;
+  if (type === "SUMMARY") return ChartIcon;
+  return SparklesIcon;
+}
+
+export function NotificationBell({
+  items,
+  unread,
+}: {
+  items: NotifItem[];
+  unread: number;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [, start] = useTransition();
+
+  function openPanel() {
+    setOpen((v) => !v);
+  }
+  function readAll() {
+    start(async () => {
+      await markAllRead({});
+      router.refresh();
+    });
+  }
+  function onItem(it: NotifItem) {
+    setOpen(false);
+    start(async () => {
+      if (!it.read) await markRead({ id: it.id });
+      if (it.href) router.push(it.href);
+      else router.refresh();
+    });
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={openPanel}
+        aria-label="通知"
+        className="relative grid h-10 w-10 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+      >
+        <BellIcon size={20} />
+        {unread > 0 && (
+          <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-expense px-1 text-[10px] font-bold text-white">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-20 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-2xl border border-border-subtle bg-surface-1 shadow-lg">
+            <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
+              <span className="text-[14px] font-semibold">通知</span>
+              {unread > 0 && (
+                <button onClick={readAll} className="text-[12px] font-medium text-accent">
+                  すべて既読
+                </button>
+              )}
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto">
+              {items.length === 0 ? (
+                <div className="px-4 py-10 text-center text-[13px] text-text-tertiary">
+                  通知はありません
+                </div>
+              ) : (
+                items.map((it) => {
+                  const Icon = iconFor(it.type);
+                  return (
+                    <button
+                      key={it.id}
+                      onClick={() => onItem(it)}
+                      className={cn(
+                        "flex w-full items-start gap-3 border-t border-border-subtle px-4 py-3 text-left first:border-t-0 hover:bg-surface-2",
+                        !it.read && "bg-accent/5",
+                      )}
+                    >
+                      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-text-secondary">
+                        <Icon size={16} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14px] font-medium">{it.title}</span>
+                        <span className="block text-[12px] leading-relaxed text-text-secondary">
+                          {it.body}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-text-tertiary">
+                          {it.timeLabel}
+                        </span>
+                      </span>
+                      {!it.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" />}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

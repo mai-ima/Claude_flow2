@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SubscriptionSheet, type SubFormValue } from "./subscription-sheet";
 import { SubscriptionReview, type ReviewItem } from "./subscription-review";
 import { markUsed, deleteSubscription } from "../actions";
@@ -84,8 +84,11 @@ export function SubscriptionsClient({
   isPro: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [view, setView] = useState<"list" | "stack">("list");
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(
+    () => canEdit && searchParams.get("new") === "1",
+  );
   const [editing, setEditing] = useState<SubFormValue | undefined>();
   const [reviewing, setReviewing] = useState(false);
   const [, start] = useTransition();
