@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAppContext } from "@/lib/app-context";
+import { getAppContext, resolveMonth, monthParam } from "@/lib/app-context";
 import { getDashboardData } from "@/lib/dashboard";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
+import { MonthSwitcher } from "@/components/app/month-switcher";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
@@ -20,19 +21,24 @@ import {
   TargetIcon,
 } from "@/components/icons";
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
-import { formatMonth, formatDate } from "@/lib/date";
+import { formatDate } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
 import { clientEnv } from "@/lib/env";
 import { pageMetadata, SITE } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({ title: "ホーム", noindex: true });
 
-export default async function DashboardPage() {
-  const { ledgerId, user, tier, isPod } = await getAppContext();
-  const now = new Date();
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ m?: string }>;
+}) {
+  const { ledgerId, user, tier, isPod, currency } = await getAppContext();
+  const { m } = await searchParams;
+  const month = resolveMonth(m);
 
   const { summary, subTotals, totalBudget, upcoming, wasteful, recent, showBudget } =
-    await getDashboardData(ledgerId, tier, now);
+    await getDashboardData(ledgerId, tier, month);
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
@@ -41,7 +47,8 @@ export default async function DashboardPage() {
     <PageContainer>
       <PageHeader
         title={`こんにちは${user.name ? `、${user.name}さん` : ""}`}
-        subtitle={`${formatMonth(now)}${isPod ? " ・ 共有帳簿" : ""}`}
+        subtitle={isPod ? "共有帳簿" : undefined}
+        action={<MonthSwitcher current={monthParam(month)} />}
       />
 
       {/* クイック操作 */}
@@ -106,7 +113,7 @@ export default async function DashboardPage() {
                   </span>
                 </div>
                 <p className="text-[12px] leading-relaxed text-text-tertiary">
-                  想定時給 {formatMoney(wage)} で換算。支出は「働いた時間」何ぶんかで考えられます。
+                  想定時給 {formatMoney(wage, currency)} で換算。支出は「働いた時間」何ぶんかで考えられます。
                 </p>
               </div>
             </div>
@@ -130,16 +137,16 @@ export default async function DashboardPage() {
         <Card className="p-4">
           <div className="text-[12px] text-text-tertiary">収入</div>
           <div className="mt-1 text-[18px] font-bold tabular-nums text-income">
-            {formatMoney(summary.income)}
+            {formatMoney(summary.income, currency)}
           </div>
         </Card>
         <Card className="p-4">
           <div className="text-[12px] text-text-tertiary">支出</div>
-          <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(summary.expense)}</div>
+          <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(summary.expense, currency)}</div>
         </Card>
         <Card className="p-4">
           <div className="text-[12px] text-text-tertiary">サブスク月額</div>
-          <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(subTotals.monthly)}</div>
+          <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(subTotals.monthly, currency)}</div>
         </Card>
       </div>
 
@@ -172,12 +179,12 @@ export default async function DashboardPage() {
                   </div>
                   <div className="mt-2.5 flex items-center justify-between text-[14px]">
                     <span className="text-text-secondary tabular-nums">
-                      {formatMoney(totalBudget.spent)} / {formatMoney(totalBudget.amount)}
+                      {formatMoney(totalBudget.spent, currency)} / {formatMoney(totalBudget.amount, currency)}
                     </span>
                     <span
                       className={`font-semibold tabular-nums ${over ? "text-expense" : "text-income"}`}
                     >
-                      {over ? `${formatMoney(-remaining)} 超過` : `残り ${formatMoney(remaining)}`}
+                      {over ? `${formatMoney(-remaining, currency)} 超過` : `残り ${formatMoney(remaining)}`}
                     </span>
                   </div>
                 </>
@@ -220,7 +227,7 @@ export default async function DashboardPage() {
                       </span>
                     </span>
                     <span className="text-[14px] font-semibold tabular-nums">
-                      {formatMoney(toMonthlyAmount(s.amount, s.cycle as BillingCycle))}
+                      {formatMoney(toMonthlyAmount(s.amount, s.cycle as BillingCycle), currency)}
                     </span>
                   </div>
                 ))}
@@ -306,7 +313,7 @@ export default async function DashboardPage() {
                     }`}
                   >
                     {t.type === "INCOME" ? "+" : "−"}
-                    {formatMoney(t.amount)}
+                    {formatMoney(t.amount, currency)}
                   </span>
                 </div>
               ))}
