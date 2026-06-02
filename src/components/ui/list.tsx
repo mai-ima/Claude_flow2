@@ -83,19 +83,20 @@ function RowInner({ icon, iconBg, label, sublabel, value, trailing, chevron }: R
 }
 
 const ROW = "flex items-center gap-3 px-4 py-3 border-t border-border-subtle first:border-t-0";
+const TAP = "transition-colors hover:bg-surface-2 active:bg-surface-3";
 
 export function ListRow(props: RowProps) {
   const { href, onClick, className } = props;
   if (href) {
     return (
-      <Link href={href} className={cn(ROW, "transition hover:bg-surface-2", className)}>
+      <Link href={href} className={cn(ROW, TAP, className)}>
         <RowInner {...props} chevron={props.chevron ?? true} />
       </Link>
     );
   }
   if (onClick) {
     return (
-      <button onClick={onClick} className={cn(ROW, "w-full text-left transition hover:bg-surface-2", className)}>
+      <button onClick={onClick} className={cn(ROW, TAP, "w-full text-left", className)}>
         <RowInner {...props} />
       </button>
     );
