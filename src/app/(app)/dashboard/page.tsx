@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAppContext } from "@/lib/app-context";
-import { monthSummary, recentTransactions } from "@/modules/transactions/queries";
-import { listSubscriptions, subscriptionTotals } from "@/modules/subscriptions/queries";
-import { listBudgetsWithSpending } from "@/modules/budgets/queries";
-import { detectWaste } from "@/modules/subscriptions";
+import { getDashboardData } from "@/lib/dashboard";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +20,8 @@ import {
   TargetIcon,
 } from "@/components/icons";
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
-import { formatMonth, formatDate, daysUntil } from "@/lib/date";
+import { formatMonth, formatDate } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
-import { canUse } from "@/lib/plans";
 import { clientEnv } from "@/lib/env";
 import { pageMetadata, SITE } from "@/lib/seo";
 
@@ -35,27 +31,11 @@ export default async function DashboardPage() {
   const { ledgerId, user, tier, isPod } = await getAppContext();
   const now = new Date();
 
-  const showBudget = canUse(tier, "budgets");
-  const [summary, subTotals, subs, recent, budgetData] = await Promise.all([
-    monthSummary(ledgerId, now),
-    subscriptionTotals(ledgerId),
-    listSubscriptions(ledgerId),
-    recentTransactions(ledgerId, 5),
-    showBudget ? listBudgetsWithSpending(ledgerId, now) : Promise.resolve(null),
-  ]);
-  const totalBudget = budgetData?.total ?? null;
+  const { summary, subTotals, totalBudget, upcoming, wasteful, recent, showBudget } =
+    await getDashboardData(ledgerId, tier, now);
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
-
-  const upcoming = subs
-    .filter((s) => s.status === "ACTIVE")
-    .map((s) => ({ ...s, d: daysUntil(s.nextRenewalAt) }))
-    .filter((s) => s.d >= 0 && s.d <= 31)
-    .sort((a, b) => a.d - b.d)
-    .slice(0, 5);
-
-  const wasteful = subs.filter((s) => detectWaste(s.lastUsedAt, s.status) === "waste");
 
   return (
     <PageContainer>
