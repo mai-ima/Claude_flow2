@@ -94,28 +94,38 @@ export function TrendAreaChart({
 
 export function CategoryDonut({
   data,
+  center,
 }: {
   data: { name: string; amount: number; color: string }[];
+  /** ドーナツ中央に重ねる任意の表示（合計など）。 */
+  center?: React.ReactNode;
 }) {
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <PieChart>
-        <Pie
-          data={data}
-          dataKey="amount"
-          nameKey="name"
-          innerRadius={62}
-          outerRadius={96}
-          paddingAngle={2}
-          stroke="none"
-          animationDuration={500}
-        >
-          {data.map((d) => (
-            <Cell key={d.name} fill={colorOf(d.color)} />
-          ))}
-        </Pie>
-        <Tooltip content={<MoneyTooltip />} />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="relative">
+      <ResponsiveContainer width="100%" height={240}>
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="amount"
+            nameKey="name"
+            innerRadius={62}
+            outerRadius={96}
+            paddingAngle={2}
+            stroke="none"
+            animationDuration={500}
+          >
+            {data.map((d) => (
+              <Cell key={d.name} fill={colorOf(d.color)} />
+            ))}
+          </Pie>
+          <Tooltip content={<MoneyTooltip />} />
+        </PieChart>
+      </ResponsiveContainer>
+      {center && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <div className="text-center">{center}</div>
+        </div>
+      )}
+    </div>
   );
 }

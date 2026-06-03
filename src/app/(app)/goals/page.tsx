@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { TargetIcon } from "@/components/icons";
 import { canUse } from "@/lib/plans";
-import { formatDate } from "@/lib/date";
+import { formatDate, monthsUntil } from "@/lib/date";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({ title: "貯金目標", noindex: true });
@@ -34,19 +34,49 @@ export default async function GoalsPage() {
   }
 
   const goals = await listGoals(ledgerId);
-  const items: GoalItem[] = goals.map((g) => ({
-    id: g.id,
-    name: g.name,
-    targetAmount: g.targetAmount,
-    currentAmount: g.currentAmount,
-    deadlineLabel: g.deadline ? formatDate(g.deadline, "yyyy年M月d日") : null,
-    color: g.color,
-  }));
+  const items: GoalItem[] = goals.map((g) => {
+    const remaining = Math.max(0, g.targetAmount - g.currentAmount);
+    const done = g.currentAmount >= g.targetAmount;
+    // 期日ありなら「達成に必要な月額」と期限超過を算出（積立履歴は持たないので残月で按分）。
+    let monthsLeft: number | null = null;
+    let monthlyNeeded: number | null = null;
+    let overdue = false;
+    if (g.deadline && !done) {
+      const m = monthsUntil(g.deadline);
+      if (m < 0) {
+        overdue = true;
+      } else {
+        monthsLeft = m;
+        monthlyNeeded = Math.ceil(remaining / Math.max(1, m));
+      }
+    }
+    return {
+      id: g.id,
+      name: g.name,
+      targetAmount: g.targetAmount,
+      currentAmount: g.currentAmount,
+      deadlineLabel: g.deadline ? formatDate(g.deadline, "yyyy年M月d日") : null,
+      color: g.color,
+      monthsLeft,
+      monthlyNeeded,
+      overdue,
+    };
+  });
+
+  // 全体サマリー
+  const totalCurrent = items.reduce((s, g) => s + g.currentAmount, 0);
+  const totalTarget = items.reduce((s, g) => s + g.targetAmount, 0);
 
   return (
     <PageContainer>
       <PageHeader title="貯金目標" subtitle="貯めたい未来を、かたちに。" />
-      <GoalsClient goals={items} canEdit={canEdit} currency={currency} />
+      <GoalsClient
+        goals={items}
+        canEdit={canEdit}
+        currency={currency}
+        totalCurrent={totalCurrent}
+        totalTarget={totalTarget}
+      />
     </PageContainer>
   );
 }

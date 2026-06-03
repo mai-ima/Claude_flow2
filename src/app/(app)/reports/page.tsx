@@ -55,10 +55,36 @@ export default async function ReportsPage() {
         <div className="space-y-5">
           <Card>
             <CardHeader>
-              <CardTitle>収支の推移（6ヶ月）</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>収支の推移（6ヶ月）</CardTitle>
+                {expensePct !== null && (
+                  <Badge tone={expenseDelta > 0 ? "expense" : "income"} size="sm">
+                    支出 前月比 {expenseDelta > 0 ? "+" : ""}
+                    {expensePct}%
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
             <CardBody>
               <TrendAreaChart data={trend} />
+              <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border-subtle pt-3 text-[13px]">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-text-secondary">
+                    <span className="h-2 w-2 rounded-full bg-income" />今月の収入
+                  </span>
+                  <span className="font-semibold tabular-nums text-income">
+                    {formatMoney(summary.income, currency)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-text-secondary">
+                    <span className="h-2 w-2 rounded-full bg-expense" />今月の支出
+                  </span>
+                  <span className="font-semibold tabular-nums">
+                    {formatMoney(summary.expense, currency)}
+                  </span>
+                </div>
+              </div>
             </CardBody>
           </Card>
 
@@ -73,7 +99,17 @@ export default async function ReportsPage() {
                 </p>
               ) : (
                 <div className="grid items-center gap-6 sm:grid-cols-2">
-                  <CategoryDonut data={byCat} />
+                  <CategoryDonut
+                    data={byCat}
+                    center={
+                      <>
+                        <div className="text-[11px] text-text-tertiary">支出合計</div>
+                        <div className="text-[17px] font-bold tabular-nums">
+                          {formatMoney(totalExpense, currency)}
+                        </div>
+                      </>
+                    }
+                  />
                   <div className="space-y-2">
                     {byCat.slice(0, 6).map((c) => (
                       <div key={c.name} className="flex items-center gap-3">
@@ -112,7 +148,10 @@ export default async function ReportsPage() {
             <Card className="p-5">
               <div className="text-[12px] text-text-tertiary">支出の前月比</div>
               {expensePct === null ? (
-                <div className="mt-1 text-[22px] font-bold tabular-nums text-text-tertiary">—</div>
+                <>
+                  <div className="mt-1 text-[22px] font-bold tabular-nums text-text-tertiary">—</div>
+                  <div className="mt-0.5 text-[11px] text-text-tertiary">前月のデータなし</div>
+                </>
               ) : (
                 <div
                   className={`mt-1 text-[22px] font-bold tabular-nums ${

@@ -12,5 +12,6 @@ export const updateGoalInput = goalInput.extend({ id: z.string() });
 export const idInput = z.object({ id: z.string() });
 export const contributeInput = z.object({
   id: z.string(),
-  amount: z.coerce.number().int(),
+  // 増減どちらも許容するが、極端値は弾く（API 直叩き対策）。
+  amount: z.coerce.number().int().min(-100_000_000).max(100_000_000),
 });

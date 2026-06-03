@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sheet } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select } from "@/components/ui/field";
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -20,6 +21,9 @@ export interface GoalItem {
   currentAmount: number;
   deadlineLabel: string | null;
   color: string;
+  monthsLeft: number | null;
+  monthlyNeeded: number | null;
+  overdue: boolean;
 }
 
 const COLORS = ["blue", "teal", "green", "mint", "orange", "pink", "purple", "indigo"];
@@ -34,10 +38,14 @@ export function GoalsClient({
   goals,
   canEdit,
   currency,
+  totalCurrent,
+  totalTarget,
 }: {
   goals: GoalItem[];
   canEdit: boolean;
   currency: string;
+  totalCurrent: number;
+  totalTarget: number;
 }) {
   const router = useRouter();
   const [, start] = useTransition();
@@ -113,7 +121,42 @@ export function GoalsClient({
           action={canEdit ? <Button onClick={openNew}><PlusIcon size={18} /> 目標を追加</Button> : undefined}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
+          {/* 全体サマリー */}
+          <Card className="p-5">
+            <div className="flex items-center gap-5">
+              <ActivityRing
+                size={96}
+                thickness={11}
+                tracks={[
+                  {
+                    value: totalTarget > 0 ? totalCurrent / totalTarget : 0,
+                    color: "var(--color-accent)",
+                  },
+                ]}
+              >
+                <span className="text-[15px] font-bold tabular-nums">
+                  {totalTarget > 0 ? Math.min(100, Math.round((totalCurrent / totalTarget) * 100)) : 0}%
+                </span>
+              </ActivityRing>
+              <div className="flex-1 space-y-2 text-[14px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-text-secondary">貯まっている合計</span>
+                  <span className="font-semibold tabular-nums">{formatMoney(totalCurrent, currency)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-text-secondary">目標の合計</span>
+                  <span className="font-semibold tabular-nums">{formatMoney(totalTarget, currency)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-text-secondary">目標の数</span>
+                  <span className="font-semibold tabular-nums">{goals.length}件</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid gap-4 sm:grid-cols-2">
           {goals.map((g) => {
             const ratio = g.targetAmount > 0 ? g.currentAmount / g.targetAmount : 0;
             const done = ratio >= 1;
@@ -150,6 +193,16 @@ export function GoalsClient({
                     {g.deadlineLabel && (
                       <div className="text-[12px] text-text-tertiary">期日 {g.deadlineLabel}</div>
                     )}
+                    {!done && g.overdue ? (
+                      <div className="mt-1">
+                        <Badge tone="expense" size="sm">期限超過</Badge>
+                      </div>
+                    ) : !done && g.monthlyNeeded !== null ? (
+                      <div className="mt-1 text-[12px] text-text-secondary">
+                        あと{g.monthsLeft}ヶ月 ・ 月{" "}
+                        <b className="tabular-nums">{formatMoney(g.monthlyNeeded, currency)}</b> で達成
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 {canEdit && (
@@ -174,6 +227,7 @@ export function GoalsClient({
               </Card>
             );
           })}
+          </div>
         </div>
       )}
 

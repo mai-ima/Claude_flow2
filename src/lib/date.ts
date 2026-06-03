@@ -3,6 +3,7 @@ import {
   addWeeks,
   addYears,
   differenceInCalendarDays,
+  differenceInCalendarMonths,
   endOfMonth,
   format,
   startOfMonth,
@@ -45,4 +46,9 @@ export function daysUntil(date: Date, from: Date = new Date()): number {
 export function daysSince(date: Date | null, from: Date = new Date()): number | null {
   if (!date) return null;
   return differenceInCalendarDays(from, date);
+}
+
+/** 今日から見た残り月数（暦月差）。過ぎていれば負。 */
+export function monthsUntil(date: Date, from: Date = new Date()): number {
+  return differenceInCalendarMonths(date, from);
 }
