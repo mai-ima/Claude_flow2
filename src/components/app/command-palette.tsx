@@ -65,7 +65,7 @@ export function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-[12vh]">
+    <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-[12dvh]">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setOpen(false)} />
       <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border-subtle bg-surface-1 shadow-lg">
         <div className="flex items-center gap-2 border-b border-border-subtle px-4">
@@ -89,11 +89,11 @@ export function CommandPalette() {
               }
             }}
             placeholder="ページや操作を検索…"
-            className="h-12 w-full bg-transparent text-[15px] outline-none placeholder:text-text-tertiary"
+            className="h-12 w-full bg-transparent text-[16px] outline-none placeholder:text-text-tertiary"
           />
           <kbd className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-text-tertiary">esc</kbd>
         </div>
-        <ul className="max-h-[50vh] overflow-y-auto p-2">
+        <ul className="max-h-[50dvh] overflow-y-auto overscroll-contain p-2">
           {filtered.length === 0 ? (
             <li className="px-3 py-6 text-center text-[14px] text-text-tertiary">該当なし</li>
           ) : (

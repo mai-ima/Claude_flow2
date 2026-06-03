@@ -78,7 +78,7 @@ export function NotificationBell({
                 </button>
               )}
             </div>
-            <div className="max-h-[60vh] overflow-y-auto">
+            <div className="max-h-[60dvh] overflow-y-auto overscroll-contain">
               {items.length === 0 ? (
                 <div className="px-4 py-10 text-center text-[13px] text-text-tertiary">
                   通知はありません
