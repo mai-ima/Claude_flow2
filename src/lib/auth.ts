@@ -18,6 +18,7 @@ export type SessionUser = {
   assumedHourlyWage: number | null;
   tier: string;
   isAdmin: boolean;
+  betaOptIn: boolean;
 };
 
 /** 新規ユーザーの初期データ（個人帳簿・メンバー・課金プロフィール・既定カテゴリ）を用意。 */
@@ -167,6 +168,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     assumedHourlyWage: u.assumedHourlyWage,
     tier: u.billing?.tier ?? "FREE",
     isAdmin: u.isAdmin,
+    betaOptIn: u.betaOptIn,
   };
 }
 

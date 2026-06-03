@@ -21,10 +21,14 @@ import {
   BellIcon,
   WalletIcon,
   TargetIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
 } from "@/components/icons";
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
 import { buildActivityRings } from "@/lib/activity-rings";
+import { weeklyExpenseTotals } from "@/modules/transactions/queries";
+import { monthEndForecast, weekDelta } from "@/lib/insight";
 import { formatDate, formatMonth } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
 import { clientEnv } from "@/lib/env";
@@ -37,7 +41,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ m?: string }>;
 }) {
-  const { ledgerId, user, tier, isPod, currency } = await getAppContext();
+  const { ledgerId, user, tier, isPod, currency, betaOptIn } = await getAppContext();
   const { m } = await searchParams;
   const month = resolveMonth(m);
 
@@ -46,6 +50,13 @@ export default async function DashboardPage({
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
+
+  // ベータ: 今週の振り返り・今月の着地予測（当月表示時のみ）
+  const now = new Date();
+  const isCurrentMonth = month.getFullYear() === now.getFullYear() && month.getMonth() === now.getMonth();
+  const weekly = betaOptIn && isCurrentMonth ? await weeklyExpenseTotals(ledgerId, now) : null;
+  const wd = weekly ? weekDelta(weekly.thisWeek, weekly.lastWeek) : null;
+  const forecast = isCurrentMonth ? monthEndForecast(summary.expense, now) : summary.expense;
 
   return (
     <PageContainer>
@@ -72,6 +83,61 @@ export default async function DashboardPage({
           </Link>
         ))}
       </div>
+
+      {/* ベータ: 今週の振り返り・今月の着地予測 */}
+      {weekly && wd && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                <span className="inline-flex items-center gap-1.5">
+                  <SparklesIcon size={16} className="text-accent" />
+                  今週の振り返り
+                </span>
+              </CardTitle>
+              <Badge tone="accent" size="sm">ベータ</Badge>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-surface-2 px-4 py-3">
+                <div className="text-[12px] text-text-tertiary">今週の支出</div>
+                <div className="mt-0.5 text-[18px] font-bold tabular-nums">
+                  {formatMoney(weekly.thisWeek, currency)}
+                </div>
+                <div
+                  className={`mt-0.5 inline-flex items-center gap-1 text-[12px] font-medium ${
+                    wd.trend === "up" ? "text-expense" : wd.trend === "down" ? "text-income" : "text-text-tertiary"
+                  }`}
+                >
+                  {wd.trend === "up" ? (
+                    <ArrowUpIcon size={12} />
+                  ) : wd.trend === "down" ? (
+                    <ArrowDownIcon size={12} />
+                  ) : null}
+                  {wd.pct === null ? "先週の記録なし" : `先週比 ${wd.pct > 0 ? "+" : ""}${wd.pct}%`}
+                </div>
+              </div>
+              <div className="rounded-xl bg-surface-2 px-4 py-3">
+                <div className="text-[12px] text-text-tertiary">今月の着地予測</div>
+                <div className="mt-0.5 text-[18px] font-bold tabular-nums">
+                  {formatMoney(forecast, currency)}
+                </div>
+                <div className="mt-0.5 text-[12px] text-text-tertiary">このペースが続いた場合</div>
+              </div>
+              <div className="rounded-xl bg-surface-2 px-4 py-3">
+                <div className="text-[12px] text-text-tertiary">今月の最多カテゴリ</div>
+                <div className="mt-0.5 truncate text-[18px] font-bold">
+                  {byCategory[0]?.name ?? "—"}
+                </div>
+                <div className="mt-0.5 text-[12px] text-text-tertiary tabular-nums">
+                  {byCategory[0] ? formatMoney(byCategory[0].amount, currency) : "記録なし"}
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* コストタイム */}
       <Card className="mb-5">

@@ -34,7 +34,7 @@ export default async function TransactionsPage({
 }: {
   searchParams: Promise<SP>;
 }) {
-  const { ledgerId, canEdit, isPod, currency } = await getAppContext();
+  const { ledgerId, canEdit, isPod, currency, betaOptIn } = await getAppContext();
   const sp = await searchParams;
   const month = resolveMonth(sp.m);
   const type = sp.type === "INCOME" || sp.type === "EXPENSE" ? sp.type : undefined;
@@ -120,6 +120,7 @@ export default async function TransactionsPage({
         canEdit={canEdit}
         showOwner={isPod}
         currency={currency}
+        beta={betaOptIn}
       />
 
       <Pagination page={result.page} pageCount={pageCount} />

@@ -1,7 +1,25 @@
 import "server-only";
+import { startOfWeek, subWeeks } from "date-fns";
 import type { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
 import { monthRange } from "@/lib/date";
+
+/** 今週・先週の支出合計（週は月曜始まり）。ベータのインサイト用。 */
+export async function weeklyExpenseTotals(ledgerId: string, now: Date = new Date()) {
+  const thisStart = startOfWeek(now, { weekStartsOn: 1 });
+  const lastStart = subWeeks(thisStart, 1);
+  const [thisAgg, lastAgg] = await Promise.all([
+    db.transaction.aggregate({
+      where: { ledgerId, type: "EXPENSE", occurredAt: { gte: thisStart, lte: now } },
+      _sum: { amount: true },
+    }),
+    db.transaction.aggregate({
+      where: { ledgerId, type: "EXPENSE", occurredAt: { gte: lastStart, lt: thisStart } },
+      _sum: { amount: true },
+    }),
+  ]);
+  return { thisWeek: thisAgg._sum.amount ?? 0, lastWeek: lastAgg._sum.amount ?? 0 };
+}
 
 /**
  * 取引一覧の取得フィールド。UI が使う列のみに絞る（過剰な include を避け、

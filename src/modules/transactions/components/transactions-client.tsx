@@ -40,6 +40,7 @@ export function TransactionsClient({
   canEdit,
   showOwner = false,
   currency = "JPY",
+  beta = false,
 }: {
   items: TxnListItem[];
   categories: Option[];
@@ -47,6 +48,7 @@ export function TransactionsClient({
   canEdit: boolean;
   showOwner?: boolean;
   currency?: string;
+  beta?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -190,6 +192,8 @@ export function TransactionsClient({
         categories={categories}
         paymentMethods={paymentMethods}
         initial={editing}
+        currency={currency}
+        beta={beta}
       />
     </div>
   );

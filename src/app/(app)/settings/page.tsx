@@ -12,6 +12,7 @@ import {
   DangerZone,
   DeleteAllData,
   DataTools,
+  BetaFeaturesToggle,
 } from "@/modules/account";
 import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
@@ -51,6 +52,10 @@ export default async function SettingsPage() {
             currency={ctx.currency}
             canEdit={ctx.role === "OWNER"}
           />
+        </ListGroup>
+
+        <ListGroup title="ベータ機能" padded>
+          <BetaFeaturesToggle enabled={ctx.betaOptIn} />
         </ListGroup>
 
         <ListGroup title="外観" padded>

@@ -6,6 +6,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
+import { AmountPad } from "./amount-pad";
 import { formatMoney } from "@/lib/money";
 import { createTransaction, updateTransaction } from "../actions";
 
@@ -37,16 +38,21 @@ export function TransactionSheet({
   categories,
   paymentMethods,
   initial,
+  currency = "JPY",
+  beta = false,
 }: {
   open: boolean;
   onClose: () => void;
   categories: Option[];
   paymentMethods: Option[];
   initial?: TxnFormValue;
+  currency?: string;
+  beta?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string>();
+  const [padKey, setPadKey] = useState(0);
   const blank = (): TxnFormValue => ({
     type: "EXPENSE",
     amount: 0,
@@ -64,6 +70,7 @@ export function TransactionSheet({
     if (open) {
       setV(initial ?? blank());
       setError(undefined);
+      setPadKey((k) => k + 1);
     }
   }
 
@@ -89,6 +96,7 @@ export function TransactionSheet({
         if (keepOpen && !v.id) {
           // 連続入力: 金額とメモだけ初期化し、種別/カテゴリ/日付は維持
           setV((s) => ({ ...s, amount: 0, memo: "" }));
+          setPadKey((k) => k + 1);
         } else {
           onClose();
         }
@@ -132,25 +140,35 @@ export function TransactionSheet({
           ]}
         />
 
-        {/* 金額（大きく） */}
-        <div className="rounded-2xl bg-surface-2 px-5 py-6 text-center">
-          <input
-            inputMode="numeric"
-            value={v.amount ? String(v.amount) : ""}
-            onChange={(e) =>
-              setV((s) => ({
-                ...s,
-                amount: Math.max(0, parseInt(e.target.value.replace(/\D/g, "") || "0", 10)),
-              }))
-            }
-            placeholder="0"
-            aria-label="金額"
-            className="w-full bg-transparent text-center text-[40px] font-bold tracking-tight tabular-nums outline-none placeholder:text-text-tertiary"
+        {/* 金額 */}
+        {beta ? (
+          <AmountPad
+            key={padKey}
+            initial={v.amount}
+            type={v.type}
+            currency={currency}
+            onChange={(amount) => setV((s) => ({ ...s, amount }))}
           />
-          <div className="text-[13px] text-text-tertiary">
-            {v.type === "EXPENSE" ? "支出" : "収入"}・{formatMoney(v.amount)}
+        ) : (
+          <div className="rounded-2xl bg-surface-2 px-5 py-6 text-center">
+            <input
+              inputMode="numeric"
+              value={v.amount ? String(v.amount) : ""}
+              onChange={(e) =>
+                setV((s) => ({
+                  ...s,
+                  amount: Math.max(0, parseInt(e.target.value.replace(/\D/g, "") || "0", 10)),
+                }))
+              }
+              placeholder="0"
+              aria-label="金額"
+              className="w-full bg-transparent text-center text-[40px] font-bold tracking-tight tabular-nums outline-none placeholder:text-text-tertiary"
+            />
+            <div className="text-[13px] text-text-tertiary">
+              {v.type === "EXPENSE" ? "支出" : "収入"}・{formatMoney(v.amount, currency)}
+            </div>
           </div>
-        </div>
+        )}
 
         <Field label="カテゴリ">
           <Select

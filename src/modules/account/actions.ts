@@ -27,6 +27,15 @@ export const updateProfile = authedAction(
   },
 );
 
+export const updateBetaOptIn = authedAction(
+  z.object({ enabled: z.coerce.boolean() }),
+  async ({ enabled }, user) => {
+    await db.user.update({ where: { id: user.id }, data: { betaOptIn: enabled } });
+    revalidatePath("/", "layout");
+    return { ok: true };
+  },
+);
+
 export const createPaymentMethod = authedAction(
   z.object({
     name: z.string().min(1, "名前を入力してください。").max(40),

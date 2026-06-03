@@ -18,6 +18,7 @@ export async function getAppContext() {
     isPod: ledger.type === "POD",
     tier: user.tier as PlanTier,
     currency: ledger.currency,
+    betaOptIn: user.betaOptIn,
   };
 }
 

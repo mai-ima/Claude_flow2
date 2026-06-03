@@ -28,6 +28,7 @@ model User {
   currency         String    @default("JPY")
   themePref        String    @default("system") // system | light | dark
   assumedHourlyWage Int?     // コストタイム用の想定時給(円)
+  betaOptIn        Boolean   @default(false) // ベータ機能の有効化
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
