@@ -6,6 +6,7 @@ import { TransactionSheet, type TxnFormValue } from "./transaction-sheet";
 import { deleteTransaction } from "../actions";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SwipeRow } from "@/components/ui/swipe-row";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon } from "@/components/icons";
@@ -118,38 +119,34 @@ export function TransactionsClient({
             <div key={date}>
               <div className="mb-1.5 px-1 text-[13px] font-medium text-text-tertiary">{date}</div>
               <Card className="overflow-hidden">
-                {list.map((it) => (
-                  <div
-                    key={it.id}
-                    className="group flex items-center gap-3 border-t border-border-subtle px-4 py-3 first:border-t-0"
-                  >
-                    <button
-                      onClick={() => openEdit(it)}
-                      className="flex flex-1 items-center gap-3 text-left"
+                {list.map((it) => {
+                  const icon = (
+                    <span
+                      className={cn(
+                        "grid h-10 w-10 shrink-0 place-items-center rounded-full",
+                        it.type === "INCOME"
+                          ? "bg-income/12 text-income"
+                          : "bg-surface-2 text-text-secondary",
+                      )}
                     >
-                      <span
-                        className={cn(
-                          "grid h-10 w-10 shrink-0 place-items-center rounded-full",
-                          it.type === "INCOME"
-                            ? "bg-income/12 text-income"
-                            : "bg-surface-2 text-text-secondary",
-                        )}
-                      >
-                        <CategoryIcon name={it.categoryIcon} size={20} />
+                      <CategoryIcon name={it.categoryIcon} size={20} />
+                    </span>
+                  );
+                  const label = (
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-medium">
+                        {it.categoryName}
+                        {it.memo ? (
+                          <span className="font-normal text-text-tertiary"> ・ {it.memo}</span>
+                        ) : null}
                       </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-medium">
-                          {it.categoryName}
-                          {it.memo ? (
-                            <span className="font-normal text-text-tertiary"> ・ {it.memo}</span>
-                          ) : null}
-                        </span>
-                        <span className="block truncate text-[12px] text-text-tertiary">
-                          {it.paymentName ?? "—"}
-                          {showOwner && it.ownerName ? ` ・ ${it.ownerName}` : ""}
-                        </span>
+                      <span className="block truncate text-[12px] text-text-tertiary">
+                        {it.paymentName ?? "—"}
+                        {showOwner && it.ownerName ? ` ・ ${it.ownerName}` : ""}
                       </span>
-                    </button>
+                    </span>
+                  );
+                  const amount = (
                     <span
                       className={cn(
                         "shrink-0 text-[15px] font-semibold tabular-nums",
@@ -159,17 +156,58 @@ export function TransactionsClient({
                       {it.type === "INCOME" ? "+" : "−"}
                       {formatMoney(it.amount, currency)}
                     </span>
-                    {canEdit && (
-                      <button
-                        onClick={() => remove(it.id)}
-                        aria-label="削除"
-                        className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary opacity-0 transition hover:bg-expense/10 hover:text-expense group-hover:opacity-100"
+                  );
+
+                  if (beta && canEdit) {
+                    return (
+                      <SwipeRow
+                        key={it.id}
+                        className="border-t border-border-subtle first:border-t-0"
+                        onTap={() => openEdit(it)}
+                        actions={[
+                          { label: "編集", tone: "edit", onClick: () => openEdit(it) },
+                          {
+                            label: "削除",
+                            tone: "delete",
+                            icon: <TrashIcon size={16} />,
+                            onClick: () => remove(it.id),
+                          },
+                        ]}
                       >
-                        <TrashIcon size={17} />
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          {icon}
+                          {label}
+                          {amount}
+                        </div>
+                      </SwipeRow>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={it.id}
+                      className="group flex items-center gap-3 border-t border-border-subtle px-4 py-3 first:border-t-0"
+                    >
+                      <button
+                        onClick={() => openEdit(it)}
+                        className="flex flex-1 items-center gap-3 text-left"
+                      >
+                        {icon}
+                        {label}
                       </button>
-                    )}
-                  </div>
-                ))}
+                      {amount}
+                      {canEdit && (
+                        <button
+                          onClick={() => remove(it.id)}
+                          aria-label="削除"
+                          className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary opacity-0 transition hover:bg-expense/10 hover:text-expense group-hover:opacity-100"
+                        >
+                          <TrashIcon size={17} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </Card>
             </div>
           ))}
