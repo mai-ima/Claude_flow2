@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { NAV_ITEMS } from "./nav-items";
 import { logoutAction } from "@/app/(auth)/actions";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,12 @@ export function MobileDrawer({
   tier: string;
 }) {
   const pathname = usePathname();
+  // クライアントでのみ true（ポータル先 document.body はサーバーに存在しないため）。
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -33,23 +40,30 @@ export function MobileDrawer({
     };
   }, [open, onClose]);
 
-  return (
+  // ヘッダー(sticky z-30)の重なり順に閉じ込められないよう body 直下へポータル。
+  // これで下タブバー(z-30)や FAB(z-30)より前面に出る。
+  if (!mounted) return null;
+
+  return createPortal(
     <div className={cn("md:hidden", open ? "pointer-events-auto" : "pointer-events-none")}>
       {/* backdrop */}
       <div
         onClick={onClose}
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm transition-opacity duration-300",
           open ? "opacity-100" : "opacity-0",
         )}
       />
       {/* panel */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[82%] flex-col bg-surface-1 shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "fixed inset-y-0 left-0 z-[60] flex w-72 max-w-[82%] flex-col bg-surface-1 shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
           open ? "translate-x-0" : "-translate-x-full",
         )}
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
       >
         <div className="flex items-center justify-between px-4 py-4">
           <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2 font-semibold">
@@ -93,7 +107,12 @@ export function MobileDrawer({
           <Link
             href="/billing"
             onClick={onClose}
-            className="flex items-center gap-3 rounded-xl px-3 py-3 text-[16px] font-medium text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-3 text-[16px] font-medium transition",
+              pathname === "/billing" || pathname.startsWith("/billing/")
+                ? "bg-accent/10 text-accent"
+                : "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
+            )}
           >
             <StarIcon size={22} />
             <span className="flex-1">プラン・お支払い</span>
@@ -118,6 +137,7 @@ export function MobileDrawer({
           </form>
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }
