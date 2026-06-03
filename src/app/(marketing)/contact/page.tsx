@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { BellIcon, ShieldIcon, SparklesIcon } from "@/components/icons";
-import { pageMetadata } from "@/lib/seo";
+import { pageMetadata, CONTACT } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   title: "お問い合わせ",
@@ -12,9 +12,9 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const CHANNELS = [
-  { icon: BellIcon, title: "サポート", body: "使い方や不具合のご相談", value: "support@tsumiki.app" },
-  { icon: SparklesIcon, title: "ご要望・ご意見", body: "あったらいいな、を教えてください", value: "feedback@tsumiki.app" },
-  { icon: ShieldIcon, title: "プライバシー", body: "データの取り扱いについて", value: "privacy@tsumiki.app" },
+  { icon: BellIcon, title: "サポート", body: "使い方や不具合のご相談", value: CONTACT.support },
+  { icon: SparklesIcon, title: "ご要望・ご意見", body: "あったらいいな、を教えてください", value: CONTACT.feedback },
+  { icon: ShieldIcon, title: "プライバシー", body: "データの取り扱いについて", value: CONTACT.privacy },
 ];
 
 export default function ContactPage() {

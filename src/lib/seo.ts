@@ -11,6 +11,29 @@ export const SITE = {
   locale: "ja_JP",
 } as const;
 
+/** 問い合わせ窓口（用途別）。各ページから参照し、メールの散在を防ぐ。 */
+export const CONTACT = {
+  support: "support@tsumiki.app",
+  feedback: "feedback@tsumiki.app",
+  privacy: "privacy@tsumiki.app",
+} as const;
+
+/**
+ * 運営者・法務情報。ベータ期間中は実在の登記情報が未確定のため一部はプレースホルダ。
+ * 本番公開前に専門家のレビューを受け、実際の事業者情報へ差し替えること。
+ */
+export const OPERATOR = {
+  name: "Tsumiki 運営チーム",
+  serviceName: "Tsumiki（ツミキ）",
+  /** 個人運営の許容範囲として、所在地は請求時に遅滞なく開示する方針。 */
+  addressDisclosure: "請求があった場合に遅滞なく開示します",
+  governingLaw: "日本法",
+  jurisdiction: "東京地方裁判所",
+  /** サービス提供開始年（ベータ）。 */
+  since: "2026年",
+  contactEmail: CONTACT.support,
+} as const;
+
 export function pageMetadata({
   title,
   description,
