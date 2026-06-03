@@ -217,7 +217,7 @@ export default function LandingPage() {
         <div className="mt-12 grid gap-5 sm:grid-cols-3">
           {[
             { n: "01", icon: WalletIcon, title: "記録する", body: "収支とサブスクを、ハーフシートからサッと入力。" },
-            { n: "02", icon: ChartIcon, title: "見える化", body: "予算は円グラフ、進捗は Apple フィットネス風リングで一目に。" },
+            { n: "02", icon: ChartIcon, title: "見える化", body: "予算は円グラフ、進捗はアクティビティリングで一目に。" },
             { n: "03", icon: SparklesIcon, title: "見直す", body: "無駄なサブスクを発見して、固定費を最適化。" },
           ].map((s) => (
             <Card key={s.n} className="relative p-7 hover-lift">

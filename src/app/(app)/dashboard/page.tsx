@@ -160,7 +160,7 @@ export default async function DashboardPage({
         </Card>
       </div>
 
-      {/* 今月のアクティビティ（Apple フィットネス風 3 重リング） */}
+      {/* 今月のアクティビティ（3 重リング） */}
       {(() => {
         const { rings, show } = buildActivityRings(summary, totalBudget, subTotals.monthly);
         if (!show) return null;
