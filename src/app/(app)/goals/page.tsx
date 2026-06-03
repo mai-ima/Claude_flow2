@@ -56,6 +56,7 @@ export default async function GoalsPage() {
       targetAmount: g.targetAmount,
       currentAmount: g.currentAmount,
       deadlineLabel: g.deadline ? formatDate(g.deadline, "yyyy年M月d日") : null,
+      deadlineInput: g.deadline ? formatDate(g.deadline, "yyyy-MM-dd") : null,
       color: g.color,
       monthsLeft,
       monthlyNeeded,

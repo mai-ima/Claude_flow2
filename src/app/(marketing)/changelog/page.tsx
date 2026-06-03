@@ -11,6 +11,22 @@ export const metadata: Metadata = pageMetadata({
 
 const RELEASES = [
   {
+    version: "ベータ v1.2.2.5",
+    date: "2026年6月",
+    tag: "Beta",
+    sections: [
+      {
+        h: "不具合の修正",
+        items: [
+          "PC のサイドバーがスクロールで一緒に流れてしまう不具合を修正（常に表示されるよう固定）",
+          "貯金目標を編集すると期日が初期値に戻ってしまう不具合を修正",
+          "削除・積み立ての失敗時にエラーが表示されない問題を修正",
+          "表記の誤りを修正",
+        ],
+      },
+    ],
+  },
+  {
     version: "ベータ v1.2.2.1",
     date: "2026年6月",
     tag: "Beta",

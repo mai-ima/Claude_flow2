@@ -74,7 +74,11 @@ export function TransactionsClient({
   function remove(id: string) {
     if (!confirm("この記録を削除しますか？")) return;
     start(async () => {
-      await deleteTransaction({ id });
+      const res = await deleteTransaction({ id });
+      if (!res.ok) {
+        alert(res.error);
+        return;
+      }
       router.refresh();
     });
   }

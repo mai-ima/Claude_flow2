@@ -20,6 +20,8 @@ export interface GoalItem {
   targetAmount: number;
   currentAmount: number;
   deadlineLabel: string | null;
+  /** 編集フォーム用の期日（yyyy-MM-dd）。未設定は null。 */
+  deadlineInput: string | null;
   color: string;
   monthsLeft: number | null;
   monthlyNeeded: number | null;
@@ -52,6 +54,7 @@ export function GoalsClient({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [contribFor, setContribFor] = useState<GoalItem | null>(null);
   const [contribAmount, setContribAmount] = useState(0);
+  const [contribError, setContribError] = useState<string>();
   const [error, setError] = useState<string>();
   const [form, setForm] = useState({
     id: "",
@@ -71,7 +74,8 @@ export function GoalsClient({
       id: g.id,
       name: g.name,
       targetAmount: g.targetAmount,
-      deadline: todayPlus(6),
+      // 既存の期日を保持（無い場合のみ既定値）。
+      deadline: g.deadlineInput ?? todayPlus(6),
       color: g.color,
     });
     setError(undefined);
@@ -97,14 +101,23 @@ export function GoalsClient({
   function remove(id: string) {
     if (!confirm("この目標を削除しますか？")) return;
     start(async () => {
-      await deleteGoal({ id });
+      const res = await deleteGoal({ id });
+      if (!res.ok) {
+        alert(res.error);
+        return;
+      }
       router.refresh();
     });
   }
   function contribute() {
     if (!contribFor) return;
+    setContribError(undefined);
     start(async () => {
-      await contributeGoal({ id: contribFor.id, amount: contribAmount });
+      const res = await contributeGoal({ id: contribFor.id, amount: contribAmount });
+      if (!res.ok) {
+        setContribError(res.error);
+        return;
+      }
       setContribFor(null);
       setContribAmount(0);
       router.refresh();
@@ -217,6 +230,7 @@ export function GoalsClient({
                         onClick={() => {
                           setContribFor(g);
                           setContribAmount(0);
+                          setContribError(undefined);
                         }}
                       >
                         <PlusIcon size={16} /> 積み立てる
@@ -312,6 +326,7 @@ export function GoalsClient({
               </button>
             ))}
           </div>
+          {contribError && <p className="text-[13px] text-expense">{contribError}</p>}
         </div>
       </Sheet>
     </div>

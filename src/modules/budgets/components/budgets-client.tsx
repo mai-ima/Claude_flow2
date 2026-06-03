@@ -156,7 +156,11 @@ export function BudgetsClient({
   function remove(id: string) {
     if (!confirm("この予算を削除しますか？")) return;
     start(async () => {
-      await deleteBudget({ id });
+      const res = await deleteBudget({ id });
+      if (!res.ok) {
+        alert(res.error);
+        return;
+      }
       router.refresh();
     });
   }

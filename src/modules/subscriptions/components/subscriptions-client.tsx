@@ -114,7 +114,11 @@ export function SubscriptionsClient({
   function remove(id: string) {
     if (!confirm("このサブスクを削除しますか？")) return;
     start(async () => {
-      await deleteSubscription({ id });
+      const res = await deleteSubscription({ id });
+      if (!res.ok) {
+        alert(res.error);
+        return;
+      }
       router.refresh();
     });
   }
