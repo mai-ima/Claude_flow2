@@ -7,9 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CategoryDonut } from "@/components/ui/chart/charts";
+import { BudgetGauge } from "@/components/app/budget-gauge";
 import { CategoryIcon, TargetIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
+import { budgetHealth } from "@/lib/budget-insight";
 import { setBudget, deleteBudget } from "../actions";
 import { cn } from "@/lib/cn";
 
@@ -31,16 +34,19 @@ interface Option {
 
 function ProgressBar({ spent, amount, color }: { spent: number; amount: number; color: string }) {
   const ratio = amount > 0 ? spent / amount : 0;
-  const over = ratio > 1;
   const pct = Math.min(ratio, 1) * 100;
+  const health = budgetHealth(spent, amount);
+  const fill =
+    health === "over"
+      ? "var(--color-expense)"
+      : health === "warning"
+        ? "var(--color-warning)"
+        : colorOf(color);
   return (
     <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
       <div
         className="h-full rounded-full transition-all duration-500"
-        style={{
-          width: `${pct}%`,
-          background: over ? "var(--color-expense)" : colorOf(color),
-        }}
+        style={{ width: `${pct}%`, background: fill }}
       />
     </div>
   );
@@ -181,14 +187,68 @@ export function BudgetsClient({
       ) : (
         <div className="space-y-3">
           {total && (
-            <BudgetCard
-              item={total}
-              canEdit={canEdit}
-              currency={currency}
-              onEdit={() => openEdit(total)}
-              onDelete={() => remove(total.id)}
-            />
+            <Card className="p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <button
+                  onClick={() => openEdit(total)}
+                  className="flex items-center gap-2.5 text-left"
+                >
+                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent/10 text-accent">
+                    <TargetIcon size={18} />
+                  </span>
+                  <span className="text-[15px] font-semibold">全体予算</span>
+                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => remove(total.id)}
+                    aria-label="削除"
+                    className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                  >
+                    <TrashIcon size={16} />
+                  </button>
+                )}
+              </div>
+              <BudgetGauge spent={total.spent} amount={total.amount} currency={currency} />
+            </Card>
           )}
+
+          {categories.length >= 2 && (
+            <Card className="p-5">
+              <div className="mb-3 text-[14px] font-semibold">カテゴリ予算の配分</div>
+              <div className="grid items-center gap-5 sm:grid-cols-2">
+                <CategoryDonut
+                  data={categories.map((c) => ({ name: c.name, amount: c.amount, color: c.color }))}
+                />
+                <div className="space-y-2">
+                  {categories.map((c) => {
+                    const health = budgetHealth(c.spent, c.amount);
+                    return (
+                      <div key={c.id} className="flex items-center gap-3">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ background: colorOf(c.color) }}
+                        />
+                        <span className="flex-1 truncate text-[13px]">{c.name}</span>
+                        <span
+                          className={cn(
+                            "text-[12px] font-medium tabular-nums",
+                            health === "over"
+                              ? "text-expense"
+                              : health === "warning"
+                                ? "text-warning"
+                                : "text-text-tertiary",
+                          )}
+                        >
+                          {c.amount > 0 ? Math.round((c.spent / c.amount) * 100) : 0}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          )}
+
           {categories.length > 0 && (
             <div className="px-1 pt-2 text-[13px] font-medium text-text-tertiary">カテゴリ別</div>
           )}

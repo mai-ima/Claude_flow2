@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CategoryDonut } from "@/components/ui/chart/charts";
+import { BudgetGauge } from "@/components/app/budget-gauge";
 import { AdSlot } from "@/components/ads/ad-slot";
 import {
   CategoryIcon,
@@ -21,6 +23,7 @@ import {
   TargetIcon,
 } from "@/components/icons";
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
+import { colorOf } from "@/lib/colors";
 import { formatDate, formatMonth } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
 import { clientEnv } from "@/lib/env";
@@ -37,11 +40,13 @@ export default async function DashboardPage({
   const { m } = await searchParams;
   const month = resolveMonth(m);
 
-  const { summary, subTotals, totalBudget, upcoming, wasteful, recent, showBudget } =
+  const { summary, subTotals, totalBudget, byCategory, upcoming, wasteful, recent, showBudget } =
     await getDashboardData(ledgerId, tier, month);
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
+  // 収支バランス（収入を基準にした支出の割合）
+  const balanceMax = Math.max(summary.income, summary.expense, 1);
 
   return (
     <PageContainer>
@@ -135,20 +140,57 @@ export default async function DashboardPage({
       {/* 今月のサマリー */}
       <div className="mb-5 grid grid-cols-3 gap-3">
         <Card className="p-4">
-          <div className="text-[12px] text-text-tertiary">収入</div>
+          <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
+            <span className="h-2 w-2 rounded-full bg-income" />収入
+          </div>
           <div className="mt-1 text-[18px] font-bold tabular-nums text-income">
             {formatMoney(summary.income, currency)}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-[12px] text-text-tertiary">支出</div>
+          <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
+            <span className="h-2 w-2 rounded-full bg-expense" />支出
+          </div>
           <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(summary.expense, currency)}</div>
         </Card>
         <Card className="p-4">
-          <div className="text-[12px] text-text-tertiary">サブスク月額</div>
+          <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
+            <RepeatIcon size={13} className="text-accent" />サブスク月額
+          </div>
           <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(subTotals.monthly, currency)}</div>
         </Card>
       </div>
+
+      {/* 収支バランス（収入と支出の割合を一目で） */}
+      {(summary.income > 0 || summary.expense > 0) && (
+        <Card className="mb-5 p-4">
+          <div className="mb-2.5 flex items-center justify-between text-[13px]">
+            <span className="font-medium">今月の収支</span>
+            <span
+              className={`font-semibold tabular-nums ${
+                summary.balance >= 0 ? "text-income" : "text-expense"
+              }`}
+            >
+              {summary.balance >= 0 ? "+" : "−"}
+              {formatMoney(Math.abs(summary.balance), currency)}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+              <div
+                className="h-full rounded-full bg-income transition-all duration-500"
+                style={{ width: `${(summary.income / balanceMax) * 100}%` }}
+              />
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
+              <div
+                className="h-full rounded-full bg-expense transition-all duration-500"
+                style={{ width: `${(summary.expense / balanceMax) * 100}%` }}
+              />
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* 予算の進捗（PLUS 以上・全体予算が設定済みの場合） */}
       {totalBudget && (
@@ -162,32 +204,53 @@ export default async function DashboardPage({
             </div>
           </CardHeader>
           <CardBody>
+            <BudgetGauge
+              spent={totalBudget.spent}
+              amount={totalBudget.amount}
+              currency={currency}
+              month={month}
+            />
+          </CardBody>
+        </Card>
+      )}
+
+      {/* カテゴリ別の支出（今月の内訳をひと目で） */}
+      {byCategory.length > 0 && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>カテゴリ別の支出</CardTitle>
+              <Link href="/reports" className="text-[13px] text-accent">
+                分析を見る
+              </Link>
+            </div>
+          </CardHeader>
+          <CardBody>
             {(() => {
-              const ratio = totalBudget.amount > 0 ? totalBudget.spent / totalBudget.amount : 0;
-              const over = ratio > 1;
-              const remaining = totalBudget.amount - totalBudget.spent;
+              const totalExpense = byCategory.reduce((s, c) => s + c.amount, 0);
               return (
-                <>
-                  <div className="h-3 w-full overflow-hidden rounded-full bg-surface-2">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${Math.min(ratio, 1) * 100}%`,
-                        background: over ? "var(--color-expense)" : "var(--color-accent)",
-                      }}
-                    />
+                <div className="grid items-center gap-5 sm:grid-cols-2">
+                  <CategoryDonut data={byCategory} />
+                  <div className="space-y-2">
+                    {byCategory.map((c) => (
+                      <div key={c.name} className="flex items-center gap-3">
+                        <span
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-white"
+                          style={{ background: colorOf(c.color) }}
+                        >
+                          <CategoryIcon name={c.icon} size={14} />
+                        </span>
+                        <span className="flex-1 truncate text-[13px]">{c.name}</span>
+                        <span className="text-[12px] text-text-tertiary tabular-nums">
+                          {totalExpense > 0 ? Math.round((c.amount / totalExpense) * 100) : 0}%
+                        </span>
+                        <span className="w-20 text-right text-[13px] font-semibold tabular-nums">
+                          {formatMoney(c.amount, currency)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="mt-2.5 flex items-center justify-between text-[14px]">
-                    <span className="text-text-secondary tabular-nums">
-                      {formatMoney(totalBudget.spent, currency)} / {formatMoney(totalBudget.amount, currency)}
-                    </span>
-                    <span
-                      className={`font-semibold tabular-nums ${over ? "text-expense" : "text-income"}`}
-                    >
-                      {over ? `${formatMoney(-remaining, currency)} 超過` : `残り ${formatMoney(remaining)}`}
-                    </span>
-                  </div>
-                </>
+                </div>
               );
             })()}
           </CardBody>

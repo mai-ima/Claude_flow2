@@ -1,5 +1,5 @@
 import "server-only";
-import { monthSummary, recentTransactions } from "@/modules/transactions/queries";
+import { monthSummary, recentTransactions, expenseByCategory } from "@/modules/transactions/queries";
 import { listSubscriptions, subscriptionTotals } from "@/modules/subscriptions/queries";
 import { listBudgetsWithSpending } from "@/modules/budgets/queries";
 import { detectWaste } from "@/modules/subscriptions/waste-detect";
@@ -17,12 +17,13 @@ export async function getDashboardData(
   now: Date = new Date(),
 ) {
   const showBudget = canUse(tier, "budgets");
-  const [summary, subTotals, subs, recent, budgetData] = await Promise.all([
+  const [summary, subTotals, subs, recent, budgetData, byCategory] = await Promise.all([
     monthSummary(ledgerId, now),
     subscriptionTotals(ledgerId),
     listSubscriptions(ledgerId),
     recentTransactions(ledgerId, 5),
     showBudget ? listBudgetsWithSpending(ledgerId, now) : Promise.resolve(null),
+    expenseByCategory(ledgerId, now),
   ]);
 
   const upcoming = subs
@@ -38,6 +39,7 @@ export async function getDashboardData(
     summary,
     subTotals,
     totalBudget: budgetData?.total ?? null,
+    byCategory: byCategory.slice(0, 6),
     upcoming,
     wasteful,
     recent,
