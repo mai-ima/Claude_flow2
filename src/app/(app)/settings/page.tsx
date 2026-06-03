@@ -12,7 +12,7 @@ import {
   DangerZone,
   DataTools,
 } from "@/modules/account";
-import { FamilySharing } from "@/modules/ledgers";
+import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
 import { PLANS, tierAtLeast } from "@/lib/plans";
 import { isStripeEnabled } from "@/lib/env";
@@ -41,6 +41,15 @@ export default async function SettingsPage() {
       <div className="space-y-6">
         <ListGroup title="プロフィール" padded>
           <ProfileForm name={ctx.user.name ?? ""} wage={ctx.user.assumedHourlyWage} />
+        </ListGroup>
+
+        <ListGroup title="帳簿" padded>
+          <LedgerSettingsForm
+            ledgerId={ctx.ledgerId}
+            name={ctx.ledger.name}
+            currency={ctx.currency}
+            canEdit={ctx.role === "OWNER"}
+          />
         </ListGroup>
 
         <ListGroup title="外観" padded>
@@ -111,7 +120,7 @@ export default async function SettingsPage() {
         </ListGroup>
 
         <p className="pt-2 text-center text-[12px] text-text-tertiary">
-          {SITE.name} ・ ベータ v1.2
+          {SITE.name} ・ ベータ v1.2.1
         </p>
       </div>
     </PageContainer>

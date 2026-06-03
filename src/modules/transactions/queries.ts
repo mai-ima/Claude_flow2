@@ -3,11 +3,28 @@ import type { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
 import { monthRange } from "@/lib/date";
 
+/**
+ * 取引一覧の取得フィールド。UI が使う列のみに絞る（過剰な include を避け、
+ * createdBy で User 全体＝passwordHash 等を引かないようにする）。
+ */
+const txnListSelect = {
+  id: true,
+  type: true,
+  amount: true,
+  occurredAt: true,
+  memo: true,
+  categoryId: true,
+  paymentMethodId: true,
+  category: { select: { name: true, icon: true } },
+  paymentMethod: { select: { name: true } },
+  createdBy: { select: { name: true } },
+} satisfies Prisma.TransactionSelect;
+
 export async function listTransactions(ledgerId: string, month: Date) {
   const { start, end } = monthRange(month);
   return db.transaction.findMany({
     where: { ledgerId, occurredAt: { gte: start, lte: end } },
-    include: { category: true, paymentMethod: true, createdBy: true },
+    select: txnListSelect,
     orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
   });
 }
@@ -46,7 +63,7 @@ export async function searchTransactions(ledgerId: string, f: TxnFilter) {
   const [items, total, grouped] = await Promise.all([
     db.transaction.findMany({
       where,
-      include: { category: true, paymentMethod: true, createdBy: true },
+      select: txnListSelect,
       orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,

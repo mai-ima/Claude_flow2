@@ -70,32 +70,46 @@ export interface ReminderItem {
  */
 export async function notifyDueRenewals(now: Date = new Date()): Promise<number> {
   const reminders = await dueReminders(now);
-  let created = 0;
-  for (const r of reminders) {
-    const recent = await db.notification.findFirst({
-      where: {
-        userId: r.ownerUserId,
-        type: "RENEWAL",
-        body: { contains: r.name },
-        createdAt: { gte: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000) },
-      },
-    });
-    if (recent) continue;
-    await db.notification.create({
-      data: {
-        userId: r.ownerUserId,
-        type: "RENEWAL",
-        title: "サブスクの更新が近づいています",
-        body:
-          r.daysUntil === 0
-            ? `${r.name} は本日更新されます。`
-            : `${r.name} はあと${r.daysUntil}日で更新されます。`,
-        href: "/subscriptions",
-      },
-    });
-    created++;
+  if (reminders.length === 0) return 0;
+
+  // 直近5日の RENEWAL 通知を対象ユーザーぶん一括取得（ループ内 N+1 を回避）。
+  const since = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+  const userIds = [...new Set(reminders.map((r) => r.ownerUserId))];
+  const recent = await db.notification.findMany({
+    where: { userId: { in: userIds }, type: "RENEWAL", createdAt: { gte: since } },
+    select: { userId: true, body: true },
+  });
+  const bodiesByUser = new Map<string, string[]>();
+  for (const n of recent) {
+    const arr = bodiesByUser.get(n.userId) ?? [];
+    arr.push(n.body);
+    bodiesByUser.set(n.userId, arr);
   }
-  return created;
+
+  const toCreate = [];
+  for (const r of reminders) {
+    const bodies = bodiesByUser.get(r.ownerUserId) ?? [];
+    // 同一サブスク名の通知が直近にあれば重複作成しない（同一バッチ内の重複も抑止）。
+    if (bodies.some((b) => b.includes(r.name))) continue;
+    const body =
+      r.daysUntil === 0
+        ? `${r.name} は本日更新されます。`
+        : `${r.name} はあと${r.daysUntil}日で更新されます。`;
+    toCreate.push({
+      userId: r.ownerUserId,
+      type: "RENEWAL",
+      title: "サブスクの更新が近づいています",
+      body,
+      href: "/subscriptions",
+    });
+    bodies.push(body);
+    bodiesByUser.set(r.ownerUserId, bodies);
+  }
+
+  if (toCreate.length > 0) {
+    await db.notification.createMany({ data: toCreate });
+  }
+  return toCreate.length;
 }
 
 /** リマインダー対象（更新が reminderDaysBefore 以内）を列挙。 */

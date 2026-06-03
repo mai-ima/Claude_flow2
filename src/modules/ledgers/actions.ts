@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
 import { requireLedgerMember, setActiveLedger } from "@/lib/ledger-access";
 import { PLANS, canUse } from "@/lib/plans";
-import type { PlanTier } from "@/lib/enums";
+import { Currency, type PlanTier } from "@/lib/enums";
 
 async function userTier(userId: string): Promise<PlanTier> {
   const b = await db.billingProfile.findUnique({ where: { userId } });
@@ -41,6 +41,24 @@ export const createPod = authedAction(
     await setActiveLedger(ledger.id);
     revalidatePath("/", "layout");
     return { id: ledger.id };
+  },
+);
+
+export const updateLedgerSettings = authedAction(
+  z.object({
+    ledgerId: z.string(),
+    name: z.string().min(1, "名前を入力してください。").max(40),
+    currency: Currency,
+  }),
+  async ({ ledgerId, name, currency }, user) => {
+    await requireLedgerMember(ledgerId, user.id, "OWNER");
+    await db.ledger.update({
+      where: { id: ledgerId },
+      data: { name: name.trim(), currency },
+    });
+    // 通貨は全画面の金額表示に影響するためレイアウト全体を再検証。
+    revalidatePath("/", "layout");
+    return { ok: true };
   },
 );
 

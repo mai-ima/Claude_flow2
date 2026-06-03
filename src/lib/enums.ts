@@ -29,6 +29,18 @@ export type MemberRole = z.infer<typeof MemberRole>;
 export const PaymentMethodType = z.enum(["CARD", "BANK", "CASH", "EMONEY"]);
 export type PaymentMethodType = z.infer<typeof PaymentMethodType>;
 
+export const Currency = z.enum(["JPY", "USD", "EUR", "GBP", "KRW", "CNY"]);
+export type Currency = z.infer<typeof Currency>;
+
+export const CURRENCY_LABEL: Record<Currency, string> = {
+  JPY: "日本円 (¥)",
+  USD: "米ドル ($)",
+  EUR: "ユーロ (€)",
+  GBP: "英ポンド (£)",
+  KRW: "韓国ウォン (₩)",
+  CNY: "人民元 (元)",
+};
+
 export const CYCLE_LABEL: Record<BillingCycle, string> = {
   MONTHLY: "月額",
   YEARLY: "年額",

@@ -1,11 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { deleteAccountAction } from "../actions";
 
 export function DangerZone() {
   const [confirming, setConfirming] = useState(false);
+  const [pending, start] = useTransition();
+  const [error, setError] = useState<string>();
+
+  function remove() {
+    setError(undefined);
+    start(async () => {
+      const res = await deleteAccountAction({});
+      if (res.ok) {
+        // セッションは削除済み。完全リロードで状態を破棄してトップへ。
+        window.location.assign("/");
+      } else {
+        setError(res.error);
+      }
+    });
+  }
 
   return (
     <div>
@@ -19,15 +34,14 @@ export function DangerZone() {
             アカウントとすべてのデータ（帳簿・取引・サブスク・予算）が完全に削除されます。この操作は取り消せません。
           </p>
           <div className="flex gap-2">
-            <form action={deleteAccountAction}>
-              <Button type="submit" variant="destructive" size="sm">
-                完全に削除する
-              </Button>
-            </form>
-            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+            <Button variant="destructive" size="sm" onClick={remove} disabled={pending}>
+              {pending ? "削除中…" : "完全に削除する"}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)} disabled={pending}>
               キャンセル
             </Button>
           </div>
+          {error && <p className="text-[13px] text-expense">{error}</p>}
         </div>
       )}
     </div>

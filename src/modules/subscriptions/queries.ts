@@ -38,13 +38,17 @@ export async function subscriptionsByPaymentMethod(ledgerId: string) {
       orderBy: { amount: "desc" },
     }),
   ]);
-  const groups = methods.map((m) => ({
-    method: m,
-    subs: subs.filter((s) => s.paymentMethodId === m.id),
-    monthly: subs
-      .filter((s) => s.paymentMethodId === m.id)
-      .reduce((sum, s) => sum + toMonthlyAmount(s.amount, s.cycle as BillingCycle), 0),
-  }));
+  const groups = methods.map((m) => {
+    const methodSubs = subs.filter((s) => s.paymentMethodId === m.id);
+    return {
+      method: m,
+      subs: methodSubs,
+      monthly: methodSubs.reduce(
+        (sum, s) => sum + toMonthlyAmount(s.amount, s.cycle as BillingCycle),
+        0,
+      ),
+    };
+  });
   const unassigned = subs.filter((s) => !s.paymentMethodId);
   return { groups, unassigned };
 }

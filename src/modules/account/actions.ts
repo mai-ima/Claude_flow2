@@ -1,12 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
 import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
-import { getCurrentUser, signOut } from "@/lib/auth";
+import { signOut } from "@/lib/auth";
 
 export const updateProfile = authedAction(
   z.object({
@@ -91,11 +90,9 @@ export const toggleArchiveCategory = authedAction(
   },
 );
 
-/** アカウント削除（関連データもカスケード削除）。完了後トップへ。 */
-export async function deleteAccountAction() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
+/** アカウント削除（関連データもカスケード削除）。遷移はクライアント側で行う。 */
+export const deleteAccountAction = authedAction(z.object({}), async (_input, user) => {
   await db.user.delete({ where: { id: user.id } });
   await signOut();
-  redirect("/");
-}
+  return { ok: true };
+});
