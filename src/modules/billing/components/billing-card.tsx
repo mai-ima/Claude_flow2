@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 import { PLANS } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
 
@@ -14,6 +15,7 @@ export function BillingCard({
   stripeEnabled: boolean;
 }) {
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
   const plan = PLANS[tier];
 
   async function portal() {
@@ -22,7 +24,7 @@ export function BillingCard({
       const res = await fetch("/api/stripe/portal", { method: "POST" });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else alert(data.message ?? "現在ご利用いただけません。");
+      else toast.error(data.message ?? "現在ご利用いただけません。");
     } finally {
       setLoading(false);
     }

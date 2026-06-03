@@ -6,6 +6,8 @@ import { TransactionSheet, type TxnFormValue } from "./transaction-sheet";
 import { deleteTransaction } from "../actions";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/cn";
@@ -48,6 +50,8 @@ export function TransactionsClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [sheetOpen, setSheetOpen] = useState(
     () => canEdit && searchParams.get("new") === "1",
   );
@@ -71,14 +75,21 @@ export function TransactionsClient({
     });
     setSheetOpen(true);
   }
-  function remove(id: string) {
-    if (!confirm("この記録を削除しますか？")) return;
+  async function remove(id: string) {
+    const ok = await confirm({
+      title: "この記録を削除しますか？",
+      body: "削除すると元に戻せません。",
+      confirmText: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
     start(async () => {
       const res = await deleteTransaction({ id });
       if (!res.ok) {
-        alert(res.error);
+        toast.error(res.error);
         return;
       }
+      toast.success("記録を削除しました");
       router.refresh();
     });
   }

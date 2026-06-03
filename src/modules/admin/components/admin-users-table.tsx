@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ShieldIcon, TrashIcon } from "@/components/icons";
 import { setUserTier, toggleAdmin, deleteUser } from "../actions";
 import { cn } from "@/lib/cn";
@@ -25,6 +26,7 @@ export function AdminUsersTable({
   selfId: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string>();
 
@@ -42,8 +44,14 @@ export function AdminUsersTable({
       router.refresh();
     });
   }
-  function remove(userId: string, email: string | null) {
-    if (!confirm(`${email ?? "このユーザー"} を削除しますか？ 関連データもすべて削除されます。`)) return;
+  async function remove(userId: string, email: string | null) {
+    const ok = await confirm({
+      title: `${email ?? "このユーザー"} を削除しますか？`,
+      body: "関連データもすべて削除されます。この操作は取り消せません。",
+      confirmText: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
     start(async () => {
       const res = await deleteUser({ userId });
       if (!res.ok) setMsg(res.error);

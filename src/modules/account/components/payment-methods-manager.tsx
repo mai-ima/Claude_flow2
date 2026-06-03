@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CardIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { PAYMENT_TYPE_LABEL, type PaymentMethodType } from "@/lib/enums";
 import { createPaymentMethod, deletePaymentMethod } from "../actions";
@@ -19,6 +21,8 @@ const COLORS = ["blue", "purple", "pink", "teal", "green", "orange", "gray"];
 
 export function PaymentMethodsManager({ methods }: { methods: PM[] }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [pending, start] = useTransition();
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: "", type: "CARD" as PaymentMethodType, color: "blue" });
@@ -33,10 +37,21 @@ export function PaymentMethodsManager({ methods }: { methods: PM[] }) {
       }
     });
   }
-  function remove(id: string) {
-    if (!confirm("削除しますか？（紐づくサブスク・取引は支払い方法が未設定になります）")) return;
+  async function remove(id: string) {
+    const ok = await confirm({
+      title: "この支払い方法を削除しますか？",
+      body: "紐づくサブスク・取引は、支払い方法が未設定になります。",
+      confirmText: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
     start(async () => {
-      await deletePaymentMethod({ id });
+      const res = await deletePaymentMethod({ id });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("削除しました");
       router.refresh();
     });
   }

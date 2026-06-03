@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select } from "@/components/ui/field";
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { TargetIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
@@ -50,6 +52,8 @@ export function GoalsClient({
   totalTarget: number;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [, start] = useTransition();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [contribFor, setContribFor] = useState<GoalItem | null>(null);
@@ -98,14 +102,20 @@ export function GoalsClient({
       } else setError(res.error);
     });
   }
-  function remove(id: string) {
-    if (!confirm("この目標を削除しますか？")) return;
+  async function remove(id: string) {
+    const ok = await confirm({
+      title: "この目標を削除しますか？",
+      confirmText: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
     start(async () => {
       const res = await deleteGoal({ id });
       if (!res.ok) {
-        alert(res.error);
+        toast.error(res.error);
         return;
       }
+      toast.success("目標を削除しました");
       router.refresh();
     });
   }

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CategoryDonut } from "@/components/ui/chart/charts";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { BudgetGauge } from "@/components/app/budget-gauge";
 import { CategoryIcon, TargetIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
@@ -120,6 +122,8 @@ export function BudgetsClient({
   currency?: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [, start] = useTransition();
   const [error, setError] = useState<string>();
@@ -153,14 +157,20 @@ export function BudgetsClient({
       }
     });
   }
-  function remove(id: string) {
-    if (!confirm("この予算を削除しますか？")) return;
+  async function remove(id: string) {
+    const ok = await confirm({
+      title: "この予算を削除しますか？",
+      confirmText: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
     start(async () => {
       const res = await deleteBudget({ id });
       if (!res.ok) {
-        alert(res.error);
+        toast.error(res.error);
         return;
       }
+      toast.success("予算を削除しました");
       router.refresh();
     });
   }

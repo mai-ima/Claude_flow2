@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Segmented } from "@/components/ui/segmented";
+import { useToast } from "@/components/ui/toast";
 import { CheckIcon } from "@/components/icons";
 import { PLAN_LIST } from "@/lib/plans";
 import { formatMoney } from "@/lib/money";
@@ -21,6 +22,7 @@ export function PricingTable({
   const [cycle, setCycle] = useState<"monthly" | "yearly">("yearly");
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
+  const toast = useToast();
 
   async function subscribe(tier: string) {
     if (!isAuthed) {
@@ -36,7 +38,7 @@ export function PricingTable({
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else alert(data.message ?? "現在この操作は利用できません。");
+      else toast.error(data.message ?? "現在この操作は利用できません。");
     } finally {
       setLoading(null);
     }

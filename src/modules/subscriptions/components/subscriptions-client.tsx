@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   CategoryIcon,
   PlusIcon,
@@ -86,6 +88,8 @@ export function SubscriptionsClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [view, setView] = useState<"list" | "stack" | "calendar">("list");
   const [sortBy, setSortBy] = useState<"renewal" | "amount" | "name">("renewal");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "PAUSED" | "CANCELED">("ALL");
@@ -111,14 +115,20 @@ export function SubscriptionsClient({
       router.refresh();
     });
   }
-  function remove(id: string) {
-    if (!confirm("このサブスクを削除しますか？")) return;
+  async function remove(id: string) {
+    const ok = await confirm({
+      title: "このサブスクを削除しますか？",
+      confirmText: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
     start(async () => {
       const res = await deleteSubscription({ id });
       if (!res.ok) {
-        alert(res.error);
+        toast.error(res.error);
         return;
       }
+      toast.success("サブスクを削除しました");
       router.refresh();
     });
   }
