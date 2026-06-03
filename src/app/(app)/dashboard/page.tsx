@@ -24,6 +24,7 @@ import {
 } from "@/components/icons";
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
+import { buildActivityRings } from "@/lib/activity-rings";
 import { formatDate, formatMonth } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
 import { clientEnv } from "@/lib/env";
@@ -45,8 +46,6 @@ export default async function DashboardPage({
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
-  // 収支バランス（収入を基準にした支出の割合）
-  const balanceMax = Math.max(summary.income, summary.expense, 1);
 
   return (
     <PageContainer>
@@ -161,36 +160,53 @@ export default async function DashboardPage({
         </Card>
       </div>
 
-      {/* 収支バランス（収入と支出の割合を一目で） */}
-      {(summary.income > 0 || summary.expense > 0) && (
-        <Card className="mb-5 p-4">
-          <div className="mb-2.5 flex items-center justify-between text-[13px]">
-            <span className="font-medium">今月の収支</span>
-            <span
-              className={`font-semibold tabular-nums ${
-                summary.balance >= 0 ? "text-income" : "text-expense"
-              }`}
-            >
-              {summary.balance >= 0 ? "+" : "−"}
-              {formatMoney(Math.abs(summary.balance), currency)}
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
-              <div
-                className="h-full rounded-full bg-income transition-all duration-500"
-                style={{ width: `${(summary.income / balanceMax) * 100}%` }}
-              />
-            </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-2">
-              <div
-                className="h-full rounded-full bg-expense transition-all duration-500"
-                style={{ width: `${(summary.expense / balanceMax) * 100}%` }}
-              />
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* 今月のアクティビティ（Apple フィットネス風 3 重リング） */}
+      {(() => {
+        const { rings, show } = buildActivityRings(summary, totalBudget, subTotals.monthly);
+        if (!show) return null;
+        const savings = rings.find((r) => r.key === "savings")!;
+        return (
+          <Card className="mb-5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>今月のアクティビティ</CardTitle>
+                <Badge tone="accent" size="sm">
+                  {formatMonth(month)}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardBody>
+              <div className="flex items-center gap-6">
+                <ActivityRing
+                  size={150}
+                  thickness={13}
+                  tracks={rings.map((r) => ({ value: r.value, color: r.color }))}
+                >
+                  <div>
+                    <div className="text-[11px] text-text-tertiary">貯蓄</div>
+                    <div className="text-[17px] font-bold leading-tight tabular-nums">
+                      {formatMoney(savings.amount, currency)}
+                    </div>
+                  </div>
+                </ActivityRing>
+                <div className="flex-1 space-y-3 text-[13px]">
+                  {rings.map((r) => (
+                    <div key={r.key} className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-text-secondary">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />
+                        {r.label}
+                      </span>
+                      <span className="font-semibold tabular-nums">
+                        {Math.round(r.value * 100)}% ・ {formatMoney(r.amount, currency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        );
+      })()}
 
       {/* 予算の進捗（PLUS 以上・全体予算が設定済みの場合） */}
       {totalBudget && (
