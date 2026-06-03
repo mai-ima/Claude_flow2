@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
-import { canUse } from "@/lib/plans";
+import { canUse, PLANS } from "@/lib/plans";
+import { clientEnv } from "@/lib/env";
+import { AdSlot } from "@/components/ads/ad-slot";
 import {
   listSubscriptions,
   subscriptionTotals,
@@ -144,6 +146,13 @@ export default async function SubscriptionsPage() {
         canEdit={canEdit}
         isPro={tier === "PRO"}
         canUseReminders={canUse(tier, "reminders")}
+        subLimit={PLANS[tier].maxSubscriptions}
+      />
+
+      <AdSlot
+        tier={tier}
+        adsenseClient={clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT}
+        className="mt-6"
       />
     </PageContainer>
   );

@@ -76,6 +76,7 @@ export function SubscriptionsClient({
   canEdit,
   isPro,
   canUseReminders = false,
+  subLimit = null,
 }: {
   items: SubItem[];
   stack: { groups: StackGroup[]; unassigned: StackGroup | null };
@@ -87,6 +88,7 @@ export function SubscriptionsClient({
   canEdit: boolean;
   isPro: boolean;
   canUseReminders?: boolean;
+  subLimit?: number | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -156,8 +158,33 @@ export function SubscriptionsClient({
       cancelSteps: it.cancelSteps,
     }));
 
+  const remaining = subLimit !== null ? subLimit - items.length : null;
+  const nearLimit = remaining !== null && remaining <= 1;
+
   return (
     <div>
+      {/* FREE: 上限が近いときのアップグレード訴求 */}
+      {nearLimit && (
+        <Card className="mb-5 flex items-center gap-3 border-accent/30 bg-accent/[0.06] p-4">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent">
+            <SparklesIcon size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-semibold">
+              {remaining! <= 0
+                ? "無料プランの登録上限に達しました"
+                : `無料プランはあと ${remaining} 件まで`}
+            </div>
+            <p className="text-[13px] text-text-secondary">
+              プラスにすると、サブスクは無制限。広告も消えて、更新リマインダーも使えます。
+            </p>
+          </div>
+          <ButtonLink href="/billing" size="sm">
+            プラスにする
+          </ButtonLink>
+        </Card>
+      )}
+
       {/* totals */}
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card className="p-4">

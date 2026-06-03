@@ -12,6 +12,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { TrendAreaChart, CategoryDonut } from "@/components/ui/chart/charts";
 import { colorOf } from "@/lib/colors";
 import { CategoryIcon, ChartIcon } from "@/components/icons";
+import { AdSlot } from "@/components/ads/ad-slot";
+import { clientEnv } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { pageMetadata } from "@/lib/seo";
 
@@ -181,6 +183,12 @@ export default async function ReportsPage() {
           </div>
         </div>
       )}
+
+      <AdSlot
+        tier={tier}
+        adsenseClient={clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT}
+        className="mt-6"
+      />
     </PageContainer>
   );
 }
