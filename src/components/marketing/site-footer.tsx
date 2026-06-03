@@ -13,19 +13,28 @@ const COLUMNS = [
     ],
   },
   {
-    title: "リソース",
+    title: "会社",
     links: [
+      { href: "/about", label: "Tsumiki について" },
+      { href: "/faq", label: "よくある質問" },
       { href: "/changelog", label: "リリースノート" },
-      { href: "/help", label: "ヘルプセンター" },
-      { href: "/contact", label: "お問い合わせ" },
     ],
   },
   {
     title: "サポート",
     links: [
+      { href: "/help", label: "ヘルプセンター" },
+      { href: "/contact", label: "お問い合わせ" },
+    ],
+  },
+  {
+    title: "法務",
+    links: [
       { href: "/legal/privacy", label: "プライバシーポリシー" },
       { href: "/legal/terms", label: "利用規約" },
       { href: "/legal/tokushoho", label: "特定商取引法に基づく表記" },
+      { href: "/legal/security", label: "セキュリティ" },
+      { href: "/legal/cookies", label: "Cookie ポリシー" },
     ],
   },
 ];
@@ -33,7 +42,7 @@ const COLUMNS = [
 export function SiteFooter() {
   return (
     <footer className="mt-24 border-t border-border-subtle bg-surface-1">
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
         <div className="sm:col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 font-semibold">
             <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent text-white">

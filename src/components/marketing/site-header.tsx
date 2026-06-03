@@ -7,6 +7,7 @@ import { SITE } from "@/lib/seo";
 const NAV = [
   { href: "/features", label: "機能" },
   { href: "/pricing", label: "料金プラン" },
+  { href: "/about", label: "会社" },
 ];
 
 export function SiteHeader() {

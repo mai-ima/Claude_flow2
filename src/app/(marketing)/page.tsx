@@ -217,7 +217,7 @@ export default function LandingPage() {
         <div className="mt-12 grid gap-5 sm:grid-cols-3">
           {[
             { n: "01", icon: WalletIcon, title: "記録する", body: "収支とサブスクを、ハーフシートからサッと入力。" },
-            { n: "02", icon: ChartIcon, title: "見える化", body: "コストタイムやグラフで、お金の流れが一目で。" },
+            { n: "02", icon: ChartIcon, title: "見える化", body: "予算は円グラフ、進捗は Apple フィットネス風リングで一目に。" },
             { n: "03", icon: SparklesIcon, title: "見直す", body: "無駄なサブスクを発見して、固定費を最適化。" },
           ].map((s) => (
             <Card key={s.n} className="relative p-7 hover-lift">
@@ -318,6 +318,11 @@ export default function LandingPage() {
             </details>
           ))}
         </Reveal>
+        <p className="mt-6 text-center text-[14px]">
+          <a href="/faq" className="font-medium text-accent transition hover:opacity-70">
+            すべての質問を見る →
+          </a>
+        </p>
       </section>
 
       {/* CTA */}

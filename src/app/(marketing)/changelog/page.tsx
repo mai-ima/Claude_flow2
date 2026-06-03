@@ -11,6 +11,22 @@ export const metadata: Metadata = pageMetadata({
 
 const RELEASES = [
   {
+    version: "ベータ v1.2.2",
+    date: "2026年6月",
+    tag: "Beta",
+    sections: [
+      {
+        h: "サイト・コンテンツ",
+        items: [
+          "会社情報ページ（/about）とよくある質問ページ（/faq）を新設",
+          "セキュリティ・Cookie ポリシーのページを追加",
+          "プライバシーポリシー・利用規約・特定商取引法に基づく表記を本格的な内容に刷新",
+          "フッター・ナビゲーションを再編し、各ページへの導線を整理",
+        ],
+      },
+    ],
+  },
+  {
     version: "ベータ v1.2.1",
     date: "2026年6月",
     tag: "Beta",

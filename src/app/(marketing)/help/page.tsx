@@ -40,9 +40,14 @@ export default function HelpPage() {
 
       <div className="mt-10 rounded-2xl bg-surface-1 p-6 text-center">
         <p className="text-[15px] text-text-secondary">解決しませんでしたか？</p>
-        <ButtonLink href="/contact" variant="gray" className="mt-3">
-          お問い合わせ
-        </ButtonLink>
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <ButtonLink href="/faq" variant="gray">
+            よくある質問
+          </ButtonLink>
+          <ButtonLink href="/contact" variant="gray">
+            お問い合わせ
+          </ButtonLink>
+        </div>
       </div>
 
       <p className="mt-8 text-center text-[13px] text-text-tertiary">

@@ -9,6 +9,8 @@ import { cn } from "@/lib/cn";
 const LINKS = [
   { href: "/features", label: "機能" },
   { href: "/pricing", label: "料金プラン" },
+  { href: "/about", label: "会社" },
+  { href: "/faq", label: "よくある質問" },
   { href: "/login", label: "ログイン" },
 ];
 
