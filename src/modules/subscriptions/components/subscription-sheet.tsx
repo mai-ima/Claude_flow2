@@ -6,6 +6,10 @@ import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
+import { Switch } from "@/components/ui/switch";
+import { ButtonLink } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
+import { BellIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { CYCLE_LABEL, STATUS_LABEL } from "@/lib/enums";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
@@ -56,14 +60,19 @@ export function SubscriptionSheet({
   categories,
   paymentMethods,
   initial,
+  currency = "JPY",
+  canUseReminders = false,
 }: {
   open: boolean;
   onClose: () => void;
   categories: Option[];
   paymentMethods: Option[];
   initial?: SubFormValue;
+  currency?: string;
+  canUseReminders?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string>();
   const [v, setV] = useState<SubFormValue>(initial ?? defaults());
@@ -77,6 +86,10 @@ export function SubscriptionSheet({
       setError(undefined);
     }
   }
+
+  const reminderOptions = Array.from(
+    new Set([0, 1, 2, 3, 5, 7, 10, 14, 30, v.reminderDaysBefore]),
+  ).sort((a, b) => a - b);
 
   function onName(name: string) {
     const match = SERVICE_CATALOG.find((s) => s.name === name);
@@ -104,6 +117,7 @@ export function SubscriptionSheet({
         ? await updateSubscription(payload)
         : await createSubscription(payload);
       if (res.ok) {
+        toast.success(v.id ? "サブスクを更新しました" : "サブスクを追加しました");
         onClose();
         router.refresh();
       } else {
@@ -179,6 +193,7 @@ export function SubscriptionSheet({
                 : v.cycle === "WEEKLY"
                   ? v.amount * 52
                   : v.amount * 4,
+            currency,
           )}
         </p>
 
@@ -231,15 +246,49 @@ export function SubscriptionSheet({
           </Field>
         </div>
 
-        <label className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-3">
+        {/* 更新リマインダー */}
+        {canUseReminders ? (
+          <Field
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                <BellIcon size={14} className="text-accent" />
+                更新リマインダー
+              </span>
+            }
+          >
+            <Select
+              value={String(v.reminderDaysBefore)}
+              onChange={(e) =>
+                setV((s) => ({ ...s, reminderDaysBefore: parseInt(e.target.value, 10) }))
+              }
+            >
+              {reminderOptions.map((n) => (
+                <option key={n} value={n}>
+                  {n === 0 ? "更新日の当日に通知" : `更新の${n}日前に通知`}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : (
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-4 py-3">
+            <span className="flex items-center gap-2 text-[14px] text-text-secondary">
+              <BellIcon size={16} className="text-text-tertiary" />
+              更新リマインダーはプラス以上で利用できます
+            </span>
+            <ButtonLink href="/billing" size="sm" variant="tinted">
+              プラン
+            </ButtonLink>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-3">
           <span className="text-[14px]">更新日に自動で家計簿へ記帳</span>
-          <input
-            type="checkbox"
+          <Switch
             checked={v.autoPostTransaction}
-            onChange={(e) => setV((s) => ({ ...s, autoPostTransaction: e.target.checked }))}
-            className="h-5 w-5 accent-[var(--accent)]"
+            onChange={(checked) => setV((s) => ({ ...s, autoPostTransaction: checked }))}
+            aria-label="更新日に自動で家計簿へ記帳"
           />
-        </label>
+        </div>
 
         <Field label="メモ（任意）">
           <Textarea

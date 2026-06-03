@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
+import { canUse } from "@/lib/plans";
 import {
   listSubscriptions,
   subscriptionTotals,
@@ -142,6 +143,7 @@ export default async function SubscriptionsPage() {
         paymentMethods={paymentMethods.map((p) => ({ id: p.id, name: p.name }))}
         canEdit={canEdit}
         isPro={tier === "PRO"}
+        canUseReminders={canUse(tier, "reminders")}
       />
     </PageContainer>
   );

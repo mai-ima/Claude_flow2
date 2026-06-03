@@ -75,6 +75,7 @@ export function SubscriptionsClient({
   paymentMethods,
   canEdit,
   isPro,
+  canUseReminders = false,
 }: {
   items: SubItem[];
   stack: { groups: StackGroup[]; unassigned: StackGroup | null };
@@ -85,6 +86,7 @@ export function SubscriptionsClient({
   paymentMethods: Option[];
   canEdit: boolean;
   isPro: boolean;
+  canUseReminders?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -378,6 +380,8 @@ export function SubscriptionsClient({
         categories={categories}
         paymentMethods={paymentMethods}
         initial={editing}
+        currency={currency}
+        canUseReminders={canUseReminders}
       />
 
       {reviewing && (
