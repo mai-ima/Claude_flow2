@@ -72,7 +72,7 @@ export async function notifyDueRenewals(now: Date = new Date()): Promise<number>
   const reminders = await dueReminders(now);
   if (reminders.length === 0) return 0;
 
-  // 直近5日の RENEWAL 通知を対象ユーザーぶん一括取得（ループ内 N+1 を回避）。
+  // 直近5日の RENEWAL 通知を対象ユーザー分まとめて取得（ループ内 N+1 を回避）。
   const since = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
   const userIds = [...new Set(reminders.map((r) => r.ownerUserId))];
   const recent = await db.notification.findMany({

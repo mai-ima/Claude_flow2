@@ -117,7 +117,7 @@ export default async function DashboardPage({
                   </span>
                 </div>
                 <p className="text-[12px] leading-relaxed text-text-tertiary">
-                  想定時給 {formatMoney(wage, currency)} で換算。支出は「働いた時間」何ぶんかで考えられます。
+                  想定時給 {formatMoney(wage, currency)} で換算。支出は「働いた時間」何分かで考えられます。
                 </p>
               </div>
             </div>

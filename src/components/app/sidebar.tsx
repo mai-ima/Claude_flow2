@@ -9,8 +9,8 @@ import { cn } from "@/lib/cn";
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-border-subtle bg-surface-1 md:flex">
-      <Link href="/dashboard" className="flex h-14 items-center gap-2 px-5 font-semibold">
+    <aside className="hidden w-60 shrink-0 self-start border-r border-border-subtle bg-surface-1 md:sticky md:top-0 md:flex md:h-screen md:flex-col">
+      <Link href="/dashboard" className="flex h-14 shrink-0 items-center gap-2 px-5 font-semibold">
         <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent text-white">
           <LogoMark size={20} />
         </span>
@@ -19,7 +19,7 @@ export function Sidebar() {
           BETA
         </span>
       </Link>
-      <nav className="flex-1 space-y-1 px-3 py-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-3">
         {NAV_ITEMS.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(item.href + "/");
