@@ -24,7 +24,7 @@ export function MonthSwitcher({ current }: { current: string }) {
       <button
         onClick={() => go(-1)}
         aria-label="前の月"
-        className="grid h-8 w-8 place-items-center rounded-lg text-text-secondary hover:bg-surface-2"
+        className="grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-surface-2"
       >
         <ChevronRightIcon size={18} className="rotate-180" />
       </button>
@@ -35,7 +35,7 @@ export function MonthSwitcher({ current }: { current: string }) {
         onClick={() => go(1)}
         aria-label="次の月"
         disabled={isCurrent}
-        className="grid h-8 w-8 place-items-center rounded-lg text-text-secondary hover:bg-surface-2 disabled:opacity-30"
+        className="grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-surface-2 disabled:opacity-30"
       >
         <ChevronRightIcon size={18} />
       </button>

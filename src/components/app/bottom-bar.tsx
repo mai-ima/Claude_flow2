@@ -21,7 +21,7 @@ export function BottomBar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition",
+                "flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition active:scale-95",
                 active ? "text-accent" : "text-text-tertiary",
               )}
             >

@@ -10,6 +10,7 @@ import {
   PaymentMethodsManager,
   CategoryManager,
   DangerZone,
+  DeleteAllData,
   DataTools,
 } from "@/modules/account";
 import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
@@ -114,13 +115,18 @@ export default async function SettingsPage() {
             <span className="text-[14px] text-text-secondary">メールアドレス</span>
             <span className="text-[14px] font-medium">{ctx.user.email}</span>
           </div>
+          {ctx.role === "OWNER" && (
+            <div className="border-t border-border-subtle pt-4">
+              <DeleteAllData />
+            </div>
+          )}
           <div className="border-t border-border-subtle pt-4">
             <DangerZone />
           </div>
         </ListGroup>
 
         <p className="pt-2 text-center text-[12px] text-text-tertiary">
-          {SITE.name} ・ ベータ v1.2.2
+          {SITE.name} ・ ベータ v1.2.2.1
         </p>
       </div>
     </PageContainer>

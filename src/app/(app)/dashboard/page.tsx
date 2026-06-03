@@ -176,7 +176,7 @@ export default async function DashboardPage({
               </div>
             </CardHeader>
             <CardBody>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
                 <ActivityRing
                   size={150}
                   thickness={13}

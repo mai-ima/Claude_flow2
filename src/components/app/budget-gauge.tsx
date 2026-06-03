@@ -41,7 +41,7 @@ export function BudgetGauge({
   const pct = Math.min(100, Math.round(ins.ratio * 100));
 
   return (
-    <div className="flex items-center gap-5">
+    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
       <ActivityRing size={size} thickness={thickness} tracks={[{ value: ins.ratio, color }]}>
         <div className="text-center">
           <div className="text-[10px] text-text-tertiary">{ins.over ? "超過" : "残り"}</div>

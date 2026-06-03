@@ -25,20 +25,17 @@ const ROWS: [string, string][] = [
 export default function TokushohoPage() {
   return (
     <LegalShell title="特定商取引法に基づく表記" updated="2026年6月3日">
-      <div className="overflow-hidden rounded-2xl border border-border-subtle">
-        <table className="w-full text-[14px]">
-          <tbody>
-            {ROWS.map(([k, v]) => (
-              <tr key={k} className="border-b border-border-subtle last:border-0">
-                <th className="w-40 bg-surface-2 px-4 py-3 text-left align-top font-medium text-text-primary">
-                  {k}
-                </th>
-                <td className="px-4 py-3 text-text-secondary">{v}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <dl className="overflow-hidden rounded-2xl border border-border-subtle text-[14px]">
+        {ROWS.map(([k, v]) => (
+          <div
+            key={k}
+            className="border-b border-border-subtle last:border-0 sm:grid sm:grid-cols-[10rem_1fr]"
+          >
+            <dt className="bg-surface-2 px-4 pt-3 pb-1 font-medium text-text-primary sm:py-3">{k}</dt>
+            <dd className="px-4 pb-3 pt-1 text-text-secondary sm:py-3">{v}</dd>
+          </div>
+        ))}
+      </dl>
       <p className="rounded-xl bg-surface-2 px-4 py-3 text-[13px] text-text-secondary">
         当サービスはベータ版です。運営責任者名・所在地は、法令に基づき請求があった場合に遅滞なく開示します。正式提供の開始にあたっては、実際の事業者情報を記載します。
       </p>

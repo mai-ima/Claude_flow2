@@ -53,7 +53,10 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border-subtle bg-glass px-4 backdrop-blur-xl backdrop-saturate-150">
+    <header
+      className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border-subtle bg-glass px-4 backdrop-blur-xl backdrop-saturate-150"
+      style={{ paddingTop: "env(safe-area-inset-top)", height: "calc(3.5rem + env(safe-area-inset-top))" }}
+    >
       <button
         onClick={() => setDrawerOpen(true)}
         aria-label="メニューを開く"

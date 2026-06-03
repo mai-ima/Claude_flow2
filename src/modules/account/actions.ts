@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
 import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
 import { signOut } from "@/lib/auth";
+import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 
 export const updateProfile = authedAction(
   z.object({
@@ -89,6 +90,29 @@ export const toggleArchiveCategory = authedAction(
     return { ok: true };
   },
 );
+
+/**
+ * アクティブな帳簿の全データを削除して初期状態に戻す（アカウントは残す）。
+ * 取引・サブスク・予算・目標・支払い方法を消し、カテゴリを既定値で再生成する。
+ */
+export const deleteAllDataAction = authedAction(z.object({}), async (_input, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id, "OWNER");
+  // 依存関係の順に削除（取引→サブスク/予算/目標→支払い方法→カテゴリ）→ 既定カテゴリを再生成。
+  await db.$transaction([
+    db.transaction.deleteMany({ where: { ledgerId } }),
+    db.subscription.deleteMany({ where: { ledgerId } }),
+    db.budget.deleteMany({ where: { ledgerId } }),
+    db.goal.deleteMany({ where: { ledgerId } }),
+    db.paymentMethod.deleteMany({ where: { ledgerId } }),
+    db.category.deleteMany({ where: { ledgerId } }),
+    db.category.createMany({
+      data: DEFAULT_CATEGORIES.map((c) => ({ ...c, ledgerId })),
+    }),
+  ]);
+  revalidatePath("/", "layout");
+  return { ok: true };
+});
 
 /** アカウント削除（関連データもカスケード削除）。遷移はクライアント側で行う。 */
 export const deleteAccountAction = authedAction(z.object({}), async (_input, user) => {

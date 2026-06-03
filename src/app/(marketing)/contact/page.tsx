@@ -1,52 +1,46 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
-import { BellIcon, ShieldIcon, SparklesIcon } from "@/components/icons";
+import { ContactForm } from "@/modules/contact";
 import { pageMetadata, CONTACT } from "@/lib/seo";
+import { isEmailEnabled } from "@/lib/env";
 
 export const metadata: Metadata = pageMetadata({
   title: "お問い合わせ",
-  description: "Tsumiki へのお問い合わせ・ご要望・不具合報告はこちら。",
+  description: "Tsumiki へのお問い合わせ・ご要望・不具合報告はこちら。フォームから直接ご連絡いただけます。",
   path: "/contact",
 });
-
-const CHANNELS = [
-  { icon: BellIcon, title: "サポート", body: "使い方や不具合のご相談", value: CONTACT.support },
-  { icon: SparklesIcon, title: "ご要望・ご意見", body: "あったらいいな、を教えてください", value: CONTACT.feedback },
-  { icon: ShieldIcon, title: "プライバシー", body: "データの取り扱いについて", value: CONTACT.privacy },
-];
 
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-2xl px-5 py-20">
       <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight">お問い合わせ</h1>
       <p className="mt-4 text-[17px] text-text-secondary">
-        ご質問・ご要望・不具合のご報告をお待ちしています。
+        ご質問・ご要望・不具合のご報告をお待ちしています。下のフォームからお送りください。
       </p>
 
-      <div className="mt-10 space-y-3">
-        {CHANNELS.map((c) => (
-          <Card key={c.title} className="flex items-center gap-4 p-5">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent">
-              <c.icon size={22} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[15px] font-semibold">{c.title}</div>
-              <div className="text-[13px] text-text-tertiary">{c.body}</div>
-            </div>
-            <a href={`mailto:${c.value}`} className="text-[14px] font-medium text-accent">
-              {c.value}
-            </a>
-          </Card>
-        ))}
+      <div className="mt-10">
+        <ContactForm emailEnabled={isEmailEnabled} />
       </div>
+
+      <p className="mt-6 text-center text-[13px] text-text-tertiary">
+        メールで直接ご連絡の場合は{" "}
+        <a href={`mailto:${CONTACT.support}`} className="text-accent">
+          {CONTACT.support}
+        </a>{" "}
+        まで。
+      </p>
 
       <div className="mt-10 rounded-2xl bg-surface-1 p-6 text-center">
         <p className="text-[15px] text-text-secondary">先によくある質問もご確認ください。</p>
-        <ButtonLink href="/help" variant="gray" className="mt-3">
-          ヘルプセンター
-        </ButtonLink>
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <ButtonLink href="/faq" variant="gray">
+            よくある質問
+          </ButtonLink>
+          <ButtonLink href="/help" variant="gray">
+            ヘルプセンター
+          </ButtonLink>
+        </div>
       </div>
 
       <p className="mt-8 text-center text-[13px] text-text-tertiary">

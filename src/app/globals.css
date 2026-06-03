@@ -125,6 +125,10 @@
 html {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* iOS: タップ時の灰色フラッシュを抑止 */
+  -webkit-tap-highlight-color: transparent;
+  /* スクロール連鎖・引っ張り更新の暴発を抑止（アプリ的挙動） */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -134,6 +138,15 @@ body {
   letter-spacing: -0.011em;
   /* iPhone セーフエリア */
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* タップ反応を機敏に（ダブルタップズーム遅延の除去） */
+button,
+a,
+summary,
+label,
+[role="button"] {
+  touch-action: manipulation;
 }
 
 /* アクセント色の滑らかな追従（テーマ/共有モード切替時） */
