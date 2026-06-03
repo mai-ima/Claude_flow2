@@ -56,10 +56,10 @@ const SECTIONS = [
 
 const MORE = [
   { icon: RepeatIcon, title: "自動記帳", body: "更新日が来たら、サブスクの支出を自動で家計簿へ。" },
-  { icon: BellIcon, title: "更新リマインダー", body: "請求の数日前に、静かにお知らせ。" },
+  { icon: BellIcon, title: "更新リマインダー", body: "更新の当日〜30日前まで、サブスクごとに通知タイミングを設定。アプリ内とメールで静かにお知らせ。" },
   { icon: TargetIcon, title: "予算・貯金目標", body: "予算は円グラフで一目。「1日あたり使える額」と達成ペースも。" },
   { icon: ChartIcon, title: "分析・レポート", body: "収支の推移やカテゴリ内訳を、合計・前月比つきの美しいグラフで。" },
-  { icon: SparklesIcon, title: "スマート解約アシスト", body: "主要サービスの解約ページへ最短で。" },
+  { icon: SparklesIcon, title: "スマート解約アシスト", body: "主要40以上のサービスに対応。解約ページへ最短でジャンプし、手順もその場で確認。" },
   { icon: ShieldIcon, title: "プライバシー", body: "データはあなたのもの。広告のために売りません。" },
 ];
 

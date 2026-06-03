@@ -1,6 +1,6 @@
 {
   "name": "tsumiki",
-  "version": "1.2.2-beta.5",
+  "version": "1.2.3-beta",
   "private": true,
   "scripts": {
     "dev": "next dev",

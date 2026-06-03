@@ -90,6 +90,12 @@ export function PricingTable({
                   </span>
                 )}
               </div>
+              {!isFree && cycle === "yearly" && plan.monthly * 12 > plan.yearly && (
+                <p className="mt-1 text-[13px] font-medium text-income">
+                  月あたり {formatMoney(Math.round(plan.yearly / 12))}・年間{" "}
+                  {formatMoney(plan.monthly * 12 - plan.yearly)} お得
+                </p>
+              )}
 
               <div className="mt-6">
                 {isFree ? (

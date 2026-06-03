@@ -131,7 +131,7 @@ export default async function SettingsPage() {
         </ListGroup>
 
         <p className="pt-2 text-center text-[12px] text-text-tertiary">
-          {SITE.name} ・ ベータ v1.2.2.5
+          {SITE.name} ・ ベータ v1.2.3
         </p>
       </div>
     </PageContainer>
