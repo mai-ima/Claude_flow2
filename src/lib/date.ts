@@ -52,3 +52,14 @@ export function daysSince(date: Date | null, from: Date = new Date()): number | 
 export function monthsUntil(date: Date, from: Date = new Date()): number {
   return differenceInCalendarMonths(date, from);
 }
+
+/**
+ * 指定した「毎月の実行日(1-28)」について、from より後（同日含まず）の
+ * 直近の実行日を返す。自動積立の次回日算出に用いる純関数。
+ */
+export function nextMonthlyDate(day: number, from: Date = new Date()): Date {
+  const d = Math.min(28, Math.max(1, Math.floor(day)));
+  const candidate = new Date(from.getFullYear(), from.getMonth(), d, 0, 0, 0, 0);
+  if (candidate > from) return candidate;
+  return new Date(from.getFullYear(), from.getMonth() + 1, d, 0, 0, 0, 0);
+}

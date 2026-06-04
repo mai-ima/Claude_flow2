@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { daysUntil } from "./date";
+import { daysUntil, monthRange } from "./date";
 import { renewalCatchup } from "@/modules/subscriptions/renewal";
 import type { BillingCycle } from "./enums";
 
@@ -52,6 +52,216 @@ export async function processRenewals(now: Date = new Date()): Promise<number> {
     }
   }
   return created;
+}
+
+/**
+ * nextRunAt が到来した繰り返し取引について、取りこぼし分も含め Transaction を
+ * 自動生成し、nextRunAt を次サイクルへ進める。生成件数を返す。
+ */
+export async function processRecurring(now: Date = new Date()): Promise<number> {
+  const due = await db.recurringTransaction.findMany({
+    where: { active: true, nextRunAt: { lte: now } },
+  });
+
+  let created = 0;
+  for (const r of due) {
+    const { occurrences, nextRenewalAt } = renewalCatchup(
+      r.nextRunAt,
+      r.cycle as BillingCycle,
+      now,
+    );
+    for (const occurredAt of occurrences) {
+      await db.transaction.create({
+        data: {
+          ledgerId: r.ledgerId,
+          createdByUserId: r.createdByUserId,
+          type: r.type,
+          amount: r.amount,
+          currency: r.currency,
+          occurredAt,
+          categoryId: r.categoryId,
+          paymentMethodId: r.paymentMethodId,
+          recurringTransactionId: r.id,
+          memo: r.memo ? `${r.memo}（定期）` : "定期取引",
+        },
+      });
+      created++;
+    }
+    if (occurrences.length > 0) {
+      await db.recurringTransaction.update({
+        where: { id: r.id },
+        data: { nextRunAt: nextRenewalAt, lastRunAt: occurrences[occurrences.length - 1] },
+      });
+    }
+  }
+  return created;
+}
+
+/** nextAutoContributionAt を翌月の同日へ進める（day は <=28 前提でクランプ不要）。 */
+function advanceMonthly(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, date.getDate(), 0, 0, 0, 0);
+}
+
+/**
+ * 自動積立が設定された目標について、到来分（取りこぼし含む）の GoalContribution を
+ * 作成し currentAmount を加算、nextAutoContributionAt を翌月へ進める。生成件数を返す。
+ */
+export async function processAutoContributions(now: Date = new Date()): Promise<number> {
+  const due = await db.goal.findMany({
+    where: {
+      autoContributionAmount: { not: null },
+      nextAutoContributionAt: { not: null, lte: now },
+    },
+  });
+
+  let created = 0;
+  for (const g of due) {
+    const amount = g.autoContributionAmount ?? 0;
+    if (amount <= 0 || !g.nextAutoContributionAt) continue;
+
+    let next = g.nextAutoContributionAt;
+    let added = 0;
+    let guard = 0;
+    while (next <= now && guard < 24) {
+      await db.goalContribution.create({
+        data: { goalId: g.id, amount, occurredAt: next, auto: true, note: "自動積立" },
+      });
+      added += amount;
+      created++;
+      next = advanceMonthly(next);
+      guard++;
+    }
+    if (added > 0) {
+      await db.goal.update({
+        where: { id: g.id },
+        data: { currentAmount: g.currentAmount + added, nextAutoContributionAt: next },
+      });
+    }
+  }
+  return created;
+}
+
+/** 予算超過アラートの閾値（割合・大きい順に判定）。 */
+const BUDGET_THRESHOLDS = [1, 0.8] as const;
+
+/**
+ * 各帳簿の当月実支出を予算と照合し、80%/100% 到達でアプリ内通知(BUDGET)を
+ * 帳簿オーナーへ作成。当月内・同一予算・同一閾値の重複は抑止。生成件数を返す。
+ */
+export async function notifyBudgetOverages(now: Date = new Date()): Promise<number> {
+  const budgets = await db.budget.findMany({
+    include: { ledger: { select: { ownerId: true } }, category: { select: { name: true } } },
+  });
+  if (budgets.length === 0) return 0;
+
+  const { start, end } = monthRange(now);
+  const ledgerIds = [...new Set(budgets.map((b) => b.ledgerId))];
+
+  // 当月の支出を帳簿×カテゴリで集計（全体予算用に帳簿合計も）。
+  const [byCat, totals, recent] = await Promise.all([
+    db.transaction.groupBy({
+      by: ["ledgerId", "categoryId"],
+      where: { ledgerId: { in: ledgerIds }, type: "EXPENSE", occurredAt: { gte: start, lte: end } },
+      _sum: { amount: true },
+    }),
+    db.transaction.groupBy({
+      by: ["ledgerId"],
+      where: { ledgerId: { in: ledgerIds }, type: "EXPENSE", occurredAt: { gte: start, lte: end } },
+      _sum: { amount: true },
+    }),
+    db.notification.findMany({
+      where: { type: "BUDGET", createdAt: { gte: start } },
+      select: { userId: true, body: true },
+    }),
+  ]);
+
+  const catSpent = new Map<string, number>();
+  for (const r of byCat) catSpent.set(`${r.ledgerId}:${r.categoryId ?? ""}`, r._sum.amount ?? 0);
+  const totalSpent = new Map<string, number>();
+  for (const r of totals) totalSpent.set(r.ledgerId, r._sum.amount ?? 0);
+  const recentBodies = new Map<string, string[]>();
+  for (const n of recent) {
+    const arr = recentBodies.get(n.userId) ?? [];
+    arr.push(n.body);
+    recentBodies.set(n.userId, arr);
+  }
+
+  const toCreate: { userId: string; ledgerId: string; type: string; title: string; body: string; href: string }[] = [];
+  for (const b of budgets) {
+    if (b.amount <= 0) continue;
+    const label = b.isTotalBudget || !b.categoryId ? "全体予算" : (b.category?.name ?? "カテゴリ予算");
+    const spent =
+      b.isTotalBudget || !b.categoryId
+        ? (totalSpent.get(b.ledgerId) ?? 0)
+        : (catSpent.get(`${b.ledgerId}:${b.categoryId}`) ?? 0);
+    const ratio = spent / b.amount;
+    const hit = BUDGET_THRESHOLDS.find((t) => ratio >= t);
+    if (!hit) continue;
+
+    const userId = b.ledger.ownerId;
+    const marker = hit === 1 ? "を超えました" : "の80%に達しました";
+    const body = `「${label}」が予算${marker}（${Math.round(ratio * 100)}%）。`;
+    const bodies = recentBodies.get(userId) ?? [];
+    // 同一予算・同一閾値の通知が当月内にあれば重複作成しない。
+    if (bodies.some((x) => x.includes(label) && x.includes(marker))) continue;
+
+    toCreate.push({ userId, ledgerId: b.ledgerId, type: "BUDGET", title: "予算アラート", body, href: "/budgets" });
+    bodies.push(body);
+    recentBodies.set(userId, bodies);
+  }
+
+  if (toCreate.length > 0) await db.notification.createMany({ data: toCreate });
+  return toCreate.length;
+}
+
+/**
+ * 無料体験(TRIAL)の終了が reminderDaysBefore 以内のサブスクについて、
+ * 終了通知(TRIAL_END)を作成。直近5日の同名通知があれば重複作成しない。
+ */
+export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
+  const subs = await db.subscription.findMany({
+    where: { status: "TRIAL", trialEndsAt: { not: null } },
+    include: { owner: { select: { id: true } } },
+  });
+  if (subs.length === 0) return 0;
+
+  const since = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+  const ownerIds = [...new Set(subs.map((s) => s.ownerUserId))];
+  const recent = await db.notification.findMany({
+    where: { userId: { in: ownerIds }, type: "TRIAL_END", createdAt: { gte: since } },
+    select: { userId: true, body: true },
+  });
+  const bodiesByUser = new Map<string, string[]>();
+  for (const n of recent) {
+    const arr = bodiesByUser.get(n.userId) ?? [];
+    arr.push(n.body);
+    bodiesByUser.set(n.userId, arr);
+  }
+
+  const toCreate: { userId: string; ledgerId: string; type: string; title: string; body: string; href: string }[] = [];
+  for (const s of subs) {
+    const d = daysUntil(s.trialEndsAt!, now);
+    if (d < 0 || d > s.reminderDaysBefore) continue;
+    const bodies = bodiesByUser.get(s.ownerUserId) ?? [];
+    if (bodies.some((b) => b.includes(s.name))) continue;
+    const body =
+      d === 0
+        ? `${s.name} の無料体験は本日終了します。`
+        : `${s.name} の無料体験はあと${d}日で終了します。`;
+    toCreate.push({
+      userId: s.ownerUserId,
+      ledgerId: s.ledgerId,
+      type: "TRIAL_END",
+      title: "無料体験が終了します",
+      body,
+      href: "/subscriptions",
+    });
+    bodies.push(body);
+    bodiesByUser.set(s.ownerUserId, bodies);
+  }
+
+  if (toCreate.length > 0) await db.notification.createMany({ data: toCreate });
+  return toCreate.length;
 }
 
 export interface ReminderItem {

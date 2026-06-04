@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { env, isEmailEnabled } from "@/lib/env";
-import { processRenewals, dueReminders, notifyDueRenewals } from "@/lib/orchestrator";
+import {
+  processRenewals,
+  dueReminders,
+  notifyDueRenewals,
+  processRecurring,
+  processAutoContributions,
+  notifyBudgetOverages,
+  notifyTrialEnds,
+} from "@/lib/orchestrator";
 import { sendEmail, emailLayout } from "@/lib/email";
 import { formatMoney } from "@/lib/money";
 import { logger } from "@/lib/logger";
@@ -19,7 +27,11 @@ async function handle(req: Request) {
 
   const now = new Date();
   const posted = await processRenewals(now);
+  const recurring = await processRecurring(now);
+  const contributed = await processAutoContributions(now);
   const notified = await notifyDueRenewals(now);
+  const budgetAlerts = await notifyBudgetOverages(now);
+  const trialAlerts = await notifyTrialEnds(now);
   const reminders = await dueReminders(now);
 
   // メール送信（env 差込み式・キーが無ければ no-op）。オーナーごとに1通。
@@ -52,7 +64,11 @@ async function handle(req: Request) {
   return NextResponse.json({
     ok: true,
     autoPosted: posted,
+    recurringPosted: recurring,
+    autoContributions: contributed,
     notified,
+    budgetAlerts,
+    trialAlerts,
     emailsSent,
     reminders: reminders.map((r) => ({
       name: r.name,

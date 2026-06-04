@@ -29,6 +29,19 @@ export type MemberRole = z.infer<typeof MemberRole>;
 export const PaymentMethodType = z.enum(["CARD", "BANK", "CASH", "EMONEY"]);
 export type PaymentMethodType = z.infer<typeof PaymentMethodType>;
 
+export const NotificationType = z.enum([
+  "RENEWAL",
+  "SUMMARY",
+  "WASTE",
+  "SYSTEM",
+  "RECURRING",
+  "GOAL",
+  "BUDGET",
+  "PRICE_CHANGE",
+  "TRIAL_END",
+]);
+export type NotificationType = z.infer<typeof NotificationType>;
+
 export const Currency = z.enum(["JPY", "USD", "EUR", "GBP", "KRW", "CNY"]);
 export type Currency = z.infer<typeof Currency>;
 

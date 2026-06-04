@@ -37,6 +37,7 @@ model User {
   memberships     LedgerMember[]
   ownedLedgers    Ledger[]        @relation("LedgerOwner")
   createdTxns     Transaction[]   @relation("TxnCreatedBy")
+  recurringTxns   RecurringTransaction[] @relation("RecurringCreatedBy")
   ownedSubs       Subscription[]  @relation("SubOwner")
   billing         BillingProfile?
   notifications   Notification[]
@@ -96,6 +97,7 @@ model Ledger {
   subscriptions  Subscription[]
   paymentMethods PaymentMethod[]
   goals          Goal[]
+  recurringTransactions RecurringTransaction[]
 
   @@index([ownerId])
 }
@@ -130,6 +132,7 @@ model PaymentMethod {
 
   transactions  Transaction[]
   subscriptions Subscription[]
+  recurringTransactions RecurringTransaction[]
 
   @@index([ledgerId])
 }
@@ -154,6 +157,7 @@ model Category {
   transactions Transaction[]
   budgets      Budget[]
   subscriptions Subscription[]
+  recurringTransactions RecurringTransaction[]
 
   @@index([ledgerId, type])
 }
@@ -174,12 +178,43 @@ model Transaction {
   paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
   subscriptionId  String?
   subscription    Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  recurringTransactionId String?
+  recurringTransaction   RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
   memo            String?
   createdAt       DateTime @default(now())
 
   @@index([ledgerId, occurredAt])
   @@index([ledgerId, categoryId])
   @@index([subscriptionId])
+  @@index([recurringTransactionId])
+}
+
+// 繰り返し（定期）取引テンプレート。cron で nextRunAt 到来分を Transaction に自動生成。
+model RecurringTransaction {
+  id              String   @id @default(cuid())
+  ledgerId        String
+  ledger          Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  createdByUserId String
+  createdBy       User     @relation("RecurringCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  type            String // INCOME | EXPENSE
+  amount          Int
+  currency        String   @default("JPY")
+  cycle           String   @default("MONTHLY") // MONTHLY | YEARLY | WEEKLY | QUARTERLY
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  memo            String?
+  active          Boolean  @default(true)
+  nextRunAt       DateTime
+  lastRunAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@index([ledgerId, active])
+  @@index([nextRunAt])
 }
 
 model Budget {
@@ -222,15 +257,30 @@ model Subscription {
   autoPostTransaction Boolean  @default(true)
   lastUsedAt          DateTime?
   lastReviewedAt      DateTime?
+  trialEndsAt         DateTime? // status=TRIAL の終了予定日
   serviceKey          String?  // lib/service-catalog.ts のキー
   notes               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  transactions Transaction[]
+  transactions  Transaction[]
+  priceChanges  SubscriptionPriceChange[]
 
   @@index([ledgerId, nextRenewalAt])
   @@index([ledgerId, status])
+}
+
+// サブスクの価格改定履歴。amount 変更時に記録し、値上げ表示・履歴に用いる。
+model SubscriptionPriceChange {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  oldAmount      Int
+  newAmount      Int
+  changedAt      DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId, changedAt])
 }
 
 // ─────────────────────────────────────────────
@@ -247,10 +297,31 @@ model Goal {
   deadline      DateTime?
   color         String    @default("blue")
   icon          String    @default("target")
+  // 自動積立（毎月）。amount と day が両方設定されると有効。
+  autoContributionAmount Int?
+  autoContributionDay    Int?      // 1-28
+  nextAutoContributionAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  contributions GoalContribution[]
+
   @@index([ledgerId])
+  @@index([nextAutoContributionAt])
+}
+
+// 貯金目標の積立履歴。手動 / 自動の各積立を1行で記録。
+model GoalContribution {
+  id         String   @id @default(cuid())
+  goalId     String
+  goal       Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  amount     Int // 正=積立, 負=引き出し
+  occurredAt DateTime @default(now())
+  note       String?
+  auto       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([goalId, occurredAt])
 }
 
 // ─────────────────────────────────────────────
@@ -261,7 +332,7 @@ model Notification {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   ledgerId  String?
-  type      String // RENEWAL | SUMMARY | WASTE | SYSTEM
+  type      String // RENEWAL | SUMMARY | WASTE | SYSTEM | RECURRING | GOAL | BUDGET | PRICE_CHANGE | TRIAL_END
   title     String
   body      String
   href      String?
