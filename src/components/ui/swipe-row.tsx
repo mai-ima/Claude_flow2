@@ -45,7 +45,7 @@ export function SwipeRow({
     if (!dragging) {
       if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
         setDragging(true);
-        (e.target as Element).setPointerCapture?.(e.pointerId);
+        e.currentTarget.setPointerCapture?.(e.pointerId);
       } else if (Math.abs(dy) > 12) {
         // 縦スクロールはスワイプ対象外
         s.active = false;
