@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
 import { EmptyState } from "@/components/ui/empty-state";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
@@ -189,11 +190,15 @@ export function SubscriptionsClient({
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card className="p-4">
           <div className="text-[12px] text-text-tertiary">月額合計</div>
-          <div className="mt-1 text-[22px] font-bold tabular-nums">{formatMoney(totals.monthly, currency)}</div>
+          <div className="mt-1 text-[22px] font-bold tabular-nums">
+            <AnimatedNumber value={totals.monthly} currency={currency} />
+          </div>
         </Card>
         <Card className="p-4">
           <div className="text-[12px] text-text-tertiary">年額換算</div>
-          <div className="mt-1 text-[22px] font-bold tabular-nums">{formatMoney(totals.yearly, currency)}</div>
+          <div className="mt-1 text-[22px] font-bold tabular-nums">
+            <AnimatedNumber value={totals.yearly} currency={currency} />
+          </div>
         </Card>
         <Card className="col-span-2 p-4 sm:col-span-1">
           <div className="text-[12px] text-text-tertiary">登録数</div>

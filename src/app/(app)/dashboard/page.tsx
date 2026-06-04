@@ -27,6 +27,7 @@ import {
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
 import { buildActivityRings } from "@/lib/activity-rings";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { weeklyExpenseTotals } from "@/modules/transactions/queries";
 import { monthEndForecast, weekDelta } from "@/lib/insight";
 import { formatDate, formatMonth } from "@/lib/date";
@@ -45,16 +46,19 @@ export default async function DashboardPage({
   const { m } = await searchParams;
   const month = resolveMonth(m);
 
-  const { summary, subTotals, totalBudget, byCategory, upcoming, wasteful, recent, showBudget } =
-    await getDashboardData(ledgerId, tier, month);
+  // ベータ: 今週の振り返り・今月の着地予測（当月表示時のみ）。本体データと並列取得。
+  const now = new Date();
+  const isCurrentMonth = month.getFullYear() === now.getFullYear() && month.getMonth() === now.getMonth();
+  const [
+    { summary, subTotals, totalBudget, byCategory, upcoming, wasteful, recent, showBudget },
+    weekly,
+  ] = await Promise.all([
+    getDashboardData(ledgerId, tier, month),
+    betaOptIn && isCurrentMonth ? weeklyExpenseTotals(ledgerId, now) : Promise.resolve(null),
+  ]);
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
-
-  // ベータ: 今週の振り返り・今月の着地予測（当月表示時のみ）
-  const now = new Date();
-  const isCurrentMonth = month.getFullYear() === now.getFullYear() && month.getMonth() === now.getMonth();
-  const weekly = betaOptIn && isCurrentMonth ? await weeklyExpenseTotals(ledgerId, now) : null;
   const wd = weekly ? weekDelta(weekly.thisWeek, weekly.lastWeek) : null;
   const forecast = isCurrentMonth ? monthEndForecast(summary.expense, now) : summary.expense;
 
@@ -209,20 +213,24 @@ export default async function DashboardPage({
             <span className="h-2 w-2 rounded-full bg-income" />収入
           </div>
           <div className="mt-1 text-[18px] font-bold tabular-nums text-income">
-            {formatMoney(summary.income, currency)}
+            <AnimatedNumber value={summary.income} currency={currency} />
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
             <span className="h-2 w-2 rounded-full bg-expense" />支出
           </div>
-          <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(summary.expense, currency)}</div>
+          <div className="mt-1 text-[18px] font-bold tabular-nums">
+            <AnimatedNumber value={summary.expense} currency={currency} />
+          </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
             <RepeatIcon size={13} className="text-accent" />サブスク月額
           </div>
-          <div className="mt-1 text-[18px] font-bold tabular-nums">{formatMoney(subTotals.monthly, currency)}</div>
+          <div className="mt-1 text-[18px] font-bold tabular-nums">
+            <AnimatedNumber value={subTotals.monthly} currency={currency} />
+          </div>
         </Card>
       </div>
 
