@@ -30,9 +30,21 @@ export function CommandPalette() {
   );
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return commands;
-    return commands.filter((c) => c.label.toLowerCase().includes(q));
+    const trimmed = query.trim();
+    const q = trimmed.toLowerCase();
+    const matched = q
+      ? commands.filter((c) => c.label.toLowerCase().includes(q))
+      : [...commands];
+    // 入力があれば、その語で取引を横断検索するジャンプを末尾に追加。
+    if (trimmed) {
+      matched.push({
+        label: `「${trimmed}」で取引を検索`,
+        icon: SearchIcon,
+        href: `/transactions?q=${encodeURIComponent(trimmed)}`,
+        hint: "検索",
+      });
+    }
+    return matched;
   }, [query, commands]);
 
   useEffect(() => {

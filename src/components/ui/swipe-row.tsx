@@ -7,7 +7,7 @@ import { haptic } from "@/lib/haptics";
 export interface SwipeAction {
   label: string;
   onClick: () => void;
-  tone: "edit" | "delete";
+  tone: "edit" | "delete" | "duplicate";
   icon?: React.ReactNode;
 }
 
@@ -23,11 +23,13 @@ export function SwipeRow({
   actions,
   onTap,
   className,
+  haptics = true,
 }: {
   children: React.ReactNode;
   actions: SwipeAction[];
   onTap?: () => void;
   className?: string;
+  haptics?: boolean;
 }) {
   const reveal = actions.length * ACTION_W;
   const [tx, setTx] = useState(0);
@@ -70,7 +72,7 @@ export function SwipeRow({
     }
     if (tx < -reveal / 2) {
       setTx(-reveal);
-      haptic(10);
+      if (haptics) haptic(10);
     } else {
       setTx(0);
     }
@@ -90,7 +92,11 @@ export function SwipeRow({
             style={{ width: ACTION_W }}
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 text-[12px] font-semibold text-white",
-              a.tone === "delete" ? "bg-expense" : "bg-accent",
+              a.tone === "delete"
+                ? "bg-expense"
+                : a.tone === "duplicate"
+                  ? "bg-text-tertiary"
+                  : "bg-accent",
             )}
           >
             {a.icon}

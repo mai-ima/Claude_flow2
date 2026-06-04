@@ -42,11 +42,11 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ m?: string }>;
 }) {
-  const { ledgerId, user, tier, isPod, currency, betaOptIn } = await getAppContext();
+  const { ledgerId, user, tier, isPod, currency } = await getAppContext();
   const { m } = await searchParams;
   const month = resolveMonth(m);
 
-  // ベータ: 今週の振り返り・今月の着地予測（当月表示時のみ）。本体データと並列取得。
+  // 今週の振り返り・今月の着地予測（当月表示時のみ）。本体データと並列取得。
   const now = new Date();
   const isCurrentMonth = month.getFullYear() === now.getFullYear() && month.getMonth() === now.getMonth();
   const [
@@ -54,7 +54,7 @@ export default async function DashboardPage({
     weekly,
   ] = await Promise.all([
     getDashboardData(ledgerId, tier, month),
-    betaOptIn && isCurrentMonth ? weeklyExpenseTotals(ledgerId, now) : Promise.resolve(null),
+    isCurrentMonth ? weeklyExpenseTotals(ledgerId, now) : Promise.resolve(null),
   ]);
 
   const wage = user.assumedHourlyWage ?? 0;
@@ -88,19 +88,16 @@ export default async function DashboardPage({
         ))}
       </div>
 
-      {/* ベータ: 今週の振り返り・今月の着地予測 */}
+      {/* 今週の振り返り・今月の着地予測 */}
       {weekly && wd && (
         <Card className="mb-5">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                <span className="inline-flex items-center gap-1.5">
-                  <SparklesIcon size={16} className="text-accent" />
-                  今週の振り返り
-                </span>
-              </CardTitle>
-              <Badge tone="accent" size="sm">ベータ</Badge>
-            </div>
+            <CardTitle>
+              <span className="inline-flex items-center gap-1.5">
+                <SparklesIcon size={16} className="text-accent" />
+                今週の振り返り
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardBody>
             <div className="grid gap-3 sm:grid-cols-3">

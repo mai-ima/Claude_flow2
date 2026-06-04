@@ -6,10 +6,10 @@ import { TransactionSheet, type TxnFormValue } from "./transaction-sheet";
 import { deleteTransaction } from "../actions";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SwipeRow } from "@/components/ui/swipe-row";
+import { SwipeRow, type SwipeAction } from "@/components/ui/swipe-row";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon } from "@/components/icons";
+import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon, CopyIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/cn";
 
@@ -72,6 +72,19 @@ export function TransactionsClient({
       type: it.type,
       amount: it.amount,
       occurredAt: it.occurredAt.slice(0, 10),
+      categoryId: it.categoryId ?? "",
+      paymentMethodId: it.paymentMethodId ?? "",
+      memo: it.memo ?? "",
+    });
+    setSheetOpen(true);
+  }
+  // ベータ: 同じ内容を今日の新規記録として複製（id を持たせず追加モードで開く）
+  function openDuplicate(it: TxnListItem) {
+    if (!canEdit) return;
+    setEditing({
+      type: it.type,
+      amount: it.amount,
+      occurredAt: new Date().toISOString().slice(0, 10),
       categoryId: it.categoryId ?? "",
       paymentMethodId: it.paymentMethodId ?? "",
       memo: it.memo ?? "",
@@ -158,53 +171,63 @@ export function TransactionsClient({
                     </span>
                   );
 
-                  if (beta && canEdit) {
+                  // 編集可能なら左スワイプ操作（v1.2.4 で全員に正式化）。
+                  // ベータ時のみ「複製」アクションとハプティックを追加。
+                  if (canEdit) {
+                    const actions: SwipeAction[] = [
+                      ...(beta
+                        ? [
+                            {
+                              label: "複製",
+                              tone: "duplicate" as const,
+                              icon: <CopyIcon size={16} />,
+                              onClick: () => openDuplicate(it),
+                            },
+                          ]
+                        : []),
+                      { label: "編集", tone: "edit", onClick: () => openEdit(it) },
+                      {
+                        label: "削除",
+                        tone: "delete",
+                        icon: <TrashIcon size={16} />,
+                        onClick: () => remove(it.id),
+                      },
+                    ];
                     return (
                       <SwipeRow
                         key={it.id}
                         className="border-t border-border-subtle first:border-t-0"
                         onTap={() => openEdit(it)}
-                        actions={[
-                          { label: "編集", tone: "edit", onClick: () => openEdit(it) },
-                          {
-                            label: "削除",
-                            tone: "delete",
-                            icon: <TrashIcon size={16} />,
-                            onClick: () => remove(it.id),
-                          },
-                        ]}
+                        actions={actions}
+                        haptics={beta}
                       >
-                        <div className="flex items-center gap-3 px-4 py-3">
+                        <div className="group flex items-center gap-3 px-4 py-3">
                           {icon}
                           {label}
                           {amount}
+                          {/* デスクトップ向けの即時削除（タッチではスワイプを使用） */}
+                          <button
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => remove(it.id)}
+                            aria-label="削除"
+                            className="hidden h-8 w-8 place-items-center rounded-full text-text-tertiary opacity-0 transition hover:bg-expense/10 hover:text-expense group-hover:opacity-100 md:grid"
+                          >
+                            <TrashIcon size={17} />
+                          </button>
                         </div>
                       </SwipeRow>
                     );
                   }
 
+                  // 閲覧のみ（共有メンバー等）。
                   return (
                     <div
                       key={it.id}
-                      className="group flex items-center gap-3 border-t border-border-subtle px-4 py-3 first:border-t-0"
+                      className="flex items-center gap-3 border-t border-border-subtle px-4 py-3 first:border-t-0"
                     >
-                      <button
-                        onClick={() => openEdit(it)}
-                        className="flex flex-1 items-center gap-3 text-left"
-                      >
-                        {icon}
-                        {label}
-                      </button>
+                      {icon}
+                      {label}
                       {amount}
-                      {canEdit && (
-                        <button
-                          onClick={() => remove(it.id)}
-                          aria-label="削除"
-                          className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary opacity-0 transition hover:bg-expense/10 hover:text-expense group-hover:opacity-100"
-                        >
-                          <TrashIcon size={17} />
-                        </button>
-                      )}
                     </div>
                   );
                 })}

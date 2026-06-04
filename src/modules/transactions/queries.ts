@@ -73,7 +73,14 @@ export async function searchTransactions(ledgerId: string, f: TxnFilter) {
   if (f.type) where.type = f.type;
   if (f.categoryId) where.categoryId = f.categoryId;
   if (f.paymentMethodId) where.paymentMethodId = f.paymentMethodId;
-  if (f.keyword) where.memo = { contains: f.keyword, mode: "insensitive" };
+  if (f.keyword) {
+    // メモに加え、カテゴリ名・支払い方法名でも一致（横断検索）。
+    where.OR = [
+      { memo: { contains: f.keyword, mode: "insensitive" } },
+      { category: { name: { contains: f.keyword, mode: "insensitive" } } },
+      { paymentMethod: { name: { contains: f.keyword, mode: "insensitive" } } },
+    ];
+  }
 
   const page = Math.max(1, f.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, f.pageSize ?? 20));

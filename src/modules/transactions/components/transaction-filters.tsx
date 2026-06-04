@@ -64,7 +64,7 @@ export function TransactionFilters({
         <Input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="メモで検索（Enter）"
+          placeholder="メモ・カテゴリ・支払いで検索（Enter）"
           className="pl-10"
         />
       </form>

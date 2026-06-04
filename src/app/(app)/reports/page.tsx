@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TrendAreaChart, CategoryDonut } from "@/components/ui/chart/charts";
 import { colorOf } from "@/lib/colors";
-import { CategoryIcon, ChartIcon } from "@/components/icons";
+import { CategoryIcon, ChartIcon, SparklesIcon } from "@/components/icons";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { clientEnv } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
+import { monthEndForecast } from "@/lib/insight";
 import { pageMetadata } from "@/lib/seo";
+import { getDate } from "date-fns";
 
 export const metadata: Metadata = pageMetadata({ title: "分析", noindex: true });
 
@@ -38,6 +40,10 @@ export default async function ReportsPage() {
   const expenseDelta = summary.expense - prev.expense;
   const expensePct =
     prev.expense > 0 ? Math.round((expenseDelta / prev.expense) * 100) : null;
+
+  // 今月のインサイト（追加クエリなしで既存値から算出）
+  const forecast = monthEndForecast(summary.expense, now);
+  const dailyAvg = Math.round(summary.expense / getDate(now));
 
   return (
     <PageContainer>
@@ -85,6 +91,44 @@ export default async function ReportsPage() {
                   <span className="font-semibold tabular-nums">
                     {formatMoney(summary.expense, currency)}
                   </span>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <span className="inline-flex items-center gap-1.5">
+                  <SparklesIcon size={16} className="text-accent" />
+                  今月のインサイト
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl bg-surface-2 px-4 py-3">
+                  <div className="text-[12px] text-text-tertiary">今月の着地予測</div>
+                  <div className="mt-0.5 text-[18px] font-bold tabular-nums">
+                    {formatMoney(forecast, currency)}
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-text-tertiary">今のペースが続いた場合</div>
+                </div>
+                <div className="rounded-xl bg-surface-2 px-4 py-3">
+                  <div className="text-[12px] text-text-tertiary">1日あたりの支出</div>
+                  <div className="mt-0.5 text-[18px] font-bold tabular-nums">
+                    {formatMoney(dailyAvg, currency)}
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-text-tertiary">今月の平均</div>
+                </div>
+                <div className="rounded-xl bg-surface-2 px-4 py-3">
+                  <div className="text-[12px] text-text-tertiary">最多カテゴリ</div>
+                  <div className="mt-0.5 truncate text-[18px] font-bold">
+                    {byCat[0]?.name ?? "—"}
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-text-tertiary tabular-nums">
+                    {byCat[0] ? formatMoney(byCat[0].amount, currency) : "記録なし"}
+                  </div>
                 </div>
               </div>
             </CardBody>
