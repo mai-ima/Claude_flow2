@@ -1,8 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ButtonLink } from "@/components/ui/button";
 import { LogoMark } from "@/components/icons";
 import { MobileNav } from "./mobile-nav";
 import { SITE } from "@/lib/seo";
+import { cn } from "@/lib/cn";
 
 const NAV = [
   { href: "/features", label: "機能" },
@@ -11,9 +16,22 @@ const NAV = [
 ];
 
 export function SiteHeader() {
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <header
-      className="sticky top-0 z-40 border-b border-border-subtle bg-glass backdrop-blur-xl backdrop-saturate-150"
+      className={cn(
+        "sticky top-0 z-40 border-b bg-glass backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-300",
+        scrolled ? "border-border-subtle shadow-sm" : "border-transparent",
+      )}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
@@ -28,15 +46,24 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 sm:flex">
-          {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className="rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              {n.label}
-            </Link>
-          ))}
+          {NAV.map((n) => {
+            const active = pathname === n.href || pathname.startsWith(n.href + "/");
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-[14px] transition",
+                  active
+                    ? "bg-surface-2 font-medium text-text-primary"
+                    : "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
+                )}
+              >
+                {n.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-2">

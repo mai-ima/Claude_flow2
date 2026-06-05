@@ -179,6 +179,26 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Trust band */}
+      <section className="mx-auto max-w-5xl px-5 pb-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { stat: "40+", label: "解約アシスト対応サービス" },
+            { stat: "¥0", label: "ずっと使える無料プラン" },
+            { stat: "連携なし", label: "口座・カードの自動連携に非依存" },
+            { stat: "広告非販売", label: "データを広告に売りません" },
+          ].map((t) => (
+            <div
+              key={t.label}
+              className="rounded-2xl border border-border-subtle bg-surface-1 px-4 py-5 text-center"
+            >
+              <div className="text-[22px] font-bold tracking-tight text-accent">{t.stat}</div>
+              <div className="mt-1 text-[12px] leading-snug text-text-secondary">{t.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features grid */}
       <section className="mx-auto max-w-6xl px-5 py-16">
         <div className="mx-auto max-w-2xl text-center">

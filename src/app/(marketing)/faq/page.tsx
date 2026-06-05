@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
+import { MarketingCta } from "@/components/marketing/marketing-cta";
 import { pageMetadata, jsonLd, CONTACT } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -136,6 +137,11 @@ export default function FaqPage() {
           または {CONTACT.support} までご連絡ください。
         </p>
       </div>
+
+      <MarketingCta
+        title="疑問が解けたら、はじめよう。"
+        subtitle="登録は1分。まずは無料で、家計とサブスクを整えましょう。"
+      />
 
       <p className="mt-8 text-center text-[13px] text-text-tertiary">
         <Link href="/" className="hover:text-text-secondary">

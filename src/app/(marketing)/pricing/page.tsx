@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PricingTable } from "@/components/marketing/pricing-table";
 import { PlanComparison } from "@/components/marketing/plan-comparison";
+import { MarketingCta } from "@/components/marketing/marketing-cta";
 import { pageMetadata, jsonLd } from "@/lib/seo";
 import { isStripeEnabled } from "@/lib/env";
 import { getCurrentUser } from "@/lib/auth";
@@ -80,6 +81,11 @@ export default async function PricingPage() {
           ))}
         </div>
       </div>
+
+      <MarketingCta
+        title="まずは無料で、はじめよう。"
+        subtitle="フリープランは無期限。必要になったら、いつでもアップグレードできます。"
+      />
     </div>
   );
 }
