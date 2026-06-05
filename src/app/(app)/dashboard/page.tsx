@@ -27,6 +27,7 @@ import {
 import { formatMoney, amountToWorkMinutes, formatWorkTime, toMonthlyAmount } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
 import { buildActivityRings } from "@/lib/activity-rings";
+import { budgetInsight, PACE_LABEL } from "@/lib/budget-insight";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { weeklyExpenseTotals } from "@/modules/transactions/queries";
 import { monthEndForecast, weekDelta } from "@/lib/insight";
@@ -42,7 +43,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ m?: string }>;
 }) {
-  const { ledgerId, user, tier, isPod, currency } = await getAppContext();
+  const { ledgerId, user, tier, isPod, currency, betaOptIn } = await getAppContext();
   const { m } = await searchParams;
   const month = resolveMonth(m);
 
@@ -300,6 +301,43 @@ export default async function DashboardPage({
           </CardBody>
         </Card>
       )}
+
+      {/* ベータ: 今日あといくら使える（全体予算 × 当月のみ） */}
+      {betaOptIn && totalBudget && isCurrentMonth && (() => {
+        const ins = budgetInsight(totalBudget.spent, totalBudget.amount, month, now);
+        return (
+          <Card className="mb-5">
+            <CardHeader>
+              <CardTitle>
+                <span className="inline-flex items-center gap-1.5">
+                  <SparklesIcon size={16} className="text-accent" />
+                  今日あといくら使える
+                  <Badge tone="neutral" size="sm">ベータ</Badge>
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <div className="text-[28px] font-bold tabular-nums leading-none">
+                    {formatMoney(ins.dailyAllowance, currency)}
+                    <span className="ml-1 text-[13px] font-normal text-text-tertiary">/日</span>
+                  </div>
+                  <div className="mt-1.5 text-[12px] text-text-tertiary">
+                    残り{ins.daysLeft}日 ・ 残額 {formatMoney(Math.max(0, ins.remaining), currency)}
+                  </div>
+                </div>
+                <Badge
+                  tone={ins.pace === "good" ? "income" : ins.pace === "tight" ? "warning" : "expense"}
+                  size="sm"
+                >
+                  {PACE_LABEL[ins.pace]}
+                </Badge>
+              </div>
+            </CardBody>
+          </Card>
+        );
+      })()}
 
       {/* カテゴリ別の支出（今月の内訳をひと目で） */}
       {byCategory.length > 0 && (

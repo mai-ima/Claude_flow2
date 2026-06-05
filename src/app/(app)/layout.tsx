@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/app/sidebar";
 import { BottomBar } from "@/components/app/bottom-bar";
 import { AppHeader, type LedgerOption } from "@/components/app/app-header";
 import { CommandPalette } from "@/components/app/command-palette";
+import { KeyboardShortcuts } from "@/components/app/keyboard-shortcuts";
 import { getCurrentUser } from "@/lib/auth";
 import { listUserLedgers, getActiveLedgerId } from "@/lib/ledger-access";
 import { listNotifications, unreadCount } from "@/modules/notifications/queries";
@@ -59,6 +60,7 @@ export default async function AppLayout({
       </div>
       <BottomBar />
       <CommandPalette />
+      <KeyboardShortcuts enabled={user.betaOptIn} />
     </div>
   );
 }

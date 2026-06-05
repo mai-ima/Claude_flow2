@@ -14,6 +14,7 @@ import { BudgetGauge } from "@/components/app/budget-gauge";
 import { CategoryIcon, TargetIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
+import { evalAmount } from "@/lib/calc";
 import { budgetHealth } from "@/lib/budget-insight";
 import { setBudget, deleteBudget } from "../actions";
 import { cn } from "@/lib/cn";
@@ -114,12 +115,14 @@ export function BudgetsClient({
   allCategories,
   canEdit,
   currency = "JPY",
+  beta = false,
 }: {
   total: BudgetItem | null;
   categories: BudgetItem[];
   allCategories: Option[];
   canEdit: boolean;
   currency?: string;
+  beta?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -131,14 +134,18 @@ export function BudgetsClient({
     categoryId: "",
     amount: 0,
   });
+  // ベータ: 数式入力（"50000-3000" 等）用の生テキスト。
+  const [amountText, setAmountText] = useState("");
 
   function openNew() {
     setForm({ categoryId: "", amount: 0 });
+    setAmountText("");
     setError(undefined);
     setSheetOpen(true);
   }
   function openEdit(item: BudgetItem) {
     setForm({ categoryId: item.categoryId ?? "", amount: item.amount });
+    setAmountText(String(item.amount));
     setError(undefined);
     setSheetOpen(true);
   }
@@ -313,19 +320,43 @@ export function BudgetsClient({
               ))}
             </Select>
           </Field>
-          <Field label="月の予算額">
-            <Input
-              inputMode="numeric"
-              value={form.amount ? String(form.amount) : ""}
-              onChange={(e) =>
-                setForm((s) => ({
-                  ...s,
-                  amount: Math.max(0, parseInt(e.target.value.replace(/\D/g, "") || "0", 10)),
-                }))
-              }
-              placeholder="例: 50000"
-            />
-          </Field>
+          {beta ? (
+            <Field label="月の予算額">
+              <Input
+                inputMode="text"
+                value={amountText}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  setAmountText(text);
+                  const v = evalAmount(text);
+                  setForm((s) => ({ ...s, amount: v !== null && v > 0 ? v : 0 }));
+                }}
+                placeholder="例: 50000 や 60000-10000"
+              />
+              <p className="mt-1 text-[12px] text-text-tertiary">
+                {(() => {
+                  const v = evalAmount(amountText);
+                  return v !== null && /[+\-*/×÷]/.test(amountText)
+                    ? `= ${formatMoney(v, currency)}`
+                    : "＋−×÷ で計算もできます（ベータ）";
+                })()}
+              </p>
+            </Field>
+          ) : (
+            <Field label="月の予算額">
+              <Input
+                inputMode="numeric"
+                value={form.amount ? String(form.amount) : ""}
+                onChange={(e) =>
+                  setForm((s) => ({
+                    ...s,
+                    amount: Math.max(0, parseInt(e.target.value.replace(/\D/g, "") || "0", 10)),
+                  }))
+                }
+                placeholder="例: 50000"
+              />
+            </Field>
+          )}
           {error && <p className="text-[13px] text-expense">{error}</p>}
         </div>
       </Sheet>

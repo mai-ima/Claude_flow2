@@ -13,7 +13,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({ title: "予算", noindex: true });
 
 export default async function BudgetsPage() {
-  const { ledgerId, canEdit, tier, currency } = await getAppContext();
+  const { ledgerId, canEdit, tier, currency, betaOptIn } = await getAppContext();
 
   if (!canUse(tier, "budgets")) {
     return (
@@ -51,6 +51,7 @@ export default async function BudgetsPage() {
         allCategories={expenseCats.map((c) => ({ id: c.id, name: c.name }))}
         canEdit={canEdit}
         currency={currency}
+        beta={betaOptIn}
       />
     </PageContainer>
   );
