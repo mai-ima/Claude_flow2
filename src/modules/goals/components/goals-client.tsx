@@ -11,9 +11,11 @@ import { ActivityRing } from "@/components/ui/activity-ring";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { TargetIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { Switch } from "@/components/ui/switch";
+import { TargetIcon, PlusIcon, TrashIcon, RepeatIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
+import { cn } from "@/lib/cn";
 import { createGoal, updateGoal, deleteGoal, contributeGoal } from "../actions";
 
 export interface GoalItem {
@@ -28,6 +30,9 @@ export interface GoalItem {
   monthsLeft: number | null;
   monthlyNeeded: number | null;
   overdue: boolean;
+  autoContributionAmount: number | null;
+  autoContributionDay: number | null;
+  history: { amount: number; dateLabel: string; auto: boolean }[];
 }
 
 const COLORS = ["blue", "teal", "green", "mint", "orange", "pink", "purple", "indigo"];
@@ -66,10 +71,13 @@ export function GoalsClient({
     targetAmount: 0,
     deadline: todayPlus(6),
     color: "blue",
+    autoOn: false,
+    autoAmount: 0,
+    autoDay: 1,
   });
 
   function openNew() {
-    setForm({ id: "", name: "", targetAmount: 0, deadline: todayPlus(6), color: "blue" });
+    setForm({ id: "", name: "", targetAmount: 0, deadline: todayPlus(6), color: "blue", autoOn: false, autoAmount: 0, autoDay: 1 });
     setError(undefined);
     setSheetOpen(true);
   }
@@ -81,6 +89,9 @@ export function GoalsClient({
       // 既存の期日を保持（無い場合のみ既定値）。
       deadline: g.deadlineInput ?? todayPlus(6),
       color: g.color,
+      autoOn: g.autoContributionAmount != null,
+      autoAmount: g.autoContributionAmount ?? 0,
+      autoDay: g.autoContributionDay ?? 1,
     });
     setError(undefined);
     setSheetOpen(true);
@@ -94,6 +105,8 @@ export function GoalsClient({
         targetAmount: form.targetAmount,
         deadline: form.deadline ? new Date(form.deadline) : null,
         color: form.color,
+        autoContributionAmount: form.autoOn ? form.autoAmount : null,
+        autoContributionDay: form.autoOn ? form.autoDay : null,
       };
       const res = form.id ? await updateGoal(payload) : await createGoal(payload);
       if (res.ok) {
@@ -226,6 +239,12 @@ export function GoalsClient({
                         <b className="tabular-nums">{formatMoney(g.monthlyNeeded, currency)}</b> で達成
                       </div>
                     ) : null}
+                    {g.autoContributionAmount != null && (
+                      <div className="mt-1 inline-flex items-center gap-1 text-[12px] text-accent">
+                        <RepeatIcon size={13} />
+                        毎月{g.autoContributionDay}日 ・ {formatMoney(g.autoContributionAmount, currency)} 自動積立
+                      </div>
+                    )}
                   </div>
                 </div>
                 {canEdit && (
@@ -298,6 +317,47 @@ export function GoalsClient({
               ))}
             </Select>
           </Field>
+
+          <div className="rounded-2xl border border-border-subtle p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[14px] font-medium">毎月の自動積立</div>
+                <div className="text-[12px] text-text-tertiary">毎月決まった日に自動で積み立てます。</div>
+              </div>
+              <Switch
+                checked={form.autoOn}
+                onChange={(v) => setForm((s) => ({ ...s, autoOn: v }))}
+                aria-label="自動積立"
+              />
+            </div>
+            {form.autoOn && (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Field label="毎月の金額">
+                  <Input
+                    inputMode="numeric"
+                    value={form.autoAmount ? String(form.autoAmount) : ""}
+                    onChange={(e) =>
+                      setForm((s) => ({
+                        ...s,
+                        autoAmount: Math.max(0, parseInt(e.target.value.replace(/\D/g, "") || "0", 10)),
+                      }))
+                    }
+                    placeholder="10000"
+                  />
+                </Field>
+                <Field label="実行日">
+                  <Select
+                    value={String(form.autoDay)}
+                    onChange={(e) => setForm((s) => ({ ...s, autoDay: parseInt(e.target.value, 10) }))}
+                  >
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}日</option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+            )}
+          </div>
           {error && <p className="text-[13px] text-expense">{error}</p>}
         </div>
       </Sheet>
@@ -337,6 +397,32 @@ export function GoalsClient({
             ))}
           </div>
           {contribError && <p className="text-[13px] text-expense">{contribError}</p>}
+
+          {contribFor && contribFor.history.length > 0 && (
+            <div className="border-t border-border-subtle pt-3">
+              <div className="mb-2 text-[13px] font-medium text-text-tertiary">積立履歴</div>
+              <ul className="space-y-1.5">
+                {contribFor.history.map((h, i) => (
+                  <li key={i} className="flex items-center justify-between text-[13px]">
+                    <span className="flex items-center gap-1.5 text-text-secondary">
+                      {h.auto && <RepeatIcon size={13} className="text-accent" />}
+                      {h.dateLabel}
+                      {h.auto ? " ・ 自動" : ""}
+                    </span>
+                    <span
+                      className={cn(
+                        "font-semibold tabular-nums",
+                        h.amount >= 0 ? "text-income" : "text-expense",
+                      )}
+                    >
+                      {h.amount >= 0 ? "+" : "−"}
+                      {formatMoney(Math.abs(h.amount), currency)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </Sheet>
     </div>

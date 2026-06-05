@@ -61,6 +61,13 @@ export default async function GoalsPage() {
       monthsLeft,
       monthlyNeeded,
       overdue,
+      autoContributionAmount: g.autoContributionAmount,
+      autoContributionDay: g.autoContributionDay,
+      history: g.contributions.map((c) => ({
+        amount: c.amount,
+        dateLabel: formatDate(c.occurredAt, "M月d日"),
+        auto: c.auto,
+      })),
     };
   });
 

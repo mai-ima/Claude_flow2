@@ -5,6 +5,9 @@ export const goalInput = z.object({
   targetAmount: z.coerce.number().int().positive("目標額を入力してください。"),
   deadline: z.coerce.date().optional().nullable(),
   color: z.string().default("blue"),
+  // 自動積立（任意）。amount>0 かつ day 指定で有効。
+  autoContributionAmount: z.coerce.number().int().min(0).max(100_000_000).optional().nullable(),
+  autoContributionDay: z.coerce.number().int().min(1).max(28).optional().nullable(),
 });
 export type GoalInput = z.infer<typeof goalInput>;
 
