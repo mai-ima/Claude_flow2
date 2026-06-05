@@ -68,6 +68,8 @@ export async function listBudgetsWithSpending(
     }
   }
 
-  categoryRows.sort((a, b) => b.spent / b.amount - a.spent / a.amount);
+  // 消化率の高い順。amount<=0 はゼロ除算(NaN/Infinity)を避け末尾へ。
+  const ratio = (r: BudgetRow) => (r.amount > 0 ? r.spent / r.amount : -1);
+  categoryRows.sort((a, b) => ratio(b) - ratio(a));
   return { total, categories: categoryRows };
 }

@@ -14,6 +14,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Switch } from "@/components/ui/switch";
 import { TargetIcon, PlusIcon, TrashIcon, RepeatIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
+import { toDateInput } from "@/lib/date";
 import { colorOf } from "@/lib/colors";
 import { cn } from "@/lib/cn";
 import { createGoal, updateGoal, deleteGoal, contributeGoal } from "../actions";
@@ -40,7 +41,7 @@ const COLORS = ["blue", "teal", "green", "mint", "orange", "pink", "purple", "in
 function todayPlus(months: number) {
   const d = new Date();
   d.setMonth(d.getMonth() + months);
-  return d.toISOString().slice(0, 10);
+  return toDateInput(d);
 }
 
 export function GoalsClient({

@@ -11,6 +11,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { BellIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
+import { toDateInput } from "@/lib/date";
 import { CYCLE_LABEL, STATUS_LABEL } from "@/lib/enums";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { createSubscription, updateSubscription } from "../actions";
@@ -45,7 +46,7 @@ function defaults(): SubFormValue {
     amount: 0,
     cycle: "MONTHLY",
     status: "ACTIVE",
-    nextRenewalAt: d.toISOString().slice(0, 10),
+    nextRenewalAt: toDateInput(d),
     trialEndsAt: "",
     categoryId: "",
     paymentMethodId: "",

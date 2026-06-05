@@ -18,7 +18,7 @@ import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
 import { PLANS, tierAtLeast } from "@/lib/plans";
 import { isStripeEnabled } from "@/lib/env";
-import { SITE, pageMetadata } from "@/lib/seo";
+import { SITE, APP_VERSION, pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true });
 
@@ -131,7 +131,7 @@ export default async function SettingsPage() {
         </ListGroup>
 
         <p className="pt-2 text-center text-[12px] text-text-tertiary">
-          {SITE.name} ・ ベータ v1.2.4
+          {SITE.name} ・ ベータ v{APP_VERSION}
         </p>
       </div>
     </PageContainer>

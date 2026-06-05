@@ -8,6 +8,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
 import { AmountPad } from "./amount-pad";
 import { formatMoney } from "@/lib/money";
+import { todayLocal } from "@/lib/date";
 import { createTransaction, updateTransaction } from "../actions";
 
 type TxnType = "INCOME" | "EXPENSE";
@@ -29,7 +30,7 @@ interface Option {
 }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return todayLocal();
 }
 
 export function TransactionSheet({

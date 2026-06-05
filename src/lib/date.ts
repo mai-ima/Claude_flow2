@@ -19,6 +19,19 @@ export function formatMonth(date: Date): string {
   return format(date, "yyyy年M月", { locale: ja });
 }
 
+/** <input type="date"> 用に「ローカル日付」を yyyy-MM-dd で返す。 */
+export function toDateInput(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}
+
+/**
+ * 本日のローカル日付（yyyy-MM-dd）。`new Date().toISOString().slice(0,10)` は
+ * UTC 基準のため早朝（JST 等）に前日へずれる不具合があり、その置き換え用。
+ */
+export function todayLocal(): string {
+  return toDateInput(new Date());
+}
+
 export function monthRange(anchor: Date): { start: Date; end: Date } {
   return { start: startOfMonth(anchor), end: endOfMonth(anchor) };
 }

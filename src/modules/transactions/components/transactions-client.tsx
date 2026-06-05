@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon, CopyIcon, CheckIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
+import { todayLocal } from "@/lib/date";
 import { cn } from "@/lib/cn";
 
 export interface TxnListItem {
@@ -162,7 +163,7 @@ export function TransactionsClient({
     setEditing({
       type: it.type,
       amount: it.amount,
-      occurredAt: new Date().toISOString().slice(0, 10),
+      occurredAt: todayLocal(),
       categoryId: it.categoryId ?? "",
       paymentMethodId: it.paymentMethodId ?? "",
       memo: it.memo ?? "",

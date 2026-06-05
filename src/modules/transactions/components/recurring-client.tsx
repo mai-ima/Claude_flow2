@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CategoryIcon, PlusIcon, RepeatIcon, TrashIcon, EditIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
+import { todayLocal } from "@/lib/date";
 import { CYCLE_LABEL, type BillingCycle } from "@/lib/enums";
 import { cn } from "@/lib/cn";
 import {
@@ -58,7 +59,7 @@ interface FormValue {
 }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return todayLocal();
 }
 
 export function RecurringClient({
