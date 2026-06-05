@@ -2,7 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { BellIcon, RepeatIcon, ChartIcon, SparklesIcon } from "@/components/icons";
+import {
+  BellIcon,
+  RepeatIcon,
+  ChartIcon,
+  SparklesIcon,
+  TargetIcon,
+  WalletIcon,
+  ArrowUpIcon,
+  ClockIcon,
+} from "@/components/icons";
 import { markAllRead, markRead } from "@/modules/notifications/actions";
 import { cn } from "@/lib/cn";
 
@@ -17,8 +26,12 @@ export interface NotifItem {
 }
 
 function iconFor(type: string) {
-  if (type === "RENEWAL") return RepeatIcon;
+  if (type === "RENEWAL" || type === "RECURRING") return RepeatIcon;
   if (type === "SUMMARY") return ChartIcon;
+  if (type === "GOAL") return TargetIcon;
+  if (type === "BUDGET") return WalletIcon;
+  if (type === "PRICE_CHANGE") return ArrowUpIcon;
+  if (type === "TRIAL_END") return ClockIcon;
   return SparklesIcon;
 }
 

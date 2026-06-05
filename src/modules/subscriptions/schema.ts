@@ -6,6 +6,7 @@ export const subscriptionInput = z.object({
   cycle: z.enum(["MONTHLY", "YEARLY", "WEEKLY", "QUARTERLY"]),
   status: z.enum(["ACTIVE", "PAUSED", "CANCELED", "TRIAL"]).default("ACTIVE"),
   nextRenewalAt: z.coerce.date(),
+  trialEndsAt: z.coerce.date().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   paymentMethodId: z.string().optional().nullable(),
   reminderDaysBefore: z.coerce.number().int().min(0).max(30).default(3),

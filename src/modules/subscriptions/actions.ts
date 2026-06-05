@@ -41,6 +41,7 @@ export const createSubscription = authedAction(
         cycle: input.cycle,
         status: input.status,
         nextRenewalAt: input.nextRenewalAt,
+        trialEndsAt: input.status === "TRIAL" ? (input.trialEndsAt ?? null) : null,
         categoryId: input.categoryId || null,
         paymentMethodId: input.paymentMethodId || null,
         reminderDaysBefore: input.reminderDaysBefore,
@@ -62,22 +63,34 @@ export const updateSubscription = authedAction(
     await requireLedgerMember(ledgerId, user.id, "EDITOR");
     const existing = await db.subscription.findUnique({ where: { id: input.id } });
     if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
-    await db.subscription.update({
-      where: { id: input.id },
-      data: {
-        name: input.name,
-        amount: input.amount,
-        cycle: input.cycle,
-        status: input.status,
-        nextRenewalAt: input.nextRenewalAt,
-        categoryId: input.categoryId || null,
-        paymentMethodId: input.paymentMethodId || null,
-        reminderDaysBefore: input.reminderDaysBefore,
-        autoPostTransaction: input.autoPostTransaction,
-        serviceKey: input.serviceKey || null,
-        notes: input.notes || null,
-      },
-    });
+    const priceChanged = input.amount !== existing.amount;
+    await db.$transaction([
+      db.subscription.update({
+        where: { id: input.id },
+        data: {
+          name: input.name,
+          amount: input.amount,
+          cycle: input.cycle,
+          status: input.status,
+          nextRenewalAt: input.nextRenewalAt,
+          trialEndsAt: input.status === "TRIAL" ? (input.trialEndsAt ?? null) : null,
+          categoryId: input.categoryId || null,
+          paymentMethodId: input.paymentMethodId || null,
+          reminderDaysBefore: input.reminderDaysBefore,
+          autoPostTransaction: input.autoPostTransaction,
+          serviceKey: input.serviceKey || null,
+          notes: input.notes || null,
+        },
+      }),
+      // 金額が変わったら価格改定履歴を記録（値上げ表示・履歴に利用）。
+      ...(priceChanged
+        ? [
+            db.subscriptionPriceChange.create({
+              data: { subscriptionId: input.id, oldAmount: existing.amount, newAmount: input.amount },
+            }),
+          ]
+        : []),
+    ]);
     revalidatePath("/subscriptions");
     revalidatePath("/dashboard");
     return { id: input.id };

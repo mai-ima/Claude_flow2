@@ -44,6 +44,10 @@ export interface SubItem {
   daysSinceUsed: number | null;
   cancelUrl: string | null;
   cancelSteps: string[];
+  priceIncrease: boolean;
+  trialEndsLabel: string | null;
+  trialDaysLeft: number | null;
+  priceHistory: { dateLabel: string; oldAmount: number; newAmount: number; increase: boolean }[];
   edit: SubFormValue;
 }
 
@@ -102,16 +106,19 @@ export function SubscriptionsClient({
     () => canEdit && searchParams.get("new") === "1",
   );
   const [editing, setEditing] = useState<SubFormValue | undefined>();
+  const [editingHistory, setEditingHistory] = useState<SubItem["priceHistory"]>([]);
   const [reviewing, setReviewing] = useState(false);
   const [, start] = useTransition();
 
   function openAdd() {
     setEditing(undefined);
+    setEditingHistory([]);
     setSheetOpen(true);
   }
   function openEdit(it: SubItem) {
     if (!canEdit) return;
     setEditing(it.edit);
+    setEditingHistory(it.priceHistory);
     setSheetOpen(true);
   }
   function used(id: string) {
@@ -300,9 +307,14 @@ export function SubscriptionsClient({
                       {it.status !== "ACTIVE" && (
                         <Badge size="sm">{it.statusLabel}</Badge>
                       )}
+                      {it.priceIncrease && (
+                        <Badge tone="expense" size="sm">値上げ</Badge>
+                      )}
                     </span>
                     <span className="block truncate text-[12px] text-text-tertiary">
-                      {it.cycleLabel} ・ 次回 {it.nextRenewalLabel}
+                      {it.status === "TRIAL" && it.trialDaysLeft !== null && it.trialDaysLeft >= 0
+                        ? `体験終了まであと${it.trialDaysLeft}日`
+                        : `${it.cycleLabel} ・ 次回 ${it.nextRenewalLabel}`}
                       {it.paymentName ? ` ・ ${it.paymentName}` : ""}
                     </span>
                   </span>
@@ -414,6 +426,7 @@ export function SubscriptionsClient({
         initial={editing}
         currency={currency}
         canUseReminders={canUseReminders}
+        priceHistory={editingHistory}
       />
 
       {reviewing && (

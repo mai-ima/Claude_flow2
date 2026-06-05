@@ -22,6 +22,7 @@ export interface SubFormValue {
   cycle: "MONTHLY" | "YEARLY" | "WEEKLY" | "QUARTERLY";
   status: "ACTIVE" | "PAUSED" | "CANCELED" | "TRIAL";
   nextRenewalAt: string;
+  trialEndsAt: string;
   categoryId: string;
   paymentMethodId: string;
   reminderDaysBefore: number;
@@ -45,6 +46,7 @@ function defaults(): SubFormValue {
     cycle: "MONTHLY",
     status: "ACTIVE",
     nextRenewalAt: d.toISOString().slice(0, 10),
+    trialEndsAt: "",
     categoryId: "",
     paymentMethodId: "",
     reminderDaysBefore: 3,
@@ -62,6 +64,7 @@ export function SubscriptionSheet({
   initial,
   currency = "JPY",
   canUseReminders = false,
+  priceHistory = [],
 }: {
   open: boolean;
   onClose: () => void;
@@ -70,6 +73,7 @@ export function SubscriptionSheet({
   initial?: SubFormValue;
   currency?: string;
   canUseReminders?: boolean;
+  priceHistory?: { dateLabel: string; oldAmount: number; newAmount: number; increase: boolean }[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -106,6 +110,7 @@ export function SubscriptionSheet({
         cycle: v.cycle,
         status: v.status,
         nextRenewalAt: new Date(v.nextRenewalAt),
+        trialEndsAt: v.status === "TRIAL" && v.trialEndsAt ? new Date(v.trialEndsAt) : null,
         categoryId: v.categoryId || null,
         paymentMethodId: v.paymentMethodId || null,
         reminderDaysBefore: v.reminderDaysBefore,
@@ -216,6 +221,39 @@ export function SubscriptionSheet({
             }))}
           />
         </Field>
+
+        {v.status === "TRIAL" && (
+          <Field label="無料体験の終了日">
+            <Input
+              type="date"
+              value={v.trialEndsAt}
+              onChange={(e) => setV((s) => ({ ...s, trialEndsAt: e.target.value }))}
+            />
+            <p className="mt-1 text-[12px] text-text-tertiary">
+              終了が近づくと通知でお知らせします（リマインダー設定の日数を使用）。
+            </p>
+          </Field>
+        )}
+
+        {priceHistory.length > 0 && (
+          <div className="rounded-xl bg-surface-2 px-4 py-3">
+            <div className="mb-2 text-[13px] font-medium text-text-secondary">価格改定の履歴</div>
+            <ul className="space-y-1.5">
+              {priceHistory.map((h, i) => (
+                <li key={i} className="flex items-center justify-between text-[13px] tabular-nums">
+                  <span className="text-text-tertiary">{h.dateLabel}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-text-tertiary line-through">{formatMoney(h.oldAmount, currency)}</span>
+                    <span>→</span>
+                    <span className={h.increase ? "font-semibold text-expense" : "font-semibold text-income"}>
+                      {formatMoney(h.newAmount, currency)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="カテゴリ">

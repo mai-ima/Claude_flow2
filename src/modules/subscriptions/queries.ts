@@ -6,8 +6,26 @@ import type { BillingCycle } from "@/lib/enums";
 export function listSubscriptions(ledgerId: string) {
   return db.subscription.findMany({
     where: { ledgerId },
-    include: { category: true, paymentMethod: true, owner: true },
+    include: {
+      category: true,
+      paymentMethod: true,
+      owner: true,
+      priceChanges: { orderBy: { changedAt: "desc" } },
+    },
     orderBy: { nextRenewalAt: "asc" },
+  });
+}
+
+/** サブスクの価格改定履歴（新しい順）。ledgerId で越境を防止。 */
+export async function priceHistory(ledgerId: string, subscriptionId: string) {
+  const sub = await db.subscription.findUnique({
+    where: { id: subscriptionId },
+    select: { ledgerId: true },
+  });
+  if (!sub || sub.ledgerId !== ledgerId) return [];
+  return db.subscriptionPriceChange.findMany({
+    where: { subscriptionId },
+    orderBy: { changedAt: "desc" },
   });
 }
 

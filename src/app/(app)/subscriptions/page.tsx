@@ -40,6 +40,10 @@ export default async function SubscriptionsPage() {
     const cycle = s.cycle as BillingCycle;
     const svc = findService(s.serviceKey);
     const wasteLevel = detectWaste(s.lastUsedAt, s.status);
+    const latestChange = s.priceChanges[0] ?? null;
+    const priceIncrease = !!latestChange && latestChange.newAmount > latestChange.oldAmount;
+    const trialDaysLeft =
+      s.status === "TRIAL" && s.trialEndsAt ? daysUntil(s.trialEndsAt) : null;
     return {
       id: s.id,
       name: s.name,
@@ -58,6 +62,15 @@ export default async function SubscriptionsPage() {
       daysSinceUsed: daysSince(s.lastUsedAt),
       cancelUrl: svc?.cancelUrl ?? null,
       cancelSteps: svc?.cancelSteps ?? [],
+      priceIncrease,
+      trialEndsLabel: s.trialEndsAt ? formatDate(s.trialEndsAt, "M月d日") : null,
+      trialDaysLeft,
+      priceHistory: s.priceChanges.map((c) => ({
+        dateLabel: formatDate(c.changedAt, "yyyy/M/d"),
+        oldAmount: c.oldAmount,
+        newAmount: c.newAmount,
+        increase: c.newAmount > c.oldAmount,
+      })),
       edit: {
         id: s.id,
         name: s.name,
@@ -65,6 +78,7 @@ export default async function SubscriptionsPage() {
         cycle,
         status: s.status as SubItem["edit"]["status"],
         nextRenewalAt: s.nextRenewalAt.toISOString().slice(0, 10),
+        trialEndsAt: s.trialEndsAt ? s.trialEndsAt.toISOString().slice(0, 10) : "",
         categoryId: s.categoryId ?? "",
         paymentMethodId: s.paymentMethodId ?? "",
         reminderDaysBefore: s.reminderDaysBefore,
