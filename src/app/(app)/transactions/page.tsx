@@ -13,6 +13,8 @@ import {
 } from "@/modules/transactions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { MonthSwitcher } from "@/components/app/month-switcher";
+import { ButtonLink } from "@/components/ui/button";
+import { RepeatIcon } from "@/components/icons";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/date";
@@ -75,7 +77,18 @@ export default async function TransactionsPage({
 
   return (
     <PageContainer>
-      <PageHeader title="家計簿" action={<MonthSwitcher current={monthParam(month)} />} />
+      <PageHeader
+        title="家計簿"
+        action={
+          <div className="flex items-center gap-2">
+            <ButtonLink href="/transactions/recurring" variant="gray" size="sm" aria-label="定期取引">
+              <RepeatIcon size={16} />
+              定期
+            </ButtonLink>
+            <MonthSwitcher current={monthParam(month)} />
+          </div>
+        }
+      />
 
       <div className="mb-5 grid grid-cols-3 gap-3">
         <Card className="p-4">

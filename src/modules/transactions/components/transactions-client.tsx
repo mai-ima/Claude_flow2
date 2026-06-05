@@ -3,13 +3,20 @@
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TransactionSheet, type TxnFormValue } from "./transaction-sheet";
-import { deleteTransaction } from "../actions";
+import {
+  deleteTransaction,
+  bulkDeleteTransactions,
+  bulkUpdateTransactions,
+} from "../actions";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SwipeRow, type SwipeAction } from "@/components/ui/swipe-row";
+import { Sheet } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Field, Select } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon, CopyIcon } from "@/components/icons";
+import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon, CopyIcon, CheckIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/cn";
 
@@ -60,6 +67,77 @@ export function TransactionsClient({
   );
   const [editing, setEditing] = useState<TxnFormValue | undefined>();
   const [pending, start] = useTransition();
+
+  // 一括操作（選択モード）
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkCat, setBulkCat] = useState("");
+  const [bulkPm, setBulkPm] = useState("");
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function exitSelect() {
+    setSelectMode(false);
+    setSelected(new Set());
+  }
+  function selectAll() {
+    setSelected(new Set(items.map((it) => it.id)));
+  }
+
+  async function bulkRemove() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: `${ids.length}件の記録を削除しますか？`,
+      body: "削除すると元に戻せません。",
+      confirmText: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
+    start(async () => {
+      const res = await bulkDeleteTransactions({ ids });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`${res.data.count}件を削除しました`);
+      exitSelect();
+      router.refresh();
+    });
+  }
+
+  function bulkApply() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (!bulkCat && !bulkPm) {
+      setBulkOpen(false);
+      return;
+    }
+    start(async () => {
+      const res = await bulkUpdateTransactions({
+        ids,
+        ...(bulkCat ? { categoryId: bulkCat } : {}),
+        ...(bulkPm ? { paymentMethodId: bulkPm } : {}),
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`${res.data.count}件を更新しました`);
+      setBulkOpen(false);
+      setBulkCat("");
+      setBulkPm("");
+      exitSelect();
+      router.refresh();
+    });
+  }
 
   function openAdd() {
     setEditing(undefined);
@@ -120,6 +198,35 @@ export function TransactionsClient({
 
   return (
     <div className={cn(pending && "opacity-70")}>
+      {canEdit && items.length > 0 && (
+        <div className="mb-3 flex items-center justify-between">
+          {selectMode ? (
+            <>
+              <button
+                onClick={selectAll}
+                className="text-[13px] font-medium text-accent"
+              >
+                すべて選択（{items.length}）
+              </button>
+              <button
+                onClick={exitSelect}
+                className="text-[13px] font-medium text-text-secondary"
+              >
+                完了
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setSelectMode(true)}
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-surface-2 px-3.5 py-1.5 text-[13px] font-medium text-text-secondary transition hover:bg-surface-3"
+            >
+              <CheckIcon size={15} />
+              選択
+            </button>
+          )}
+        </div>
+      )}
+
       {items.length === 0 ? (
         <EmptyState
           icon={<WalletIcon size={28} />}
@@ -170,6 +277,35 @@ export function TransactionsClient({
                       {formatMoney(it.amount, currency)}
                     </span>
                   );
+
+                  // 選択モード: チェックボックス付きの行。タップで選択をトグル。
+                  if (selectMode && canEdit) {
+                    const checked = selected.has(it.id);
+                    return (
+                      <button
+                        key={it.id}
+                        onClick={() => toggleSelect(it.id)}
+                        className={cn(
+                          "flex w-full items-center gap-3 border-t border-border-subtle px-4 py-3 text-left first:border-t-0",
+                          checked && "bg-accent/5",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition",
+                            checked
+                              ? "border-accent bg-accent text-white"
+                              : "border-border-strong text-transparent",
+                          )}
+                        >
+                          <CheckIcon size={14} />
+                        </span>
+                        {icon}
+                        {label}
+                        {amount}
+                      </button>
+                    );
+                  }
 
                   // 編集可能なら左スワイプ操作（v1.2.4 で全員に正式化）。
                   // ベータ時のみ「複製」アクションとハプティックを追加。
@@ -237,7 +373,7 @@ export function TransactionsClient({
         </div>
       )}
 
-      {canEdit && (
+      {canEdit && !selectMode && (
         <button
           onClick={openAdd}
           aria-label="記録を追加"
@@ -246,6 +382,73 @@ export function TransactionsClient({
           <PlusIcon size={26} />
         </button>
       )}
+
+      {/* 一括操作バー（選択モードで選択がある時のみ） */}
+      {selectMode && selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-20 z-30 px-4 md:bottom-6">
+          <div className="mx-auto flex max-w-md items-center gap-2 rounded-2xl border border-border-subtle bg-surface-1 p-2 shadow-lg">
+            <span className="px-2 text-[13px] font-medium tabular-nums">{selected.size}件</span>
+            <Button
+              variant="gray"
+              size="sm"
+              className="flex-1"
+              onClick={() => setBulkOpen(true)}
+              disabled={pending}
+            >
+              変更
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="flex-1"
+              onClick={bulkRemove}
+              disabled={pending}
+            >
+              <TrashIcon size={16} />
+              削除
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <Sheet
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title={`${selected.size}件をまとめて変更`}
+        footer={
+          <Button full size="lg" onClick={bulkApply} disabled={pending || (!bulkCat && !bulkPm)}>
+            {pending ? "更新中…" : "変更を適用"}
+          </Button>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-[13px] text-text-secondary">
+            選択した記録のカテゴリ・支払い方法をまとめて変更します。空欄の項目は変更しません。
+          </p>
+          <Field label="カテゴリ">
+            <Select value={bulkCat} onChange={(e) => setBulkCat(e.target.value)}>
+              <option value="">変更しない</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {paymentMethods.length > 0 && (
+            <Field label="支払い方法">
+              <Select value={bulkPm} onChange={(e) => setBulkPm(e.target.value)}>
+                <option value="">変更しない</option>
+                {paymentMethods.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+        </div>
+      </Sheet>
 
       <TransactionSheet
         open={sheetOpen}

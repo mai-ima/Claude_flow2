@@ -170,6 +170,28 @@ export async function monthlyTrend(ledgerId: string, months: number) {
   return buckets.map((b) => ({ label: b.label, income: b.income, expense: b.expense }));
 }
 
+/** 繰り返し（定期）取引の一覧。カテゴリ/支払い名を付与。 */
+export function listRecurring(ledgerId: string) {
+  return db.recurringTransaction.findMany({
+    where: { ledgerId },
+    select: {
+      id: true,
+      type: true,
+      amount: true,
+      cycle: true,
+      nextRunAt: true,
+      lastRunAt: true,
+      active: true,
+      memo: true,
+      categoryId: true,
+      paymentMethodId: true,
+      category: { select: { name: true, icon: true } },
+      paymentMethod: { select: { name: true } },
+    },
+    orderBy: [{ active: "desc" }, { nextRunAt: "asc" }],
+  });
+}
+
 export function listCategories(ledgerId: string) {
   return db.category.findMany({
     where: { ledgerId, isArchived: false },
