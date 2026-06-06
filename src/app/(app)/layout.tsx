@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/app/sidebar";
 import { BottomBar } from "@/components/app/bottom-bar";
 import { AppHeader, type LedgerOption } from "@/components/app/app-header";
+import { AppChromeProvider } from "@/components/app/app-chrome";
 import { CommandPalette } from "@/components/app/command-palette";
 import { KeyboardShortcuts } from "@/components/app/keyboard-shortcuts";
 import { getCurrentUser } from "@/lib/auth";
@@ -47,17 +48,19 @@ export default async function AppLayout({
   return (
     <div className={cn("transition-theme flex min-h-screen", isPod && "theme-pod")}>
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader
-          ledgers={options}
-          activeId={activeId}
-          tier={user.tier}
-          userName={user.name ?? "ユーザー"}
-          notifications={notifItems}
-          unread={unread}
-        />
-        <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">{children}</main>
-      </div>
+      <AppChromeProvider>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <AppHeader
+            ledgers={options}
+            activeId={activeId}
+            tier={user.tier}
+            userName={user.name ?? "ユーザー"}
+            notifications={notifItems}
+            unread={unread}
+          />
+          <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">{children}</main>
+        </div>
+      </AppChromeProvider>
       <BottomBar />
       <CommandPalette />
       <KeyboardShortcuts enabled={user.betaOptIn} />

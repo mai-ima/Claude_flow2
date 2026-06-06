@@ -12,7 +12,7 @@ export function BottomBar() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border-subtle bg-glass backdrop-blur-xl backdrop-saturate-150 md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="grid grid-cols-5">
+      <div className="grid grid-cols-5 px-1.5 pt-1">
         {BOTTOM_ITEMS.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(item.href + "/");
@@ -20,12 +20,20 @@ export function BottomBar() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition active:scale-95",
+                "group flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium transition-[color] duration-[var(--dur-1)] ease-spring active:scale-95",
                 active ? "text-accent" : "text-text-tertiary",
               )}
             >
-              <item.icon size={23} />
+              <span
+                className={cn(
+                  "grid h-8 w-16 place-items-center rounded-full transition-all duration-[var(--dur-2)] ease-spring",
+                  active ? "bg-accent/12 scale-100" : "scale-95 group-active:bg-surface-2",
+                )}
+              >
+                <item.icon size={22} />
+              </span>
               {item.label}
             </Link>
           );

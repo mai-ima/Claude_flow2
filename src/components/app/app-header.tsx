@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { useAppChrome } from "./app-chrome";
 import { MobileDrawer } from "./mobile-drawer";
 import { NotificationBell, type NotifItem } from "./notification-bell";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ export function AppHeader({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pending, start] = useTransition();
   const active = ledgers.find((l) => l.id === activeId) ?? ledgers[0];
+  const { title, promoted } = useAppChrome();
 
   function choose(id: string) {
     setOpen(false);
@@ -57,10 +59,24 @@ export function AppHeader({
       className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border-subtle bg-glass px-4 backdrop-blur-xl backdrop-saturate-150"
       style={{ paddingTop: "env(safe-area-inset-top)", height: "calc(3.5rem + env(safe-area-inset-top))" }}
     >
+      {/* スクロールで大型タイトルが隠れたら、ヘッダー中央へ昇格表示（iOS 風） */}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 flex items-center justify-center px-16 transition-all duration-[var(--dur-2)] ease-spring",
+          promoted ? "translate-y-0 opacity-100" : "translate-y-1.5 opacity-0",
+        )}
+        style={{ paddingTop: "env(safe-area-inset-top)", height: "calc(3.5rem + env(safe-area-inset-top))" }}
+      >
+        <span className="max-w-full truncate text-[16px] font-semibold tracking-tight">
+          {title}
+        </span>
+      </div>
+
       <button
         onClick={() => setDrawerOpen(true)}
         aria-label="メニューを開く"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary md:hidden"
+        className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary md:hidden"
       >
         <MenuIcon size={22} />
       </button>
