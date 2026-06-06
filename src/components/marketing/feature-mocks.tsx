@@ -1,6 +1,15 @@
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { Badge } from "@/components/ui/badge";
-import { CheckIcon, PlayIcon, UsersIcon, CardIcon, CategoryIcon } from "@/components/icons";
+import {
+  CheckIcon,
+  PlayIcon,
+  UsersIcon,
+  CardIcon,
+  CategoryIcon,
+  RepeatIcon,
+  TargetIcon,
+  HomeIcon,
+} from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 
 /** 機能紹介用の、実UIを模した軽量モック（純表示・絵文字なし）。 */
@@ -148,6 +157,39 @@ function FamilyMock() {
   );
 }
 
+const AUTOMATION_ROWS = [
+  { icon: <HomeIcon size={16} />, name: "家賃", note: "毎月25日 ・ 定期", amount: "−85,000円", tone: "text-text-primary" },
+  { icon: <PlayIcon size={16} />, name: "Netflix", note: "毎月15日 ・ 自動記帳", amount: "−1,490円", tone: "text-text-primary" },
+  { icon: <TargetIcon size={16} />, name: "旅行ファンド", note: "毎月1日 ・ 自動積立", amount: "+30,000円", tone: "text-income" },
+];
+
+function AutomationMock() {
+  return (
+    <Frame>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[12px] text-text-tertiary">自動で記録・積立</span>
+        <Badge tone="accent" size="sm">
+          <RepeatIcon size={12} /> 定期
+        </Badge>
+      </div>
+      <div className="space-y-2">
+        {AUTOMATION_ROWS.map((r) => (
+          <div key={r.name} className="flex items-center gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-surface-1 text-text-secondary">
+              {r.icon}
+            </span>
+            <span className="flex-1">
+              <span className="block text-[13px] font-medium">{r.name}</span>
+              <span className="block text-[11px] text-text-tertiary">{r.note}</span>
+            </span>
+            <span className={`text-[13px] font-semibold tabular-nums ${r.tone}`}>{r.amount}</span>
+          </div>
+        ))}
+      </div>
+    </Frame>
+  );
+}
+
 export function FeatureMock({ tag }: { tag: string }) {
   switch (tag) {
     case "コストタイム":
@@ -158,6 +200,8 @@ export function FeatureMock({ tag }: { tag: string }) {
       return <ReviewMock />;
     case "ファミリー共有":
       return <FamilyMock />;
+    case "自動化・繰り返し":
+      return <AutomationMock />;
     default:
       return <CostTimeMock />;
   }

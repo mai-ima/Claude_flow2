@@ -14,7 +14,10 @@ const ROWS: { group: string; rows: Row[] }[] = [
     group: "基本",
     rows: [
       { label: "収支の記録", free: "無制限", plus: "無制限", pro: "無制限" },
+      { label: "繰り返し取引・自動記帳", free: true, plus: true, pro: true },
+      { label: "取引の一括編集", free: true, plus: true, pro: true },
       { label: "サブスク登録", free: "5件まで", plus: "無制限", pro: "無制限" },
+      { label: "値上げ検知・体験終了通知", free: true, plus: true, pro: true },
       { label: "基本ダッシュボード", free: true, plus: true, pro: true },
       { label: "コストタイム", free: true, plus: true, pro: true },
     ],
@@ -22,7 +25,8 @@ const ROWS: { group: string; rows: Row[] }[] = [
   {
     group: "管理",
     rows: [
-      { label: "予算管理", free: false, plus: true, pro: true },
+      { label: "予算管理・超過アラート", free: false, plus: true, pro: true },
+      { label: "貯金目標・自動積立", free: false, plus: true, pro: true },
       { label: "更新リマインダー", free: false, plus: true, pro: true },
       { label: "サブスク・スタック", free: false, plus: true, pro: true },
       { label: "ファミリー共有", free: false, plus: "最大2人", pro: "最大5人" },

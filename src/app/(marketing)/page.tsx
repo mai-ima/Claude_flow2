@@ -14,6 +14,7 @@ import {
   ClockIcon,
   ShieldIcon,
   StarIcon,
+  TargetIcon,
 } from "@/components/icons";
 import { pageMetadata, SITE, jsonLd } from "@/lib/seo";
 import { formatMoney } from "@/lib/money";
@@ -46,12 +47,12 @@ const FEATURES = [
   {
     icon: WalletIcon,
     title: "家計簿",
-    body: "収入も支出も、ハーフシートから片手でサッと記録。カテゴリと予算で、お金の流れが自然に整います。",
+    body: "収入も支出も、ハーフシートから片手でサッと。繰り返し取引や一括編集で、記録の手間を限りなくゼロへ。",
   },
   {
     icon: RepeatIcon,
     title: "サブスク管理",
-    body: "更新日・年額換算・合計コストを一目で。決済日が来たら自動で家計簿に記帳されます。",
+    body: "更新日・年額換算・合計を一目で。決済日には自動で記帳。値上げ検知や無料体験の終了通知で、変化も見逃しません。",
   },
   {
     icon: ClockIcon,
@@ -59,9 +60,9 @@ const FEATURES = [
     body: "支出をあなたの「働いた時間」に換算。月980円は、人生の何分か——数字に体温を。",
   },
   {
-    icon: SparklesIcon,
-    title: "サブスク・レビュー",
-    body: "1件ずつ美しいカードで仕分け。使っていない固定費を、ゲーム感覚で見直せます。",
+    icon: TargetIcon,
+    title: "予算・貯金目標",
+    body: "予算は円グラフ＋超過アラート、過去平均からの提案も。目標は毎月の自動積立と履歴で、未来をかたちに。",
   },
   {
     icon: BellIcon,

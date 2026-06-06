@@ -14,17 +14,26 @@ import {
   ChartIcon,
   ShieldIcon,
   TargetIcon,
+  SlidersIcon,
+  ArrowUpIcon,
+  WalletIcon,
 } from "@/components/icons";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   title: "機能",
   description:
-    "コストタイム、サブスク・スタック、サブスク・レビュー、スマート解約アシスト、ファミリー共有。Tsumiki のすべての機能を紹介します。",
+    "繰り返し取引・自動記帳、コストタイム、サブスクの値上げ検知・体験終了通知、予算アラートと自動積立、サブスク・レビュー、ファミリー共有。Tsumiki のすべての機能を紹介します。",
   path: "/features",
 });
 
 const SECTIONS = [
+  {
+    icon: RepeatIcon,
+    tag: "自動化・繰り返し",
+    title: "決まった出入りは、自動で。",
+    body: "家賃やサブスクの引き落としを「定期取引」に登録すれば、毎月・毎週など自動で家計簿に記録。貯金も毎月の自動積立でコツコツ積み上がります。記録の手間を、限りなくゼロへ。",
+  },
   {
     icon: ClockIcon,
     tag: "コストタイム",
@@ -55,9 +64,13 @@ const SECTIONS = [
 ];
 
 const MORE = [
-  { icon: RepeatIcon, title: "自動記帳", body: "更新日が来たら、サブスクの支出を自動で家計簿へ。" },
+  { icon: RepeatIcon, title: "自動記帳", body: "更新日が来たら、サブスクの支出を自動で家計簿へ。取りこぼした分もまとめて記録。" },
+  { icon: SlidersIcon, title: "一括編集", body: "複数の取引をまとめて選択し、カテゴリ・支払い方法の変更や削除をワンアクションで。" },
+  { icon: ArrowUpIcon, title: "値上げ検知", body: "サブスクの金額が変わると価格改定を自動で記録。値上げは一覧でひと目でわかります。" },
+  { icon: ClockIcon, title: "体験終了アラート", body: "無料体験（トライアル）の終了が近づくと通知。解約忘れによる課金を防ぎます。" },
   { icon: BellIcon, title: "更新リマインダー", body: "更新の当日〜30日前まで、サブスクごとに通知タイミングを設定。アプリ内とメールで静かにお知らせ。" },
-  { icon: TargetIcon, title: "予算・貯金目標", body: "予算は円グラフで一目。「1日あたり使える額」と達成ペースも。" },
+  { icon: WalletIcon, title: "予算アラート", body: "カテゴリや全体の予算が80%・100%に達したら通知。使いすぎを早めに防ぎます。" },
+  { icon: TargetIcon, title: "予算・貯金目標", body: "予算は円グラフ＋過去平均からの提案。目標は毎月の自動積立と積立履歴・引き出しに対応。" },
   { icon: ChartIcon, title: "分析・レポート", body: "収支の推移やカテゴリ内訳を、合計・前月比つきの美しいグラフで。" },
   { icon: SparklesIcon, title: "スマート解約アシスト", body: "主要40以上のサービスに対応。解約ページへ最短でジャンプし、手順もその場で確認。" },
   { icon: ShieldIcon, title: "プライバシー", body: "データはあなたのもの。広告のために売りません。" },

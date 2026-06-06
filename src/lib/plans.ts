@@ -32,8 +32,8 @@ export const PLANS: Record<PlanTier, Plan> = {
     yearly: 0,
     highlights: [
       "収支記録は無制限",
-      "サブスク登録は5件まで",
-      "基本ダッシュボード",
+      "繰り返し取引・一括編集",
+      "サブスク5件＋値上げ検知",
       "コストタイム（基本）",
     ],
     maxSubscriptions: 5,
@@ -49,7 +49,8 @@ export const PLANS: Record<PlanTier, Plan> = {
     stripePriceYearlyEnv: "STRIPE_PRICE_PLUS_YEARLY",
     highlights: [
       "サブスク無制限",
-      "予算管理",
+      "予算管理・超過アラート",
+      "貯金目標・自動積立",
       "更新リマインダー",
       "サブスク・スタック",
       "ファミリー共有（最大2人）",
