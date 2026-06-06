@@ -110,7 +110,7 @@ export function Sheet({
       <div
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300",
+          "absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-[var(--dur-2)] ease-spring",
           open ? "opacity-100" : "opacity-0",
         )}
       />
@@ -123,7 +123,7 @@ export function Sheet({
         className={cn(
           "relative w-full sm:max-w-lg bg-surface-1 sm:rounded-3xl rounded-t-3xl shadow-lg",
           "max-h-full sm:max-h-[92dvh] flex flex-col",
-          "transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "transition-all duration-[var(--dur-2)] ease-spring",
           open
             ? "translate-y-0 sm:scale-100 opacity-100"
             : "translate-y-8 sm:translate-y-4 sm:scale-95 opacity-0",

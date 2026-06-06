@@ -37,13 +37,13 @@ export function MobileNav() {
       <div
         onClick={() => setOpen(false)}
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-[var(--dur-2)] ease-spring",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
       />
       <div
         className={cn(
-          "fixed inset-x-0 top-0 z-50 origin-top rounded-b-3xl border-b border-border-subtle bg-surface-1 p-5 shadow-lg transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "fixed inset-x-0 top-0 z-50 origin-top rounded-b-3xl border-b border-border-subtle bg-surface-1 p-5 shadow-lg transition-all duration-[var(--dur-2)] ease-spring",
           open ? "translate-y-0 opacity-100" : "-translate-y-4 pointer-events-none opacity-0",
         )}
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}

@@ -44,6 +44,11 @@
 
   /* モーション */
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 0.18s; /* micro: タップ/ホバー */
+  --dur-2: 0.28s; /* base: シート/トグル/タブ */
+  --dur-3: 0.45s; /* major: テーマ/大きな移動 */
+  --dur-reveal: 0.7s; /* reveal/リング */
 }
 
 .dark {
@@ -112,6 +117,10 @@
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
 
+  /* イージング（ease-spring / ease-out ユーティリティを有効化） */
+  --ease-spring: var(--ease-spring);
+  --ease-out: var(--ease-out);
+
   --font-sans:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
     "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic",
@@ -127,6 +136,9 @@ html {
   text-rendering: optimizeLegibility;
   /* iOS: タップ時の灰色フラッシュを抑止 */
   -webkit-tap-highlight-color: transparent;
+  /* iOS: 横向き等での自動フォント拡大を抑止（レイアウト一貫性） */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   /* スクロール連鎖・引っ張り更新の暴発を抑止（アプリ的挙動） */
   overscroll-behavior-y: none;
 }
@@ -153,11 +165,32 @@ label,
 .transition-theme,
 .transition-theme * {
   transition:
-    background-color 0.4s var(--ease-spring),
-    border-color 0.4s var(--ease-spring),
-    color 0.4s var(--ease-spring),
-    fill 0.4s var(--ease-spring),
-    stroke 0.4s var(--ease-spring);
+    background-color var(--dur-3) var(--ease-spring),
+    border-color var(--dur-3) var(--ease-spring),
+    color var(--dur-3) var(--ease-spring),
+    fill var(--dur-3) var(--ease-spring),
+    stroke var(--dur-3) var(--ease-spring);
+}
+
+/* View Transitions（テーマ切替の円形リビール）実行中は、
+   全要素の色フェードを止めて二重アニメ・ちらつきを防ぐ。 */
+html[data-vt] .transition-theme,
+html[data-vt] .transition-theme * {
+  transition: none !important;
+}
+
+/* テーマ切替の View Transition: 既定のクロスフェードを無効化し、
+   新スナップショットを上に重ねて clip-path で円形リビールさせる。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  z-index: 0;
+}
+::view-transition-new(root) {
+  z-index: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -195,7 +228,7 @@ label,
   }
 }
 .toast-in {
-  animation: toast-in 0.32s var(--ease-spring) both;
+  animation: toast-in var(--dur-2) var(--ease-spring) both;
 }
 
 /* ページ遷移: ふわっと立ち上がる（template.tsx で適用） */
@@ -210,7 +243,7 @@ label,
   }
 }
 .page-enter {
-  animation: page-in 0.34s var(--ease-spring) both;
+  animation: page-in var(--dur-3) var(--ease-spring) both;
 }
 
 /* スクロール出現（マーケティング） */
@@ -218,8 +251,8 @@ label,
   opacity: 0;
   transform: translateY(22px);
   transition:
-    opacity 0.7s var(--ease-spring),
-    transform 0.7s var(--ease-spring);
+    opacity var(--dur-reveal) var(--ease-spring),
+    transform var(--dur-reveal) var(--ease-spring);
   will-change: opacity, transform;
 }
 .reveal.is-visible {
@@ -230,8 +263,8 @@ label,
 /* カードのホバー浮き上がり */
 .hover-lift {
   transition:
-    transform 0.3s var(--ease-spring),
-    box-shadow 0.3s var(--ease-spring);
+    transform var(--dur-2) var(--ease-spring),
+    box-shadow var(--dur-2) var(--ease-spring);
 }
 .hover-lift:hover {
   transform: translateY(-4px);

@@ -26,15 +26,15 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-300 ease-spring",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1",
         checked ? "bg-income" : "bg-surface-3",
-        disabled && "opacity-50",
+        disabled && "opacity-50 pointer-events-none",
       )}
     >
       <span
         className={cn(
-          "absolute left-0.5 top-0.5 h-[27px] w-[27px] rounded-full bg-white shadow-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "absolute left-0.5 top-0.5 h-[27px] w-[27px] rounded-full bg-white shadow-md transition-transform duration-300 ease-spring",
           checked ? "translate-x-5" : "translate-x-0",
         )}
       />

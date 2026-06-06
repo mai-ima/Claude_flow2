@@ -113,7 +113,7 @@ export function SwipeRow({
         style={{ transform: `translateX(${tx}px)`, touchAction: "pan-y" }}
         className={cn(
           "relative bg-surface-1",
-          !dragging && "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          !dragging && "transition-transform duration-[var(--dur-2)] ease-spring",
         )}
       >
         {children}

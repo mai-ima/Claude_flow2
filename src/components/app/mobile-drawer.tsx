@@ -50,14 +50,14 @@ export function MobileDrawer({
       <div
         onClick={onClose}
         className={cn(
-          "fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm transition-opacity duration-[var(--dur-2)] ease-spring",
           open ? "opacity-100" : "opacity-0",
         )}
       />
       {/* panel */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] flex w-72 max-w-[82%] flex-col bg-surface-1 shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "fixed inset-y-0 left-0 z-[60] flex w-72 max-w-[82%] flex-col bg-surface-1 shadow-lg transition-transform duration-[var(--dur-2)] ease-spring",
           open ? "translate-x-0" : "-translate-x-full",
         )}
         style={{
