@@ -37,7 +37,7 @@ export function ActivityRing({
       className={cn("relative inline-grid place-items-center", className)}
       style={{ width: size, height: size }}
     >
-      <svg width={size} height={size} className="-rotate-90 overflow-visible">
+      <svg width={size} height={size} aria-hidden focusable="false" className="-rotate-90 overflow-visible">
         <defs>
           {tracks.map((t, i) => (
             <linearGradient key={i} id={`${uid}-g${i}`} x1="0%" y1="0%" x2="100%" y2="100%">

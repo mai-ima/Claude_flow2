@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/cn";
 
-/** iOS 風セグメンテッドコントロール。 */
+/** iOS 風セグメンテッドコントロール（選択ピルが spring でスライド）。 */
 export function Segmented<T extends string>({
   value,
   onChange,
@@ -14,15 +14,26 @@ export function Segmented<T extends string>({
   options: { value: T; label: string }[];
   className?: string;
 }) {
+  const idx = options.findIndex((o) => o.value === value);
+  const n = options.length;
+
   return (
     <div
-      className={cn(
-        "inline-grid gap-1 rounded-xl bg-surface-2 p-1",
-        className,
-      )}
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }}
+      className={cn("relative inline-flex rounded-xl bg-surface-2 p-1", className)}
       role="tablist"
     >
+      {/* スライドする選択インジケータ */}
+      {idx >= 0 && (
+        <span
+          aria-hidden
+          className="absolute inset-y-1 rounded-lg bg-surface-1 shadow-sm transition-transform duration-[var(--dur-2)] ease-spring"
+          style={{
+            left: 4,
+            width: `calc((100% - 8px) / ${n})`,
+            transform: `translateX(${idx * 100}%)`,
+          }}
+        />
+      )}
       {options.map((o) => (
         <button
           key={o.value}
@@ -30,10 +41,9 @@ export function Segmented<T extends string>({
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "rounded-lg px-3 py-1.5 text-[14px] font-medium transition-all duration-200",
-            value === o.value
-              ? "bg-surface-1 text-text-primary shadow-sm"
-              : "text-text-secondary hover:text-text-primary",
+            "relative z-10 flex-1 rounded-lg px-3 py-1.5 text-[14px] font-medium transition-colors duration-[var(--dur-1)] ease-spring",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+            value === o.value ? "text-text-primary" : "text-text-secondary hover:text-text-primary",
           )}
         >
           {o.label}

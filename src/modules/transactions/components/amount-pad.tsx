@@ -113,7 +113,8 @@ export function AmountPad({
             key={n}
             type="button"
             onClick={() => setQuick(n)}
-            className="rounded-full bg-surface-2 px-3.5 py-1.5 text-[13px] font-medium text-text-secondary transition active:scale-95 hover:bg-surface-3"
+            aria-label={`${formatMoney(n, currency)} を加算`}
+            className="rounded-full bg-surface-2 px-3.5 py-1.5 text-[13px] font-medium text-text-secondary transition duration-[var(--dur-1)] ease-spring active:scale-95 hover:bg-surface-3"
           >
             {formatMoney(n, currency)}
           </button>
@@ -121,14 +122,14 @@ export function AmountPad({
         <button
           type="button"
           onClick={clearAll}
-          className="ml-auto rounded-full px-3.5 py-1.5 text-[13px] font-medium text-text-tertiary transition active:scale-95 hover:text-expense"
+          className="ml-auto rounded-full px-3.5 py-1.5 text-[13px] font-medium text-text-tertiary transition duration-[var(--dur-1)] ease-spring active:scale-95 hover:text-expense"
         >
           クリア
         </button>
       </div>
 
       {/* キーパッド */}
-      <div className="grid grid-cols-4 gap-2">
+      <div role="group" aria-label="電卓キーパッド" className="grid grid-cols-4 gap-2">
         {keys.map((k) => (
           <button
             key={k.label}
@@ -136,7 +137,7 @@ export function AmountPad({
             onClick={k.onClick}
             aria-label={k.label === "⌫" ? "1文字削除" : k.label}
             className={cn(
-              "grid h-12 place-items-center rounded-xl text-[20px] font-semibold transition active:scale-95",
+              "grid h-12 place-items-center rounded-xl text-[20px] font-semibold transition duration-[var(--dur-1)] ease-spring active:scale-95",
               k.kind === "op"
                 ? "bg-accent/10 text-accent hover:bg-accent/15"
                 : k.kind === "util"

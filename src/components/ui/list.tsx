@@ -83,7 +83,8 @@ function RowInner({ icon, iconBg, label, sublabel, value, trailing, chevron }: R
 }
 
 const ROW = "flex items-center gap-3 px-4 py-3 border-t border-border-subtle first:border-t-0";
-const TAP = "transition-colors hover:bg-surface-2 active:bg-surface-3";
+const TAP =
+  "transition-colors duration-[var(--dur-1)] ease-spring hover:bg-surface-2 active:bg-surface-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50";
 
 export function ListRow(props: RowProps) {
   const { href, onClick, className } = props;

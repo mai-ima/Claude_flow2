@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 
 // フォントは 16px 以上に固定（iOS Safari のフォーカス時オートズームを回避）。
 const base =
-  "w-full rounded-xl border border-border-subtle bg-surface-1 px-3.5 text-[16px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/40 transition";
+  "w-full rounded-xl border border-border-subtle bg-surface-1 px-3.5 text-[16px] text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/40 transition duration-[var(--dur-1)] ease-spring";
 
 export function Field({
   label,

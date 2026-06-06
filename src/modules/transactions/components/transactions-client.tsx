@@ -378,7 +378,7 @@ export function TransactionsClient({
         <button
           onClick={openAdd}
           aria-label="記録を追加"
-          className="fixed bottom-24 right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
+          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition duration-[var(--dur-1)] ease-spring hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
         >
           <PlusIcon size={26} />
         </button>
@@ -386,7 +386,7 @@ export function TransactionsClient({
 
       {/* 一括操作バー（選択モードで選択がある時のみ） */}
       {selectMode && selected.size > 0 && (
-        <div className="fixed inset-x-0 bottom-20 z-30 px-4 md:bottom-6">
+        <div className="fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 px-4 md:bottom-6">
           <div className="mx-auto flex max-w-md items-center gap-2 rounded-2xl border border-border-subtle bg-surface-1 p-2 shadow-lg">
             <span className="px-2 text-[13px] font-medium tabular-nums">{selected.size}件</span>
             <Button

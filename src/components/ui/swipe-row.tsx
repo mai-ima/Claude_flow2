@@ -85,6 +85,7 @@ export function SwipeRow({
         {actions.map((a) => (
           <button
             key={a.label}
+            aria-label={a.label}
             onClick={() => {
               setTx(0);
               a.onClick();
