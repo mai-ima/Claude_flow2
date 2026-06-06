@@ -105,7 +105,7 @@ export function CommandPalette() {
           />
           <kbd className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-text-tertiary">esc</kbd>
         </div>
-        <ul className="max-h-[50dvh] overflow-y-auto overscroll-contain p-2">
+        <ul className="max-h-[50dvh] overflow-y-auto overscroll-contain touch-pan-y p-2">
           {filtered.length === 0 ? (
             <li className="px-3 py-6 text-center text-[14px] text-text-tertiary">該当なし</li>
           ) : (

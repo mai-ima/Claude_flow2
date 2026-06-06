@@ -35,7 +35,7 @@ export function MonthSwitcher({ current }: { current: string }) {
         onClick={() => go(1)}
         aria-label="次の月"
         disabled={isCurrent}
-        className="grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-surface-2 disabled:opacity-30"
+        className="grid h-9 w-9 place-items-center rounded-lg text-text-secondary hover:bg-surface-2 disabled:opacity-30 disabled:hover:bg-transparent"
       >
         <ChevronRightIcon size={18} />
       </button>

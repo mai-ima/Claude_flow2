@@ -54,7 +54,8 @@ export function ActivityRing({
           const r = center - thickness / 2 - i * (thickness + gap);
           if (r <= 0) return null;
           const circ = 2 * Math.PI * r;
-          const value = Math.max(t.value, 0);
+          // 非有限値(NaN/Infinity)は 0 として扱い、不正な SVG 座標を防ぐ。
+          const value = Number.isFinite(t.value) ? Math.max(t.value, 0) : 0;
           const pct = Math.min(value, 1);
           const over = value > 1;
           // 100%超の先端位置（開始＝回転後の真上）。1周分の剰余で重なりを表現。

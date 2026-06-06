@@ -56,7 +56,7 @@ export default async function AppLayout({
           notifications={notifItems}
           unread={unread}
         />
-        <main className="flex-1 pb-24 md:pb-10">{children}</main>
+        <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">{children}</main>
       </div>
       <BottomBar />
       <CommandPalette />
