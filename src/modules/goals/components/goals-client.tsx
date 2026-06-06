@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, Input, Select } from "@/components/ui/field";
+import { Segmented } from "@/components/ui/segmented";
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
@@ -64,6 +65,7 @@ export function GoalsClient({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [contribFor, setContribFor] = useState<GoalItem | null>(null);
   const [contribAmount, setContribAmount] = useState(0);
+  const [contribMode, setContribMode] = useState<"add" | "withdraw">("add");
   const [contribError, setContribError] = useState<string>();
   const [error, setError] = useState<string>();
   const [form, setForm] = useState({
@@ -136,14 +138,16 @@ export function GoalsClient({
   function contribute() {
     if (!contribFor) return;
     setContribError(undefined);
+    const amount = contribMode === "withdraw" ? -contribAmount : contribAmount;
     start(async () => {
-      const res = await contributeGoal({ id: contribFor.id, amount: contribAmount });
+      const res = await contributeGoal({ id: contribFor.id, amount });
       if (!res.ok) {
         setContribError(res.error);
         return;
       }
       setContribFor(null);
       setContribAmount(0);
+      setContribMode("add");
       router.refresh();
     });
   }
@@ -260,6 +264,7 @@ export function GoalsClient({
                         onClick={() => {
                           setContribFor(g);
                           setContribAmount(0);
+                          setContribMode("add");
                           setContribError(undefined);
                         }}
                       >
@@ -363,28 +368,39 @@ export function GoalsClient({
         </div>
       </Sheet>
 
-      {/* contribute */}
+      {/* contribute / withdraw */}
       <Sheet
         open={contribFor !== null}
         onClose={() => setContribFor(null)}
-        title={`${contribFor?.name ?? ""} に積み立て`}
+        title={contribFor?.name ?? ""}
         footer={
           <Button full size="lg" onClick={contribute} disabled={contribAmount === 0}>
-            積み立てる
+            {contribMode === "withdraw" ? "引き出す" : "積み立てる"}
           </Button>
         }
       >
         <div className="space-y-4">
+          <Segmented<"add" | "withdraw">
+            className="w-full"
+            value={contribMode}
+            onChange={setContribMode}
+            options={[
+              { value: "add", label: "積立" },
+              { value: "withdraw", label: "引き出し" },
+            ]}
+          />
           <div className="rounded-2xl bg-surface-2 px-5 py-6 text-center">
             <input
               inputMode="numeric"
               value={contribAmount ? String(contribAmount) : ""}
               onChange={(e) => setContribAmount(Math.max(0, parseInt(e.target.value.replace(/\D/g, "") || "0", 10)))}
               placeholder="0"
-              aria-label="積立額"
+              aria-label={contribMode === "withdraw" ? "引き出し額" : "積立額"}
               className="w-full bg-transparent text-center text-[36px] font-bold tabular-nums outline-none placeholder:text-text-tertiary"
             />
-            <div className="text-[13px] text-text-tertiary">{formatMoney(contribAmount, currency)} を追加</div>
+            <div className="text-[13px] text-text-tertiary">
+              {formatMoney(contribAmount, currency)} を{contribMode === "withdraw" ? "引き出す" : "追加"}
+            </div>
           </div>
           <div className="grid grid-cols-4 gap-2">
             {[1000, 5000, 10000, 30000].map((v) => (
@@ -397,6 +413,11 @@ export function GoalsClient({
               </button>
             ))}
           </div>
+          {contribMode === "withdraw" && contribFor && (
+            <p className="text-[12px] text-text-tertiary">
+              現在の貯蓄額 {formatMoney(contribFor.currentAmount, currency)} を上限に引き出せます。
+            </p>
+          )}
           {contribError && <p className="text-[13px] text-expense">{contribError}</p>}
 
           {contribFor && contribFor.history.length > 0 && (

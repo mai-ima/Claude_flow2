@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
-import { listBudgetsWithSpending } from "@/modules/budgets/queries";
+import { listBudgetsWithSpending, categoryAverages } from "@/modules/budgets/queries";
 import { listCategories } from "@/modules/transactions/queries";
 import { BudgetsClient, type BudgetItem } from "@/modules/budgets";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
@@ -33,9 +33,10 @@ export default async function BudgetsPage() {
     );
   }
 
-  const [{ total, categories }, allCategories] = await Promise.all([
+  const [{ total, categories }, allCategories, averages] = await Promise.all([
     listBudgetsWithSpending(ledgerId),
     listCategories(ledgerId),
+    categoryAverages(ledgerId, 3),
   ]);
 
   const totalItem: BudgetItem | null = total;
@@ -52,6 +53,7 @@ export default async function BudgetsPage() {
         canEdit={canEdit}
         currency={currency}
         beta={betaOptIn}
+        averages={averages}
       />
     </PageContainer>
   );

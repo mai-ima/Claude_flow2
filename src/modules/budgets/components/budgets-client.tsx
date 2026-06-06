@@ -116,6 +116,7 @@ export function BudgetsClient({
   canEdit,
   currency = "JPY",
   beta = false,
+  averages,
 }: {
   total: BudgetItem | null;
   categories: BudgetItem[];
@@ -123,6 +124,7 @@ export function BudgetsClient({
   canEdit: boolean;
   currency?: string;
   beta?: boolean;
+  averages?: { byCategory: Record<string, number>; total: number };
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -149,6 +151,16 @@ export function BudgetsClient({
     setError(undefined);
     setSheetOpen(true);
   }
+  function applyAmount(v: number) {
+    setForm((s) => ({ ...s, amount: v }));
+    setAmountText(String(v));
+  }
+  // 選択中の対象（全体 or カテゴリ）の過去平均。0 以下なら提案しない。
+  const suggested = !averages
+    ? 0
+    : form.categoryId
+      ? (averages.byCategory[form.categoryId] ?? 0)
+      : averages.total;
   function save() {
     setError(undefined);
     start(async () => {
@@ -320,6 +332,19 @@ export function BudgetsClient({
               ))}
             </Select>
           </Field>
+          {suggested > 0 && (
+            <button
+              type="button"
+              onClick={() => applyAmount(suggested)}
+              className="flex w-full items-center justify-between rounded-xl bg-surface-2 px-4 py-2.5 text-left transition hover:bg-surface-3"
+            >
+              <span className="text-[13px] text-text-secondary">
+                過去3ヶ月の平均: <b className="tabular-nums text-text-primary">{formatMoney(suggested, currency)}</b>
+              </span>
+              <span className="text-[13px] font-medium text-accent">適用</span>
+            </button>
+          )}
+
           {beta ? (
             <Field label="月の予算額">
               <Input

@@ -1,6 +1,40 @@
 import "server-only";
+import { subMonths } from "date-fns";
 import { db } from "@/lib/db";
 import { monthRange } from "@/lib/date";
+
+/**
+ * 直近 N ヶ月（当月を除く）のカテゴリ別・全体の平均支出を返す（予算の自動提案用）。
+ * 「全体」は categoryId=null キーで保持。1ヶ月あたりに按分した整数。
+ */
+export async function categoryAverages(
+  ledgerId: string,
+  months = 3,
+  now: Date = new Date(),
+): Promise<{ byCategory: Record<string, number>; total: number }> {
+  const period = Math.max(1, months);
+  const start = monthRange(subMonths(now, period)).start; // N ヶ月前の月初
+  const end = monthRange(subMonths(now, 1)).end; // 前月末（当月は除外）
+
+  const [byCat, totalAgg] = await Promise.all([
+    db.transaction.groupBy({
+      by: ["categoryId"],
+      where: { ledgerId, type: "EXPENSE", occurredAt: { gte: start, lte: end } },
+      _sum: { amount: true },
+    }),
+    db.transaction.aggregate({
+      where: { ledgerId, type: "EXPENSE", occurredAt: { gte: start, lte: end } },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const byCategory: Record<string, number> = {};
+  for (const r of byCat) {
+    if (!r.categoryId) continue;
+    byCategory[r.categoryId] = Math.round((r._sum.amount ?? 0) / period);
+  }
+  return { byCategory, total: Math.round((totalAgg._sum.amount ?? 0) / period) };
+}
 
 export interface BudgetRow {
   id: string;
