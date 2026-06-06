@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { parseDateInput } from "@/lib/date";
 
 /** ごく軽量な CSV パーサ（ダブルクォート + "" エスケープ対応）。 */
 function parseCsv(text: string): string[][] {
@@ -84,7 +85,7 @@ export async function importTransactionsCsv(
     const [dateStr, typeStr, amountStr, currencyStr, catName, pmName, memo] = cols.map((c) =>
       (c ?? "").trim(),
     );
-    const date = new Date(dateStr);
+    const date = parseDateInput(dateStr);
     const amount = parseInt((amountStr || "").replace(/[^\d-]/g, ""), 10);
     const type = typeStr === "収入" || typeStr.toUpperCase() === "INCOME" ? "INCOME" : "EXPENSE";
 

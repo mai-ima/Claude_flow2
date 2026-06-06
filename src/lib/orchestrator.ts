@@ -171,7 +171,7 @@ export async function notifyBudgetOverages(now: Date = new Date()): Promise<numb
     }),
     db.notification.findMany({
       where: { type: "BUDGET", createdAt: { gte: start } },
-      select: { userId: true, body: true },
+      select: { userId: true, href: true },
     }),
   ]);
 
@@ -179,11 +179,12 @@ export async function notifyBudgetOverages(now: Date = new Date()): Promise<numb
   for (const r of byCat) catSpent.set(`${r.ledgerId}:${r.categoryId ?? ""}`, r._sum.amount ?? 0);
   const totalSpent = new Map<string, number>();
   for (const r of totals) totalSpent.set(r.ledgerId, r._sum.amount ?? 0);
-  const recentBodies = new Map<string, string[]>();
+  // 当月内の既存 BUDGET 通知を href の安定キー(予算ID:しきい値)で集合化。
+  const keysByUser = new Map<string, Set<string>>();
   for (const n of recent) {
-    const arr = recentBodies.get(n.userId) ?? [];
-    arr.push(n.body);
-    recentBodies.set(n.userId, arr);
+    const set = keysByUser.get(n.userId) ?? new Set<string>();
+    if (n.href) set.add(n.href);
+    keysByUser.set(n.userId, set);
   }
 
   const toCreate: { userId: string; ledgerId: string; type: string; title: string; body: string; href: string }[] = [];
@@ -201,13 +202,14 @@ export async function notifyBudgetOverages(now: Date = new Date()): Promise<numb
     const userId = b.ledger.ownerId;
     const marker = hit === 1 ? "を超えました" : "の80%に達しました";
     const body = `「${label}」が予算${marker}（${Math.round(ratio * 100)}%）。`;
-    const bodies = recentBodies.get(userId) ?? [];
+    const href = `/budgets?ref=${b.id}:${hit}`;
+    const keys = keysByUser.get(userId) ?? new Set<string>();
     // 同一予算・同一閾値の通知が当月内にあれば重複作成しない。
-    if (bodies.some((x) => x.includes(label) && x.includes(marker))) continue;
+    if (keys.has(href)) continue;
 
-    toCreate.push({ userId, ledgerId: b.ledgerId, type: "BUDGET", title: "予算アラート", body, href: "/budgets" });
-    bodies.push(body);
-    recentBodies.set(userId, bodies);
+    toCreate.push({ userId, ledgerId: b.ledgerId, type: "BUDGET", title: "予算アラート", body, href });
+    keys.add(href);
+    keysByUser.set(userId, keys);
   }
 
   if (toCreate.length > 0) await db.notification.createMany({ data: toCreate });
@@ -229,21 +231,22 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
   const ownerIds = [...new Set(subs.map((s) => s.ownerUserId))];
   const recent = await db.notification.findMany({
     where: { userId: { in: ownerIds }, type: "TRIAL_END", createdAt: { gte: since } },
-    select: { userId: true, body: true },
+    select: { userId: true, href: true },
   });
-  const bodiesByUser = new Map<string, string[]>();
+  const keysByUser = new Map<string, Set<string>>();
   for (const n of recent) {
-    const arr = bodiesByUser.get(n.userId) ?? [];
-    arr.push(n.body);
-    bodiesByUser.set(n.userId, arr);
+    const set = keysByUser.get(n.userId) ?? new Set<string>();
+    if (n.href) set.add(n.href);
+    keysByUser.set(n.userId, set);
   }
 
   const toCreate: { userId: string; ledgerId: string; type: string; title: string; body: string; href: string }[] = [];
   for (const s of subs) {
     const d = daysUntil(s.trialEndsAt!, now);
     if (d < 0 || d > s.reminderDaysBefore) continue;
-    const bodies = bodiesByUser.get(s.ownerUserId) ?? [];
-    if (bodies.some((b) => b.includes(s.name))) continue;
+    const href = `/subscriptions?ref=${s.id}`;
+    const keys = keysByUser.get(s.ownerUserId) ?? new Set<string>();
+    if (keys.has(href)) continue;
     const body =
       d === 0
         ? `${s.name} の無料体験は本日終了します。`
@@ -254,10 +257,10 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
       type: "TRIAL_END",
       title: "無料体験が終了します",
       body,
-      href: "/subscriptions",
+      href,
     });
-    bodies.push(body);
-    bodiesByUser.set(s.ownerUserId, bodies);
+    keys.add(href);
+    keysByUser.set(s.ownerUserId, keys);
   }
 
   if (toCreate.length > 0) await db.notification.createMany({ data: toCreate });
@@ -266,6 +269,7 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
 
 export interface ReminderItem {
   subscriptionId: string;
+  ledgerId: string;
   name: string;
   amount: number;
   daysUntil: number;
@@ -283,37 +287,40 @@ export async function notifyDueRenewals(now: Date = new Date()): Promise<number>
   if (reminders.length === 0) return 0;
 
   // 直近5日の RENEWAL 通知を対象ユーザー分まとめて取得（ループ内 N+1 を回避）。
+  // 重複判定は本文の部分一致ではなく、href に埋めた安定キー(subscriptionId)で行う。
   const since = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
   const userIds = [...new Set(reminders.map((r) => r.ownerUserId))];
   const recent = await db.notification.findMany({
     where: { userId: { in: userIds }, type: "RENEWAL", createdAt: { gte: since } },
-    select: { userId: true, body: true },
+    select: { userId: true, href: true },
   });
-  const bodiesByUser = new Map<string, string[]>();
+  const keysByUser = new Map<string, Set<string>>();
   for (const n of recent) {
-    const arr = bodiesByUser.get(n.userId) ?? [];
-    arr.push(n.body);
-    bodiesByUser.set(n.userId, arr);
+    const set = keysByUser.get(n.userId) ?? new Set<string>();
+    if (n.href) set.add(n.href);
+    keysByUser.set(n.userId, set);
   }
 
   const toCreate = [];
   for (const r of reminders) {
-    const bodies = bodiesByUser.get(r.ownerUserId) ?? [];
-    // 同一サブスク名の通知が直近にあれば重複作成しない（同一バッチ内の重複も抑止）。
-    if (bodies.some((b) => b.includes(r.name))) continue;
+    const href = `/subscriptions?ref=${r.subscriptionId}`;
+    const keys = keysByUser.get(r.ownerUserId) ?? new Set<string>();
+    // 同一サブスクの通知が直近にあれば重複作成しない（同一バッチ内の重複も抑止）。
+    if (keys.has(href)) continue;
     const body =
       r.daysUntil === 0
         ? `${r.name} は本日更新されます。`
         : `${r.name} はあと${r.daysUntil}日で更新されます。`;
     toCreate.push({
       userId: r.ownerUserId,
+      ledgerId: r.ledgerId,
       type: "RENEWAL",
       title: "サブスクの更新が近づいています",
       body,
-      href: "/subscriptions",
+      href,
     });
-    bodies.push(body);
-    bodiesByUser.set(r.ownerUserId, bodies);
+    keys.add(href);
+    keysByUser.set(r.ownerUserId, keys);
   }
 
   if (toCreate.length > 0) {
@@ -334,6 +341,7 @@ export async function dueReminders(now: Date = new Date()): Promise<ReminderItem
     if (d >= 0 && d <= s.reminderDaysBefore) {
       items.push({
         subscriptionId: s.id,
+        ledgerId: s.ledgerId,
         name: s.name,
         amount: s.amount,
         daysUntil: d,

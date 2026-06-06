@@ -17,7 +17,7 @@ import {
   type StackGroup,
 } from "@/modules/subscriptions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
-import { formatDate, daysUntil, daysSince, advanceRenewal } from "@/lib/date";
+import { formatDate, daysUntil, daysSince, advanceRenewal, toDateInput } from "@/lib/date";
 import { formatMoney, toMonthlyAmount, toYearlyAmount } from "@/lib/money";
 import { CYCLE_LABEL, STATUS_LABEL, type BillingCycle } from "@/lib/enums";
 import { findService } from "@/lib/service-catalog";
@@ -77,8 +77,8 @@ export default async function SubscriptionsPage() {
         amount: s.amount,
         cycle,
         status: s.status as SubItem["edit"]["status"],
-        nextRenewalAt: s.nextRenewalAt.toISOString().slice(0, 10),
-        trialEndsAt: s.trialEndsAt ? s.trialEndsAt.toISOString().slice(0, 10) : "",
+        nextRenewalAt: toDateInput(s.nextRenewalAt),
+        trialEndsAt: s.trialEndsAt ? toDateInput(s.trialEndsAt) : "",
         categoryId: s.categoryId ?? "",
         paymentMethodId: s.paymentMethodId ?? "",
         reminderDaysBefore: s.reminderDaysBefore,

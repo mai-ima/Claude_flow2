@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { advanceRenewal, daysUntil, daysSince, toDateInput, nextMonthlyDate } from "./date";
+import {
+  advanceRenewal,
+  daysUntil,
+  daysSince,
+  toDateInput,
+  nextMonthlyDate,
+  parseDateInput,
+} from "./date";
 
 describe("advanceRenewal", () => {
   const base = new Date("2026-01-15T00:00:00");
@@ -50,5 +57,25 @@ describe("nextMonthlyDate", () => {
   });
   it("12月から翌年へ繰り越す", () => {
     expect(toDateInput(nextMonthlyDate(10, new Date(2026, 11, 20)))).toBe("2027-01-10");
+  });
+});
+
+describe("parseDateInput", () => {
+  it("yyyy-MM-dd をローカル日付として解釈（UTCずれ無し）", () => {
+    const d = parseDateInput("2026-06-01");
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(5);
+    expect(d.getDate()).toBe(1);
+    // ローカル基準のため toDateInput で往復一致。
+    expect(toDateInput(d)).toBe("2026-06-01");
+  });
+
+  it("スラッシュ区切り・ゼロ埋め無しを許容", () => {
+    expect(toDateInput(parseDateInput("2026/6/5"))).toBe("2026-06-05");
+    expect(toDateInput(parseDateInput("2026/12/31"))).toBe("2026-12-31");
+  });
+
+  it("非対応形式は標準パースにフォールバック", () => {
+    expect(Number.isNaN(parseDateInput("not-a-date").getTime())).toBe(true);
   });
 });

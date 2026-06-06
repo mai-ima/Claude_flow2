@@ -32,6 +32,22 @@ export function todayLocal(): string {
   return toDateInput(new Date());
 }
 
+/**
+ * 日付文字列を「ローカルタイム」で解釈して Date を返す。
+ * `new Date("2026-06-01")` は UTC 深夜と解釈され、JST 等では前日へずれるため、
+ * `yyyy-MM-dd` / `yyyy/M/d`（ゼロ埋め有無を許容）はローカルで生成する。
+ * それ以外の形式は標準パースにフォールバック。CSV 取込などで使用。
+ */
+export function parseDateInput(value: string): Date {
+  const s = value.trim();
+  const m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/.exec(s);
+  if (m) {
+    const [, y, mo, d] = m;
+    return new Date(Number(y), Number(mo) - 1, Number(d), 0, 0, 0, 0);
+  }
+  return new Date(s);
+}
+
 export function monthRange(anchor: Date): { start: Date; end: Date } {
   return { start: startOfMonth(anchor), end: endOfMonth(anchor) };
 }
