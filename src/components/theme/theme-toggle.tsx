@@ -103,7 +103,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
           change(next, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
         }}
         aria-label="テーマを切り替え"
-        className="grid h-10 w-10 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+        className="grid h-11 w-11 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
       >
         {dark ? <SunIcon size={20} /> : <MoonIcon size={20} />}
       </button>

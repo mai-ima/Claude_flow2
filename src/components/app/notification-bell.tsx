@@ -69,7 +69,7 @@ export function NotificationBell({
       <button
         onClick={openPanel}
         aria-label="通知"
-        className="relative grid h-10 w-10 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+        className="relative grid h-11 w-11 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
       >
         <BellIcon size={20} />
         {unread > 0 && (

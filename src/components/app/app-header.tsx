@@ -76,7 +76,7 @@ export function AppHeader({
       <button
         onClick={() => setDrawerOpen(true)}
         aria-label="メニューを開く"
-        className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary md:hidden"
+        className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary md:hidden"
       >
         <MenuIcon size={22} />
       </button>
@@ -86,21 +86,24 @@ export function AppHeader({
         userName={userName}
         tier={tier}
       />
-      <div className="relative">
+      {/* 帳簿切替は可変幅。狭い端末では帳簿名を詰めて横スクロールを防ぐ。 */}
+      <div className="relative min-w-0 flex-1">
         <button
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            "flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-1 px-3 py-1.5 text-[14px] font-medium transition hover:bg-surface-2",
+            "flex min-h-11 w-full items-center gap-2 rounded-xl border border-border-subtle bg-surface-1 px-3 text-[14px] font-medium transition hover:bg-surface-2",
             pending && "opacity-60",
           )}
         >
           {active?.type === "POD" ? (
-            <UsersIcon size={17} className="text-pod" />
+            <UsersIcon size={17} className="shrink-0 text-pod" />
           ) : (
-            <WalletIcon size={17} className="text-accent" />
+            <WalletIcon size={17} className="shrink-0 text-accent" />
           )}
-          <span className="max-w-[150px] truncate">{active?.name}</span>
-          <ChevronDownIcon size={15} className="text-text-tertiary" />
+          <span className="min-w-0 flex-1 truncate text-left sm:max-w-[150px] sm:flex-none">
+            {active?.name}
+          </span>
+          <ChevronDownIcon size={15} className="shrink-0 text-text-tertiary" />
         </button>
 
         {open && (
@@ -133,20 +136,21 @@ export function AppHeader({
         )}
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1.5">
         {tier !== "FREE" && (
-          <Badge tone={tier === "PRO" ? "pod" : "accent"} size="md">
+          <Badge tone={tier === "PRO" ? "pod" : "accent"} size="md" className="hidden sm:inline-flex">
             {tier}
           </Badge>
         )}
         <NotificationBell items={notifications} unread={unread} />
         <ThemeToggle compact />
-        <form action={logoutAction}>
+        {/* 狭い端末では非表示。メニュー(ドロワー)側にも同じ導線がある。 */}
+        <form action={logoutAction} className="hidden min-[360px]:block">
           <button
             type="submit"
             aria-label="ログアウト"
             title={`${userName} ・ ログアウト`}
-            className="grid h-10 w-10 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+            className="grid h-11 w-11 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
           >
             <LogoutIcon size={20} />
           </button>

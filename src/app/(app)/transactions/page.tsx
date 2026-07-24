@@ -114,30 +114,31 @@ export default async function TransactionsPage({
         }
       />
 
-      <div className="mb-5 grid grid-cols-3 gap-3">
-        <Card className="p-4">
+      {/* カレンダー表示の集計バーと同じ意匠。1枚を3分割し、狭い端末でも金額を省略しない。 */}
+      <Card className="mb-5 grid grid-cols-3 divide-x divide-border-subtle">
+        <div className="min-w-0 px-1 py-3 text-center sm:px-4">
           <div className="text-[12px] text-text-tertiary">収入</div>
-          <div className="mt-1 text-[19px] font-bold tabular-nums text-income">
+          <div className="mt-0.5 truncate text-[14px] font-bold tabular-nums text-income sm:text-[19px]">
             {formatMoney(summary.income, currency)}
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="min-w-0 px-1 py-3 text-center sm:px-4">
           <div className="text-[12px] text-text-tertiary">支出</div>
-          <div className="mt-1 text-[19px] font-bold tabular-nums">
+          <div className="mt-0.5 truncate text-[14px] font-bold tabular-nums text-expense sm:text-[19px]">
             {formatMoney(summary.expense, currency)}
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="min-w-0 px-1 py-3 text-center sm:px-4">
           <div className="text-[12px] text-text-tertiary">収支</div>
           <div
-            className={`mt-1 text-[19px] font-bold tabular-nums ${
+            className={`mt-0.5 truncate text-[14px] font-bold tabular-nums sm:text-[19px] ${
               summary.balance >= 0 ? "text-income" : "text-expense"
             }`}
           >
             {formatMoney(summary.balance, currency)}
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
 
       <div className="mb-4">
         <ViewSwitcher current={view} />

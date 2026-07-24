@@ -22,19 +22,20 @@ export function BottomBar() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "group flex flex-col items-center gap-1 py-1.5 text-[11px] font-medium transition-[color] duration-[var(--dur-1)] ease-spring active:scale-95",
+                "group flex min-w-0 flex-col items-center gap-1 py-1.5 text-[11px] font-medium transition-[color] duration-[var(--dur-1)] ease-spring active:scale-95",
                 active ? "text-accent" : "text-text-tertiary",
               )}
             >
+              {/* 幅は上限つきの可変。小型端末(320px)でも 5 列が収まる。 */}
               <span
                 className={cn(
-                  "grid h-8 w-16 place-items-center rounded-full transition-all duration-[var(--dur-2)] ease-spring",
+                  "grid h-8 w-full max-w-16 place-items-center rounded-full transition-all duration-[var(--dur-2)] ease-spring",
                   active ? "bg-accent/12 scale-100" : "scale-95 group-active:bg-surface-2",
                 )}
               >
                 <item.icon size={22} />
               </span>
-              {item.label}
+              <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
         })}

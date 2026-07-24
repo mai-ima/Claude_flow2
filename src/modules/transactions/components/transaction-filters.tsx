@@ -137,7 +137,7 @@ export function Pagination({ page, pageCount }: { page: number; pageCount: numbe
         onClick={() => go(page - 1)}
         disabled={page <= 1}
         aria-label="前のページ"
-        className="grid h-9 w-9 place-items-center rounded-lg border border-border-subtle text-text-secondary hover:bg-surface-2 disabled:opacity-30"
+        className="grid h-11 w-11 place-items-center rounded-lg border border-border-subtle text-text-secondary hover:bg-surface-2 disabled:opacity-30"
       >
         <ChevronRightIcon size={18} className="rotate-180" />
       </button>
@@ -148,7 +148,7 @@ export function Pagination({ page, pageCount }: { page: number; pageCount: numbe
         onClick={() => go(page + 1)}
         disabled={page >= pageCount}
         aria-label="次のページ"
-        className="grid h-9 w-9 place-items-center rounded-lg border border-border-subtle text-text-secondary hover:bg-surface-2 disabled:opacity-30"
+        className="grid h-11 w-11 place-items-center rounded-lg border border-border-subtle text-text-secondary hover:bg-surface-2 disabled:opacity-30"
       >
         <ChevronRightIcon size={18} />
       </button>

@@ -5,13 +5,13 @@ export default function Loading() {
   return (
     <PageContainer>
       <Skeleton className="h-9 w-28" />
-      <Skeleton className="mt-5 h-64" />
-      <Skeleton className="mt-5 h-64" />
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-24" />
+      {/* タブバー */}
+      <div className="mt-5 flex gap-1 overflow-hidden">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-11 w-20 shrink-0 rounded-full" />
         ))}
       </div>
+      <Skeleton className="mt-5 h-[420px]" />
     </PageContainer>
   );
 }
