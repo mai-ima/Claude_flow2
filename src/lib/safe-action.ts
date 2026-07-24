@@ -56,11 +56,13 @@ export function authedAction<TSchema extends z.ZodType, TResult>(
       const data = await handler(parsed.data, user);
       return ok(data);
     } catch (err) {
-      logger.error("action error", err);
       const code = err instanceof Error ? err.message : "";
-      const message =
-        ERROR_MESSAGES[code] ?? "処理に失敗しました。時間をおいて再度お試しください。";
-      return fail(message);
+      const known = ERROR_MESSAGES[code];
+      // 想定内のドメインエラー（権限・上限・プラン等）は制御フローであり、
+      // error ログ / Sentry へは流さない（監視ノイズを避ける）。
+      if (known) return fail(known);
+      logger.error("action error", err);
+      return fail("処理に失敗しました。時間をおいて再度お試しください。");
     }
   };
 }
