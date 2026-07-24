@@ -267,6 +267,28 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
   return toCreate.length;
 }
 
+/** 既読の古い通知を保持する日数（これを超えたものは定期削除）。 */
+const NOTIFICATION_RETENTION_DAYS = 90;
+
+/**
+ * 期限切れ/不要データの定期プルーニング（テーブルの無制限な肥大化を防ぐ基盤処理）。
+ * - 期限切れセッションを削除
+ * - 既読かつ保持期間を過ぎた通知を削除
+ * cron から日次で呼ばれる想定。削除件数を返す。
+ */
+export async function pruneExpiredData(
+  now: Date = new Date(),
+): Promise<{ sessions: number; notifications: number }> {
+  const notifCutoff = new Date(now.getTime() - NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  const [sessions, notifications] = await Promise.all([
+    db.session.deleteMany({ where: { expires: { lt: now } } }),
+    db.notification.deleteMany({
+      where: { readAt: { not: null }, createdAt: { lt: notifCutoff } },
+    }),
+  ]);
+  return { sessions: sessions.count, notifications: notifications.count };
+}
+
 export interface ReminderItem {
   subscriptionId: string;
   ledgerId: string;
