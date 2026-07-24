@@ -19,4 +19,3 @@ export { TransactionsClient, type TxnListItem } from "./components/transactions-
 export { TransactionFilters, Pagination } from "./components/transaction-filters";
 export { TransactionSheet, type TxnFormValue } from "./components/transaction-sheet";
 export { RecurringClient, type RecurringListItem } from "./components/recurring-client";
-export { MonthReplay } from "./components/month-replay";

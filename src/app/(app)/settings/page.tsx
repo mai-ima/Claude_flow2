@@ -13,7 +13,6 @@ import {
   DeleteAllData,
   DataTools,
   BetaFeaturesToggle,
-  AlphaFeaturesToggle,
 } from "@/modules/account";
 import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
@@ -57,10 +56,6 @@ export default async function SettingsPage() {
 
         <ListGroup title="ベータ機能" padded>
           <BetaFeaturesToggle enabled={ctx.betaOptIn} />
-        </ListGroup>
-
-        <ListGroup title="α（実験的）機能" padded>
-          <AlphaFeaturesToggle enabled={ctx.alphaOptIn} />
         </ListGroup>
 
         <ListGroup title="外観" padded>

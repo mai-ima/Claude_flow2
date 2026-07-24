@@ -8,11 +8,9 @@ export {
   deleteAccountAction,
   deleteAllDataAction,
   updateBetaOptIn,
-  updateAlphaOptIn,
 } from "./actions";
 export { ProfileForm } from "./components/profile-form";
 export { BetaFeaturesToggle } from "./components/beta-features-toggle";
-export { AlphaFeaturesToggle } from "./components/alpha-features-toggle";
 export { PaymentMethodsManager } from "./components/payment-methods-manager";
 export { CategoryManager } from "./components/category-manager";
 export { DangerZone } from "./components/danger-zone";

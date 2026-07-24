@@ -4,18 +4,14 @@ import {
   monthlyTrend,
   expenseByCategory,
   monthSummary,
-  monthReplaySeries,
 } from "@/modules/transactions/queries";
-import { MonthReplay } from "@/modules/transactions";
-import { Category3D } from "@/components/app/category-3d";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TrendAreaChart, CategoryDonut } from "@/components/ui/chart/charts";
 import { colorOf } from "@/lib/colors";
-import { CategoryIcon, ChartIcon, SparklesIcon, PlayIcon } from "@/components/icons";
-import { formatMonth } from "@/lib/date";
+import { CategoryIcon, ChartIcon, SparklesIcon } from "@/components/icons";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { clientEnv } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
@@ -26,16 +22,15 @@ import { getDate } from "date-fns";
 export const metadata: Metadata = pageMetadata({ title: "分析", noindex: true });
 
 export default async function ReportsPage() {
-  const { ledgerId, tier, currency, alphaOptIn } = await getAppContext();
+  const { ledgerId, tier, currency } = await getAppContext();
   const now = new Date();
   const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  const [trend, byCat, summary, prev, replay] = await Promise.all([
+  const [trend, byCat, summary, prev] = await Promise.all([
     monthlyTrend(ledgerId, 6),
     expenseByCategory(ledgerId, now),
     monthSummary(ledgerId, now),
     monthSummary(ledgerId, lastMonth),
-    monthReplaySeries(ledgerId, now),
   ]);
 
   const totalExpense = byCat.reduce((s, c) => s + c.amount, 0);
@@ -98,28 +93,6 @@ export default async function ReportsPage() {
                   </span>
                 </div>
               </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>
-                  <span className="inline-flex items-center gap-1.5">
-                    <PlayIcon size={16} className="text-accent" />
-                    月のリプレイ
-                  </span>
-                </CardTitle>
-                <span className="text-[12px] text-text-tertiary">今月の支出を再生</span>
-              </div>
-            </CardHeader>
-            <CardBody>
-              <MonthReplay
-                days={replay.days}
-                daysInMonth={replay.daysInMonth}
-                monthLabel={formatMonth(now)}
-                currency={currency}
-              />
             </CardBody>
           </Card>
 
@@ -206,27 +179,6 @@ export default async function ReportsPage() {
               )}
             </CardBody>
           </Card>
-
-          {alphaOptIn && byCat.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>カテゴリ 3D ビュー</CardTitle>
-                  <Badge tone="pod" size="sm">ALPHA</Badge>
-                </div>
-              </CardHeader>
-              <CardBody>
-                <Category3D
-                  data={byCat.slice(0, 8).map((c) => ({
-                    name: c.name,
-                    amount: c.amount,
-                    color: colorOf(c.color),
-                  }))}
-                  currency={currency}
-                />
-              </CardBody>
-            </Card>
-          )}
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Card className="p-5">

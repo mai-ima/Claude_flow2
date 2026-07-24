@@ -1,47 +1,8 @@
 import "server-only";
-import { startOfWeek, subWeeks, getDaysInMonth } from "date-fns";
+import { startOfWeek, subWeeks } from "date-fns";
 import type { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
 import { monthRange } from "@/lib/date";
-
-export interface ReplayDay {
-  day: number; // 1..daysInMonth
-  expense: number;
-  income: number;
-  count: number;
-}
-
-/**
- * 「月のリプレイ」用に、当月の日ごとの支出/収入合計を返す（1日〜月末）。
- * 1 クエリで取得し JS で日別集計。
- */
-export async function monthReplaySeries(
-  ledgerId: string,
-  month: Date,
-): Promise<{ days: ReplayDay[]; daysInMonth: number }> {
-  const { start, end } = monthRange(month);
-  const daysInMonth = getDaysInMonth(month);
-  const days: ReplayDay[] = Array.from({ length: daysInMonth }, (_, i) => ({
-    day: i + 1,
-    expense: 0,
-    income: 0,
-    count: 0,
-  }));
-
-  const rows = await db.transaction.findMany({
-    where: { ledgerId, occurredAt: { gte: start, lte: end } },
-    select: { type: true, amount: true, occurredAt: true },
-  });
-  for (const t of rows) {
-    const d = t.occurredAt.getDate();
-    const bucket = days[d - 1];
-    if (!bucket) continue;
-    if (t.type === "INCOME") bucket.income += t.amount;
-    else bucket.expense += t.amount;
-    bucket.count++;
-  }
-  return { days, daysInMonth };
-}
 
 /** 今週・先週の支出合計（週は月曜始まり）。ベータのインサイト用。 */
 export async function weeklyExpenseTotals(ledgerId: string, now: Date = new Date()) {

@@ -23,7 +23,6 @@ export const getAppContext = cache(async () => {
     tier: user.tier as PlanTier,
     currency: ledger.currency,
     betaOptIn: user.betaOptIn,
-    alphaOptIn: user.alphaOptIn,
   };
 });
 
