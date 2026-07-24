@@ -290,3 +290,12 @@ html {
   border: 3px solid transparent;
   background-clip: padding-box;
 }
+
+/* 横スクロール領域（タブ等）でスクロールバーを隠す。 */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

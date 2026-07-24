@@ -26,3 +26,13 @@ export function weekDelta(thisWeek: number, lastWeek: number): WeekDelta {
   const trend: WeekTrend = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
   return { diff, pct, trend };
 }
+
+/**
+ * 貯蓄率 (収入 − 支出) / 収入 をパーセントで返す。
+ * 収入が無い月は算出不能として null（0% と区別する）。
+ * 支出が収入を上回る月は負の値になる。
+ */
+export function savingsRate(income: number, expense: number): number | null {
+  if (income <= 0) return null;
+  return Math.round(((income - expense) / income) * 100);
+}

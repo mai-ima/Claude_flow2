@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { monthEndForecast, weekDelta } from "./insight";
+import { monthEndForecast, weekDelta, savingsRate } from "./insight";
 
 describe("monthEndForecast", () => {
   it("半分経過で支出の倍を予測（30日月の15日）", () => {
@@ -33,5 +33,24 @@ describe("weekDelta", () => {
   });
   it("同額は flat", () => {
     expect(weekDelta(5000, 5000).trend).toBe("flat");
+  });
+});
+
+describe("savingsRate", () => {
+  it("収入の2割を残せば20%", () => {
+    expect(savingsRate(500000, 400000)).toBe(20);
+  });
+
+  it("支出が収入を上回るとマイナス", () => {
+    expect(savingsRate(200000, 300000)).toBe(-50);
+  });
+
+  it("使い切りは0%", () => {
+    expect(savingsRate(300000, 300000)).toBe(0);
+  });
+
+  it("収入が無い月は算出不能（0%と区別）", () => {
+    expect(savingsRate(0, 50000)).toBeNull();
+    expect(savingsRate(0, 0)).toBeNull();
   });
 });

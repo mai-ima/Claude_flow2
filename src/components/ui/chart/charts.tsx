@@ -3,16 +3,41 @@
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
+  YAxis,
 } from "recharts";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
+
+const CHART_H = 240;
+
+/**
+ * 全チャート共通のレスポンシブ枠。
+ * initialDimension を与えないと、ResizeObserver の初回通知までに幅 0 と
+ * 判定された場合にグラフが描画されないままになるため必ず指定する。
+ */
+function ChartFrame({ children }: { children: React.ReactElement }) {
+  return (
+    <ResponsiveContainer
+      width="100%"
+      height={CHART_H}
+      minWidth={0}
+      initialDimension={{ width: 320, height: CHART_H }}
+    >
+      {children}
+    </ResponsiveContainer>
+  );
+}
 
 interface TooltipPayload {
   name: string;
@@ -49,7 +74,7 @@ export function TrendAreaChart({
   data: { label: string; income: number; expense: number }[];
 }) {
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ChartFrame>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
         <defs>
           <linearGradient id="inc" x1="0" y1="0" x2="0" y2="1">
@@ -88,7 +113,7 @@ export function TrendAreaChart({
           animationDuration={500}
         />
       </AreaChart>
-    </ResponsiveContainer>
+    </ChartFrame>
   );
 }
 
@@ -102,7 +127,7 @@ export function CategoryDonut({
 }) {
   return (
     <div className="relative">
-      <ResponsiveContainer width="100%" height={240}>
+      <ChartFrame>
         <PieChart>
           <Pie
             data={data}
@@ -120,12 +145,94 @@ export function CategoryDonut({
           </Pie>
           <Tooltip content={<MoneyTooltip />} />
         </PieChart>
-      </ResponsiveContainer>
+      </ChartFrame>
       {center && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <div className="text-center">{center}</div>
         </div>
       )}
     </div>
+  );
+}
+
+/** 月次の棒グラフ（年間の支出/収入用）。 */
+export function MonthlyBarChart({
+  data,
+  tone,
+}: {
+  data: { label: string; amount: number }[];
+  tone: "income" | "expense";
+}) {
+  const color = tone === "income" ? "var(--color-income)" : "var(--color-expense)";
+  return (
+    <ChartFrame>
+      <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+        <CartesianGrid stroke="var(--color-border-subtle)" vertical={false} />
+        <XAxis
+          dataKey="label"
+          tickLine={false}
+          axisLine={false}
+          interval={0}
+          tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }}
+        />
+        <Tooltip content={<MoneyTooltip />} cursor={{ fill: "var(--color-surface-2)" }} />
+        <Bar
+          name={tone === "income" ? "収入" : "支出"}
+          dataKey="amount"
+          fill={color}
+          radius={[6, 6, 0, 0]}
+          animationDuration={500}
+        />
+      </BarChart>
+    </ChartFrame>
+  );
+}
+
+/** 割合（％）の推移。貯蓄率タブ用。 */
+export function RateLineChart({ data }: { data: { label: string; rate: number }[] }) {
+  return (
+    <ChartFrame>
+      <LineChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+        <CartesianGrid stroke="var(--color-border-subtle)" vertical={false} />
+        <XAxis
+          dataKey="label"
+          tickLine={false}
+          axisLine={false}
+          interval={0}
+          tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={38}
+          tickFormatter={(v: number) => `${v}%`}
+          tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
+        />
+        <Tooltip
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null;
+            const v = payload[0].value as number;
+            return (
+              <div className="rounded-xl border border-border-subtle bg-surface-1 px-3 py-2 text-[12px] shadow-md">
+                <div className="mb-1 font-medium">{label}</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-text-secondary">貯蓄率</span>
+                  <span className="ml-auto font-semibold tabular-nums">{v}%</span>
+                </div>
+              </div>
+            );
+          }}
+        />
+        <Line
+          type="monotone"
+          name="貯蓄率"
+          dataKey="rate"
+          stroke="var(--color-accent)"
+          strokeWidth={2}
+          dot={{ r: 3 }}
+          animationDuration={500}
+        />
+      </LineChart>
+    </ChartFrame>
   );
 }
