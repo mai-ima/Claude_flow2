@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { db } from "./db";
 import type { MemberRole } from "./enums";
@@ -7,19 +8,25 @@ const LEDGER_COOKIE = "tsumiki_ledger";
 
 const ROLE_RANK: Record<MemberRole, number> = { VIEWER: 0, EDITOR: 1, OWNER: 2 };
 
+/**
+ * メンバー表示に必要な User フィールドのみ。`include: { user: true }` は
+ * passwordHash など機微情報までサーバーメモリに載せるため使わない。
+ */
+const memberUserSelect = { id: true, name: true, email: true, image: true } as const;
+
 export async function listUserLedgers(userId: string) {
   return db.ledger.findMany({
     where: { members: { some: { userId } } },
     include: {
-      members: { include: { user: true } },
+      members: { include: { user: { select: memberUserSelect } } },
       _count: { select: { subscriptions: true } },
     },
     orderBy: { createdAt: "asc" },
   });
 }
 
-/** メンバーシップ検証付きでアクティブ帳簿 ID を返す。 */
-export async function getActiveLedgerId(userId: string): Promise<string> {
+/** メンバーシップ検証付きでアクティブ帳簿 ID を返す（リクエスト内メモ化）。 */
+export const getActiveLedgerId = cache(async (userId: string): Promise<string> => {
   const store = await cookies();
   const cookieId = store.get(LEDGER_COOKIE)?.value;
   if (cookieId) {
@@ -41,7 +48,7 @@ export async function getActiveLedgerId(userId: string): Promise<string> {
   });
   if (!any) throw new Error("NO_LEDGER");
   return any.id;
-}
+});
 
 export async function setActiveLedger(ledgerId: string) {
   const store = await cookies();
@@ -64,14 +71,14 @@ export async function requireLedgerMember(
   return member;
 }
 
-export async function getActiveLedger(userId: string) {
+export const getActiveLedger = cache(async (userId: string) => {
   const id = await getActiveLedgerId(userId);
   const ledger = await db.ledger.findUnique({
     where: { id },
-    include: { members: { include: { user: true } } },
+    include: { members: { include: { user: { select: memberUserSelect } } } },
   });
   if (!ledger) throw new Error("NO_LEDGER");
   const role =
     ledger.members.find((m) => m.userId === userId)?.role ?? "VIEWER";
   return { ledger, role: role as MemberRole };
-}
+});

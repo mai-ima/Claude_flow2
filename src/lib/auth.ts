@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
 import { db } from "./db";
@@ -140,8 +141,12 @@ export async function signOut() {
   }
 }
 
-/** 現在のログインユーザー。未ログインは null。 */
-export async function getCurrentUser(): Promise<SessionUser | null> {
+/**
+ * 現在のログインユーザー。未ログインは null。
+ * React cache() で 1 リクエスト内の重複クエリを排除（layout・page・action で
+ * 複数回呼ばれてもセッション取得は 1 回に集約される）。
+ */
+export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -170,7 +175,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     isAdmin: u.isAdmin,
     betaOptIn: u.betaOptIn,
   };
-}
+});
 
 /** 認証必須箇所で使用。未ログインは throw。 */
 export async function requireUser(): Promise<SessionUser> {

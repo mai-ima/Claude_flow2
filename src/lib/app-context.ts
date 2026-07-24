@@ -1,11 +1,15 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth";
 import { getActiveLedger } from "./ledger-access";
 import type { MemberRole, PlanTier } from "./enums";
 
-/** 認証済みページ用: ユーザー + アクティブ帳簿 + 権限 + プランをまとめて取得。 */
-export async function getAppContext() {
+/**
+ * 認証済みページ用: ユーザー + アクティブ帳簿 + 権限 + プランをまとめて取得。
+ * リクエスト内メモ化により、layout と各 page から呼ばれても実クエリは 1 回に集約。
+ */
+export const getAppContext = cache(async () => {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const { ledger, role } = await getActiveLedger(user.id);
@@ -20,7 +24,7 @@ export async function getAppContext() {
     currency: ledger.currency,
     betaOptIn: user.betaOptIn,
   };
-}
+});
 
 /** searchParams から対象月を解決（?m=YYYY-MM）。 */
 export function resolveMonth(m?: string): Date {
