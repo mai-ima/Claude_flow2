@@ -12,7 +12,7 @@ export const SITE = {
 } as const;
 
 /** アプリのバージョン表記（設定画面・リリースノート等で参照を一元化）。 */
-export const APP_VERSION = "1.2.5.5";
+export const APP_VERSION = "1.2.6";
 
 /** 問い合わせ窓口（用途別）。各ページから参照し、メールの散在を防ぐ。 */
 export const CONTACT = {

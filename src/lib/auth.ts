@@ -20,6 +20,7 @@ export type SessionUser = {
   tier: string;
   isAdmin: boolean;
   betaOptIn: boolean;
+  alphaOptIn: boolean;
 };
 
 /** 新規ユーザーの初期データ（個人帳簿・メンバー・課金プロフィール・既定カテゴリ）を用意。 */
@@ -174,6 +175,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     tier: u.billing?.tier ?? "FREE",
     isAdmin: u.isAdmin,
     betaOptIn: u.betaOptIn,
+    alphaOptIn: u.alphaOptIn,
   };
 });
 
