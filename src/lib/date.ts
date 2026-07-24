@@ -4,9 +4,12 @@ import {
   addYears,
   differenceInCalendarDays,
   differenceInCalendarMonths,
+  eachDayOfInterval,
   endOfMonth,
+  endOfWeek,
   format,
   startOfMonth,
+  startOfWeek,
 } from "date-fns";
 import { ja } from "date-fns/locale";
 import type { BillingCycle } from "./enums";
@@ -50,6 +53,22 @@ export function parseDateInput(value: string): Date {
 
 export function monthRange(anchor: Date): { start: Date; end: Date } {
   return { start: startOfMonth(anchor), end: endOfMonth(anchor) };
+}
+
+/**
+ * カレンダー表示用の週配列（日曜始まり）。前後の月から埋め日を含めて
+ * 各週が必ず7日になるよう返す。週数は月によって 4〜6 と変動する。
+ */
+export function buildCalendarWeeks(month: Date): Date[][] {
+  const days = eachDayOfInterval({
+    start: startOfWeek(startOfMonth(month), { weekStartsOn: 0 }),
+    end: endOfWeek(endOfMonth(month), { weekStartsOn: 0 }),
+  });
+  const weeks: Date[][] = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+  return weeks;
 }
 
 /** 次の更新日を周期に応じて進める。 */

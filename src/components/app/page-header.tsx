@@ -43,9 +43,10 @@ export function PageHeader({
   return (
     <>
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
-      <div className="mb-6 flex items-end justify-between gap-3">
+      {/* 狭い画面では操作部を次の行へ折り返す（タイトルの不自然な改行を防ぐ）。 */}
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-3 gap-y-3">
         <div className="min-w-0">
-          <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] sm:text-[34px]">
+          <h1 className="truncate text-[30px] font-bold leading-tight tracking-[-0.02em] sm:text-[34px]">
             {title}
           </h1>
           {subtitle && <p className="mt-1 text-[15px] text-text-secondary">{subtitle}</p>}

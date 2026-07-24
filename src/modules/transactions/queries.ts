@@ -2,7 +2,7 @@ import "server-only";
 import { startOfWeek, subWeeks } from "date-fns";
 import type { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
-import { monthRange } from "@/lib/date";
+import { monthRange, toDateInput } from "@/lib/date";
 
 /** 今週・先週の支出合計（週は月曜始まり）。ベータのインサイト用。 */
 export async function weeklyExpenseTotals(ledgerId: string, now: Date = new Date()) {
@@ -122,11 +122,16 @@ export async function monthSummary(ledgerId: string, month: Date): Promise<Month
   return { income, expense, balance: income - expense };
 }
 
-export async function expenseByCategory(ledgerId: string, month: Date) {
+/** カテゴリ別の内訳（種別を指定）。円グラフ・内訳リスト用。 */
+async function categoryBreakdown(
+  ledgerId: string,
+  month: Date,
+  type: "INCOME" | "EXPENSE",
+) {
   const { start, end } = monthRange(month);
   const rows = await db.transaction.groupBy({
     by: ["categoryId"],
-    where: { ledgerId, type: "EXPENSE", occurredAt: { gte: start, lte: end } },
+    where: { ledgerId, type, occurredAt: { gte: start, lte: end } },
     _sum: { amount: true },
   });
   const categories = await db.category.findMany({ where: { ledgerId } });
@@ -140,6 +145,73 @@ export async function expenseByCategory(ledgerId: string, month: Date) {
       amount: r._sum.amount ?? 0,
     }))
     .sort((a, b) => b.amount - a.amount);
+}
+
+export function expenseByCategory(ledgerId: string, month: Date) {
+  return categoryBreakdown(ledgerId, month, "EXPENSE");
+}
+
+export function incomeByCategory(ledgerId: string, month: Date) {
+  return categoryBreakdown(ledgerId, month, "INCOME");
+}
+
+export interface DayTotal {
+  /** yyyy-MM-dd（ローカル日付） */
+  date: string;
+  income: number;
+  expense: number;
+  count: number;
+}
+
+/**
+ * 当月の日別収支。カレンダー表示用に 1 クエリで取得し JS で日別集計する
+ * （occurredAt は時刻を持つため DB の groupBy では日単位にまとまらない）。
+ */
+export async function dailyTotals(ledgerId: string, month: Date): Promise<DayTotal[]> {
+  const { start, end } = monthRange(month);
+  const rows = await db.transaction.findMany({
+    where: { ledgerId, occurredAt: { gte: start, lte: end } },
+    select: { type: true, amount: true, occurredAt: true },
+  });
+
+  const map = new Map<string, DayTotal>();
+  for (const t of rows) {
+    const key = toDateInput(t.occurredAt);
+    const bucket = map.get(key) ?? { date: key, income: 0, expense: 0, count: 0 };
+    if (t.type === "INCOME") bucket.income += t.amount;
+    else bucket.expense += t.amount;
+    bucket.count++;
+    map.set(key, bucket);
+  }
+  return [...map.values()];
+}
+
+/**
+ * 指定年の月次収支（1〜12月）。monthlyTrend は「今日から遡る N ヶ月」で
+ * ラベルに年を持たないため、年単位の集計にはこちらを使う。
+ */
+export async function yearlyTrend(ledgerId: string, year: number) {
+  const start = new Date(year, 0, 1, 0, 0, 0, 0);
+  const end = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  const buckets = Array.from({ length: 12 }, (_, i) => ({
+    label: `${i + 1}月`,
+    income: 0,
+    expense: 0,
+  }));
+
+  const rows = await db.transaction.findMany({
+    where: { ledgerId, occurredAt: { gte: start, lte: end } },
+    select: { type: true, amount: true, occurredAt: true },
+  });
+
+  for (const t of rows) {
+    const b = buckets[t.occurredAt.getMonth()];
+    if (!b) continue;
+    if (t.type === "INCOME") b.income += t.amount;
+    else b.expense += t.amount;
+  }
+  return buckets;
 }
 
 /** 直近 N ヶ月の収支推移（1クエリで取得し JS で月別集計）。 */

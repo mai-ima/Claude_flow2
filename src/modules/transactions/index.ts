@@ -16,6 +16,7 @@ export {
   deleteRecurring,
 } from "./actions";
 export { TransactionsClient, type TxnListItem } from "./components/transactions-client";
-export { TransactionFilters, Pagination } from "./components/transaction-filters";
+export { CalendarClient, type DayTotalItem } from "./components/calendar-client";
+export { TransactionFilters, Pagination, ViewSwitcher } from "./components/transaction-filters";
 export { TransactionSheet, type TxnFormValue } from "./components/transaction-sheet";
 export { RecurringClient, type RecurringListItem } from "./components/recurring-client";

@@ -90,6 +90,33 @@ export function TransactionFilters({
   );
 }
 
+/** リスト表示 / カレンダー表示の切り替え（?view= を更新）。 */
+export function ViewSwitcher({ current }: { current: "list" | "calendar" }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+
+  function change(v: "list" | "calendar") {
+    const next = new URLSearchParams(params.toString());
+    if (v === "list") next.delete("view");
+    else next.set("view", v);
+    next.delete("page");
+    router.push(`${pathname}?${next.toString()}`);
+  }
+
+  return (
+    <Segmented
+      className="w-full"
+      value={current}
+      onChange={change}
+      options={[
+        { value: "list", label: "リスト" },
+        { value: "calendar", label: "カレンダー" },
+      ]}
+    />
+  );
+}
+
 export function Pagination({ page, pageCount }: { page: number; pageCount: number }) {
   const router = useRouter();
   const pathname = usePathname();

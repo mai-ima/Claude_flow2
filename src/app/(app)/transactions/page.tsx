@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getAppContext, resolveMonth, monthParam } from "@/lib/app-context";
 import {
   searchTransactions,
+  listTransactions,
+  dailyTotals,
   listCategories,
   listPaymentMethods,
 } from "@/modules/transactions/queries";
@@ -10,6 +12,8 @@ import {
   type TxnListItem,
   TransactionFilters,
   Pagination,
+  ViewSwitcher,
+  CalendarClient,
 } from "@/modules/transactions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { MonthSwitcher } from "@/components/app/month-switcher";
@@ -29,35 +33,23 @@ type SP = {
   cat?: string;
   pm?: string;
   page?: string;
+  view?: string;
 };
 
-export default async function TransactionsPage({
-  searchParams,
-}: {
-  searchParams: Promise<SP>;
-}) {
-  const { ledgerId, canEdit, isPod, currency, betaOptIn } = await getAppContext();
-  const sp = await searchParams;
-  const month = resolveMonth(sp.m);
-  const type = sp.type === "INCOME" || sp.type === "EXPENSE" ? sp.type : undefined;
-  const page = Number(sp.page) || 1;
-
-  const [result, categories, paymentMethods] = await Promise.all([
-    searchTransactions(ledgerId, {
-      month,
-      keyword: sp.q?.trim() || undefined,
-      type,
-      categoryId: sp.cat || undefined,
-      paymentMethodId: sp.pm || undefined,
-      page,
-    }),
-    listCategories(ledgerId),
-    listPaymentMethods(ledgerId),
-  ]);
-
-  const { items: txns, summary, pageCount } = result;
-
-  const items: TxnListItem[] = txns.map((t) => ({
+/** Transaction 行 → クライアント表示用の項目へ変換。 */
+function toListItem(t: {
+  id: string;
+  type: string;
+  amount: number;
+  occurredAt: Date;
+  memo: string | null;
+  categoryId: string | null;
+  paymentMethodId: string | null;
+  category: { name: string; icon: string } | null;
+  paymentMethod: { name: string } | null;
+  createdBy: { name: string | null } | null;
+}): TxnListItem {
+  return {
     id: t.id,
     type: t.type as "INCOME" | "EXPENSE",
     amount: t.amount,
@@ -70,7 +62,39 @@ export default async function TransactionsPage({
     paymentMethodId: t.paymentMethodId,
     paymentName: t.paymentMethod?.name ?? null,
     ownerName: t.createdBy?.name ?? null,
-  }));
+  };
+}
+
+export default async function TransactionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
+  const { ledgerId, canEdit, isPod, currency, betaOptIn } = await getAppContext();
+  const sp = await searchParams;
+  const month = resolveMonth(sp.m);
+  const view = sp.view === "calendar" ? "calendar" : "list";
+  const type = sp.type === "INCOME" || sp.type === "EXPENSE" ? sp.type : undefined;
+  const page = Number(sp.page) || 1;
+
+  const [result, categories, paymentMethods, calendar] = await Promise.all([
+    searchTransactions(ledgerId, {
+      month,
+      keyword: sp.q?.trim() || undefined,
+      type,
+      categoryId: sp.cat || undefined,
+      paymentMethodId: sp.pm || undefined,
+      page,
+    }),
+    listCategories(ledgerId),
+    listPaymentMethods(ledgerId),
+    view === "calendar"
+      ? Promise.all([dailyTotals(ledgerId, month), listTransactions(ledgerId, month)])
+      : Promise.resolve(null),
+  ]);
+
+  const { items: txns, summary, pageCount } = result;
+  const items: TxnListItem[] = txns.map(toListItem);
 
   const catOpts = categories.map((c) => ({ id: c.id, name: c.name, type: c.type }));
   const pmOpts = paymentMethods.map((p) => ({ id: p.id, name: p.name }));
@@ -115,28 +139,47 @@ export default async function TransactionsPage({
         </Card>
       </div>
 
-      <TransactionFilters
-        categories={catOpts}
-        paymentMethods={pmOpts}
-        current={{
-          q: sp.q ?? "",
-          type: type ?? "",
-          cat: sp.cat ?? "",
-          pm: sp.pm ?? "",
-        }}
-      />
+      <div className="mb-4">
+        <ViewSwitcher current={view} />
+      </div>
 
-      <TransactionsClient
-        items={items}
-        categories={catOpts}
-        paymentMethods={pmOpts}
-        canEdit={canEdit}
-        showOwner={isPod}
-        currency={currency}
-        beta={betaOptIn}
-      />
+      {view === "calendar" && calendar ? (
+        <CalendarClient
+          month={monthParam(month)}
+          days={calendar[0]}
+          items={calendar[1].map(toListItem)}
+          categories={catOpts}
+          paymentMethods={pmOpts}
+          canEdit={canEdit}
+          currency={currency}
+          beta={betaOptIn}
+        />
+      ) : (
+        <>
+          <TransactionFilters
+            categories={catOpts}
+            paymentMethods={pmOpts}
+            current={{
+              q: sp.q ?? "",
+              type: type ?? "",
+              cat: sp.cat ?? "",
+              pm: sp.pm ?? "",
+            }}
+          />
 
-      <Pagination page={result.page} pageCount={pageCount} />
+          <TransactionsClient
+            items={items}
+            categories={catOpts}
+            paymentMethods={pmOpts}
+            canEdit={canEdit}
+            showOwner={isPod}
+            currency={currency}
+            beta={betaOptIn}
+          />
+
+          <Pagination page={result.page} pageCount={pageCount} />
+        </>
+      )}
     </PageContainer>
   );
 }
