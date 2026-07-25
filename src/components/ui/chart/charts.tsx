@@ -18,6 +18,9 @@ import {
 } from "recharts";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
+import { cn } from "@/lib/cn";
+import { CategoryIcon } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
 
 const CHART_H = 240;
 
@@ -234,5 +237,85 @@ export function RateLineChart({ data }: { data: { label: string; rate: number }[
         />
       </LineChart>
     </ChartFrame>
+  );
+}
+
+export interface BudgetBarRow {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  amount: number;
+  spent: number;
+}
+
+/**
+ * 予算 vs 実績の横棒。予算タブ用。
+ * 件数が少なく1行が細いため、recharts ではなく CSS バーで描く
+ * （軽量・スマホで読みやすく、金額と残額を同じ行に併記できる）。
+ */
+export function BudgetBars({
+  rows,
+  currency,
+}: {
+  rows: BudgetBarRow[];
+  currency: string;
+}) {
+  return (
+    <div className="space-y-4">
+      {rows.map((b) => {
+        const ratio = b.amount > 0 ? b.spent / b.amount : 0;
+        const pct = Math.min(100, Math.round(ratio * 100));
+        const over = b.spent > b.amount;
+        const remaining = b.amount - b.spent;
+        return (
+          <div key={b.id}>
+            <div className="mb-1.5 flex items-center gap-2">
+              <span
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-white"
+                style={{ background: colorOf(b.color) }}
+              >
+                <CategoryIcon name={b.icon} size={14} />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[14px] font-medium">{b.name}</span>
+              {over && (
+                <Badge tone="expense" size="sm">
+                  超過
+                </Badge>
+              )}
+              <span className="shrink-0 text-[13px] tabular-nums text-text-tertiary">
+                {Math.round(ratio * 100)}%
+              </span>
+            </div>
+            <div
+              className="h-2 overflow-hidden rounded-full bg-surface-2"
+              role="progressbar"
+              aria-label={`${b.name} の予算消化`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={pct}
+            >
+              <div
+                className={cn(
+                  "h-full rounded-full transition-[width] duration-[var(--dur-2)] ease-spring",
+                  over ? "bg-expense" : "bg-accent",
+                )}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div className="mt-1 flex items-center justify-between text-[12px] tabular-nums text-text-tertiary">
+              <span>
+                {formatMoney(b.spent, currency)} / {formatMoney(b.amount, currency)}
+              </span>
+              <span className={over ? "text-expense" : undefined}>
+                {over
+                  ? `${formatMoney(-remaining, currency)} 超過`
+                  : `残り ${formatMoney(remaining, currency)}`}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

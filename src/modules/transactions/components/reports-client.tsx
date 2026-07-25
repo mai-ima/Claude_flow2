@@ -9,6 +9,7 @@ import {
   CategoryDonut,
   MonthlyBarChart,
   RateLineChart,
+  BudgetBars,
 } from "@/components/ui/chart/charts";
 import { CategoryIcon, SparklesIcon, TargetIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
@@ -514,56 +515,7 @@ export function ReportsClient({ data }: { data: ReportsData }) {
                 まだ予算が設定されていません。予算を決めると、使いすぎを早めに気づけます。
               </p>
             ) : (
-              <div className="space-y-4">
-                {budgetRows.map((b) => {
-                  const pct =
-                    b.amount > 0 ? Math.min(100, Math.round((b.spent / b.amount) * 100)) : 0;
-                  const over = b.spent > b.amount;
-                  const remaining = b.amount - b.spent;
-                  return (
-                    <div key={b.id}>
-                      <div className="mb-1.5 flex items-center gap-2">
-                        <span
-                          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-white"
-                          style={{ background: colorOf(b.color) }}
-                        >
-                          <CategoryIcon name={b.icon} size={14} />
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-[14px] font-medium">
-                          {b.name}
-                        </span>
-                        {over && (
-                          <Badge tone="expense" size="sm">
-                            超過
-                          </Badge>
-                        )}
-                        <span className="shrink-0 text-[13px] tabular-nums text-text-tertiary">
-                          {b.amount > 0 ? Math.round((b.spent / b.amount) * 100) : 0}%
-                        </span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-surface-2">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-[width] duration-[var(--dur-2)] ease-spring",
-                            over ? "bg-expense" : "bg-accent",
-                          )}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <div className="mt-1 flex items-center justify-between text-[12px] tabular-nums text-text-tertiary">
-                        <span>
-                          {formatMoney(b.spent, currency)} / {formatMoney(b.amount, currency)}
-                        </span>
-                        <span className={over ? "text-expense" : undefined}>
-                          {over
-                            ? `${formatMoney(-remaining, currency)} 超過`
-                            : `残り ${formatMoney(remaining, currency)}`}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <BudgetBars rows={budgetRows} currency={currency} />
             )}
           </CardBody>
         </Card>
