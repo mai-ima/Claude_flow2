@@ -11,6 +11,40 @@ export const metadata: Metadata = pageMetadata({
 
 const RELEASES = [
   {
+    version: "ベータ v1.6.6.0",
+    date: "2026年7月",
+    tag: "Beta",
+    sections: [
+      {
+        h: "カレンダー表示を追加",
+        items: [
+          "家計簿に「カレンダー」表示を追加。1ヶ月の収支をカレンダーの形で一覧でき、どの日にいくら使ったかがひと目で分かります",
+          "日付をタップすると、その日の記録だけを下に表示。そのまま その日づけで追加・編集できます",
+          "上部の「リスト／カレンダー」で、これまでの一覧表示とすぐ切り替えられます",
+        ],
+      },
+      {
+        h: "分析画面を8つの切り口に刷新",
+        items: [
+          "「支出・収入・収支・年間支出・年間収入・貯蓄・貯蓄率・予算」の8タブに拡張。指でスワイプするように切り替えられます",
+          "支出と収入は、カテゴリ別の円グラフと内訳リストで確認できます",
+          "年間支出・年間収入は、1月から12月までの棒グラフと月別の一覧に",
+          "貯蓄では収支の積み上がりと目標の進み具合、貯蓄率では月ごとの推移を表示",
+          "予算タブでは、予算に対して今どれくらい使ったか・あといくら使えるかを一覧できます",
+        ],
+      },
+      {
+        h: "使い心地の改善",
+        items: [
+          "iPhone でのタップのしやすさを見直し、小さなボタンでも指で押しやすいよう当たり判定を拡大",
+          "画面の横はみ出しを解消し、どの画面でも横スクロールが起きないように",
+          "分析やカレンダーの表示に失敗しても、アプリ全体が止まらないように改善",
+          "ホーム画面に追加したときのアイコン表示を整備し、家計簿・分析へ直接開けるショートカットに対応",
+        ],
+      },
+    ],
+  },
+  {
     version: "ベータ v1.2.5.5",
     date: "2026年6月",
     tag: "Beta",
@@ -359,13 +393,18 @@ export default function ChangelogPage() {
 
       <div className="mt-12 space-y-6">
         {RELEASES.map((r) => (
-          <Card key={r.version} className="p-7">
-            <div className="flex items-center gap-3">
-              <h2 className="text-[22px] font-bold tracking-tight">{r.version}</h2>
+          <Card key={r.version} className="p-5 sm:p-7">
+            {/* 狭い画面ではバージョン名・日付が語中で折り返さないよう、行ごと折り返す。 */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h2 className="whitespace-nowrap text-[22px] font-bold tracking-tight">
+                {r.version}
+              </h2>
               <Badge tone="accent" size="md">
                 {r.tag}
               </Badge>
-              <span className="ml-auto text-[13px] text-text-tertiary">{r.date}</span>
+              <span className="ml-auto whitespace-nowrap text-[13px] text-text-tertiary">
+                {r.date}
+              </span>
             </div>
             <div className="mt-5 space-y-5">
               {r.sections.map((s) => (
