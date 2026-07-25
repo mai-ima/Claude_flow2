@@ -28,6 +28,9 @@ const serverSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   // cron 保護 / デモ投入の本番許可
   CRON_SECRET: z.string().optional(),
+  // デモ投入用。未設定なら CRON_SECRET にフォールバック（既存デプロイ互換）。
+  // 用途ごとに鍵を分けたい場合はこちらを設定する。
+  SEED_DEMO_SECRET: z.string().optional(),
   ALLOW_DEMO_SEED: z.string().optional(),
 });
 
@@ -68,6 +71,7 @@ export const env = parseEnv(
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
+    SEED_DEMO_SECRET: process.env.SEED_DEMO_SECRET,
     ALLOW_DEMO_SEED: process.env.ALLOW_DEMO_SEED,
   },
   "server",

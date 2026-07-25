@@ -3,6 +3,7 @@ import { stripe, isStripeEnabled, priceIdFor } from "@/lib/stripe";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clientEnv } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
 import { PlanTier } from "@/lib/enums";
 
 export async function POST(req: Request) {
@@ -16,6 +17,15 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
+  }
+
+  // Stripe への顧客作成・セッション発行を伴うため、実行回数を制限する。
+  const rl = await rateLimit(`checkout:${user.id}`, 10, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { message: "操作が集中しています。少し時間をおいてお試しください。" },
+      { status: 429 },
+    );
   }
 
   const body = await req.json().catch(() => ({}));

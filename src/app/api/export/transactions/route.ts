@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getActiveLedgerId } from "@/lib/ledger-access";
 import { db } from "@/lib/db";
 import { tierAtLeast } from "@/lib/plans";
+import { rateLimit } from "@/lib/rate-limit";
 import type { PlanTier } from "@/lib/enums";
 
 /** CSV エクスポート（PRO 限定）。 */
@@ -11,6 +12,15 @@ export async function GET() {
   if (!user) return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
   if (!tierAtLeast(user.tier as PlanTier, "PRO")) {
     return NextResponse.json({ message: "CSV エクスポートは PRO プランの機能です。" }, { status: 403 });
+  }
+
+  // 帳簿の全取引を走査するため、連続実行を制限する。
+  const rl = await rateLimit(`export:${user.id}`, 10, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { message: "書き出しの回数が多すぎます。少し時間をおいてお試しください。" },
+      { status: 429 },
+    );
   }
 
   const ledgerId = await getActiveLedgerId(user.id);

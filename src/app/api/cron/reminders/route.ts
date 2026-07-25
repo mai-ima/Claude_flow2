@@ -16,10 +16,16 @@ import { logger } from "@/lib/logger";
 
 /**
  * 更新日の自動記帳 + リマインダー判定。Vercel Cron 等から呼ばれる想定。
- * CRON_SECRET が設定されている場合は Bearer 認証を要求。
+ * Bearer 認証を要求する。自動記帳・通知送信・データ削除を行うため、
+ * 本番で CRON_SECRET が未設定の場合は開放せず 503 で停止する（fail-closed）。
  */
 async function handle(req: Request) {
-  if (env.CRON_SECRET) {
+  if (!env.CRON_SECRET) {
+    if (env.NODE_ENV === "production") {
+      logger.error("CRON_SECRET is not configured; refusing to run cron");
+      return NextResponse.json({ error: "not configured" }, { status: 503 });
+    }
+  } else {
     const auth = req.headers.get("authorization");
     if (auth !== `Bearer ${env.CRON_SECRET}`) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });

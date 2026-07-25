@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
 import { importTransactionsCsv } from "@/modules/transactions/import";
 import { tierAtLeast } from "@/lib/plans";
+import { rateLimit } from "@/lib/rate-limit";
 import type { PlanTier } from "@/lib/enums";
 
 export async function POST(req: Request) {
@@ -10,6 +11,15 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
   if (!tierAtLeast(user.tier as PlanTier, "PRO")) {
     return NextResponse.json({ message: "CSV インポートは PRO プランの機能です。" }, { status: 403 });
+  }
+
+  // 最大2MBのCSVを解析し大量の行を書き込むため、実行回数を制限する。
+  const rl = await rateLimit(`import:${user.id}`, 6, 60);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { message: "取り込みの回数が多すぎます。少し時間をおいてお試しください。" },
+      { status: 429 },
+    );
   }
 
   const ledgerId = await getActiveLedgerId(user.id);
