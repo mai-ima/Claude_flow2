@@ -16,22 +16,24 @@
   --glass: rgba(255, 255, 255, 0.5);
   --glass-border: rgba(255, 255, 255, 0.55);
 
+  /* ガラス面は背景が透けるぶん実効コントラストが下がるため、
+     他スキンより濃いめに置いて 4.5:1（WCAG AA）を確保する。 */
   --text-primary: #12131a;
-  --text-secondary: rgba(30, 32, 45, 0.66);
-  --text-tertiary: rgba(30, 32, 45, 0.42);
+  --text-secondary: rgba(24, 26, 38, 0.82);
+  --text-tertiary: rgba(24, 26, 38, 0.72);
 
   /* 縁は白の光沢が主役。暗い線は使わない */
   --border: rgba(255, 255, 255, 0.5);
   --border-strong: rgba(255, 255, 255, 0.75);
 
-  /* 透過越しでも沈まないよう、やや高彩度 */
-  --accent: #0a7cff;
-  --accent-hover: #0a6ae0;
-  --pod: #6a5cff;
-  --income: #22c55e;
-  --expense: #ff3b46;
-  --warning: #ff9a00;
-  --success: #22c55e;
+  /* 透過越しでも沈まないよう、AA を満たす濃さに寄せる */
+  --accent: #0a63d2;
+  --accent-hover: #0052b0;
+  --pod: #5a4ee0;
+  --income: #14803a;
+  --expense: #cf0016;
+  --warning: #a85400;
+  --success: #14803a;
 
   /* ガラス板らしく、大きめで柔らかい角丸 */
   --radius-sm: 14px;
@@ -77,8 +79,8 @@
   --glass-border: rgba(255, 255, 255, 0.18);
 
   --text-primary: #f7f8fc;
-  --text-secondary: rgba(235, 238, 250, 0.68);
-  --text-tertiary: rgba(235, 238, 250, 0.42);
+  --text-secondary: rgba(238, 241, 252, 0.84);
+  --text-tertiary: rgba(238, 241, 252, 0.7);
 
   --border: rgba(255, 255, 255, 0.16);
   --border-strong: rgba(255, 255, 255, 0.3);

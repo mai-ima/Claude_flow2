@@ -14,21 +14,26 @@
   --glass: rgba(249, 249, 249, 0.94); /* ほぼ不透明。ブラーに依存しない */
   --glass-border: rgba(0, 0, 0, 0.12);
 
+  /* iOS の secondaryLabel(0.6) / tertiaryLabel(0.3) をそのまま使うと
+     白背景で 3:1 / 1.7:1 となり本文が読めないため、階層は保ったまま
+     4.5:1（WCAG AA）を満たす不透明度へ引き上げる。 */
   --text-primary: #000000; /* label */
-  --text-secondary: rgba(60, 60, 67, 0.6); /* secondaryLabel */
-  --text-tertiary: rgba(60, 60, 67, 0.3); /* tertiaryLabel */
+  --text-secondary: rgba(60, 60, 67, 0.78);
+  --text-tertiary: rgba(60, 60, 67, 0.76);
 
   /* separator / opaqueSeparator に準拠。線で階層を作るため classic より濃い */
   --border: rgba(60, 60, 67, 0.18);
   --border-strong: rgba(60, 60, 67, 0.34);
 
-  --accent: #007aff; /* systemBlue */
-  --accent-hover: #0071eb;
-  --pod: #5856d6; /* systemIndigo */
-  --income: #34c759; /* systemGreen */
-  --expense: #ff3b30; /* systemRed */
-  --warning: #ff9500; /* systemOrange */
-  --success: #34c759;
+  /* Apple の Accessible 系システムカラー（ライト）に準拠。
+     素の systemBlue/Green は白背景で AA を満たさないため。 */
+  --accent: #0a6cda; /* systemBlue (accessible) */
+  --accent-hover: #0059bd;
+  --pod: #4b49c4; /* systemIndigo (accessible) */
+  --income: #1e8a3c; /* systemGreen (accessible) */
+  --expense: #d70015; /* systemRed (accessible) */
+  --warning: #b25a00; /* systemOrange (accessible) */
+  --success: #1e8a3c;
 
   /* iOS の連続曲率に近い、やや小さめで揃った角丸 */
   --radius-sm: 8px;
@@ -66,8 +71,8 @@
   --glass-border: rgba(255, 255, 255, 0.16);
 
   --text-primary: #ffffff;
-  --text-secondary: rgba(235, 235, 245, 0.6);
-  --text-tertiary: rgba(235, 235, 245, 0.3);
+  --text-secondary: rgba(235, 235, 245, 0.78);
+  --text-tertiary: rgba(235, 235, 245, 0.62);
 
   --border: rgba(84, 84, 88, 0.65);
   --border-strong: rgba(120, 120, 128, 0.8);
