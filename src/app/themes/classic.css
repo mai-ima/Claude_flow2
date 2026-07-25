@@ -1,0 +1,83 @@
+/**
+ * classic スキン — これまでの Tsumiki の見た目。
+ * data-skin 未指定時の既定でもあるため :root にも適用する。
+ * 不透明なカード + 繊細な影。ブラーは上部バーなど一部のみ。
+ */
+
+:root,
+:root[data-skin="classic"] {
+  /* surface 階層（奥行き） */
+  --surface-0: #f2f2f6; /* ページ背景（システムグレー） */
+  --surface-1: #ffffff; /* カード */
+  --surface-2: #eceef2; /* チップ/入力/トラック（淡い段差） */
+  --surface-3: #e3e5ea;
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.06);
+
+  /* テキスト */
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #9a9aa0;
+
+  /* 罫線 */
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  /* アクセント / セマンティック */
+  --accent: #007aff; /* システムブルー */
+  --accent-hover: #0a6cda;
+  --pod: #5856d6; /* 共有帳簿（インディゴ） */
+  --income: #34c759; /* 収入（ミントグリーン） */
+  --expense: #ff3b30; /* 支出 / 超過（レッド） */
+  --warning: #ff9500;
+  --success: #34c759;
+
+  /* 角丸 */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* 影（ごく繊細に） */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  /* 素材（ブラー系）。classic は控えめ。 */
+  --blur-bar: 20px;
+  --blur-glass: 20px;
+  --glass-saturate: 180%;
+  /* カード上端のスペキュラ（光沢）。classic では無し。 */
+  --specular: none;
+  --page-bg-image: none;
+}
+
+:root[data-skin="classic"].dark,
+:root:not([data-skin]).dark,
+.dark {
+  --surface-0: #000000;
+  --surface-1: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --surface-3: #3a3a3c;
+  --glass: rgba(28, 28, 30, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  --text-primary: #f5f5f7;
+  --text-secondary: #aeaeb2;
+  --text-tertiary: #8e8e93;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --accent: #0a84ff;
+  --accent-hover: #3a9bff;
+  --pod: #7d7aff;
+  --income: #30d158;
+  --expense: #ff453a;
+  --warning: #ff9f0a;
+  --success: #30d158;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+}

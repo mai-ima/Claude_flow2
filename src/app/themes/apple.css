@@ -1,0 +1,107 @@
+/**
+ * apple スキン — Liquid Glass を使わない、純度の高い Apple 的UI。
+ *
+ * 方針: 透明・ブラーに頼らず「余白・区切り線・活字」で階層を作る。
+ * iOS 設定アプリのように、影はほぼ使わず境界線とグルーピングで見せる。
+ * 角丸は連続的な曲率に近い値、彩度は System Colors に忠実。
+ */
+
+:root[data-skin="apple"] {
+  --surface-0: #f2f2f7; /* systemGroupedBackground */
+  --surface-1: #ffffff; /* secondarySystemGroupedBackground */
+  --surface-2: #e9e9ef;
+  --surface-3: #dededf;
+  --glass: rgba(249, 249, 249, 0.94); /* ほぼ不透明。ブラーに依存しない */
+  --glass-border: rgba(0, 0, 0, 0.12);
+
+  --text-primary: #000000; /* label */
+  --text-secondary: rgba(60, 60, 67, 0.6); /* secondaryLabel */
+  --text-tertiary: rgba(60, 60, 67, 0.3); /* tertiaryLabel */
+
+  /* separator / opaqueSeparator に準拠。線で階層を作るため classic より濃い */
+  --border: rgba(60, 60, 67, 0.18);
+  --border-strong: rgba(60, 60, 67, 0.34);
+
+  --accent: #007aff; /* systemBlue */
+  --accent-hover: #0071eb;
+  --pod: #5856d6; /* systemIndigo */
+  --income: #34c759; /* systemGreen */
+  --expense: #ff3b30; /* systemRed */
+  --warning: #ff9500; /* systemOrange */
+  --success: #34c759;
+
+  /* iOS の連続曲率に近い、やや小さめで揃った角丸 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* 影はほぼ使わない（線とグルーピングで階層を示す） */
+  --shadow-sm: none;
+  --shadow-md: 0 1px 0 rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+  --blur-bar: 0px; /* ブラー不使用 */
+  --blur-glass: 0px;
+  --glass-saturate: 100%;
+  --specular: none;
+  --page-bg-image: none;
+
+  /* モーション: きびきび短く、行き過ぎない（精密さを優先） */
+  --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1); /* iOS の標準的な減速 */
+  --ease-bounce: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-1: 0.15s;
+  --dur-2: 0.24s;
+  --dur-3: 0.38s;
+  --stagger: 0.028s;
+}
+
+:root[data-skin="apple"].dark {
+  --surface-0: #000000;
+  --surface-1: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --surface-3: #3a3a3c;
+  --glass: rgba(30, 30, 32, 0.94);
+  --glass-border: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #ffffff;
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-tertiary: rgba(235, 235, 245, 0.3);
+
+  --border: rgba(84, 84, 88, 0.65);
+  --border-strong: rgba(120, 120, 128, 0.8);
+
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+  --pod: #5e5ce6;
+  --income: #30d158;
+  --expense: #ff453a;
+  --warning: #ff9f0a;
+  --success: #30d158;
+
+  --shadow-sm: none;
+  --shadow-md: 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* ── apple スキン固有の質感 ───────────────────────────── */
+
+/* カードは影ではなく境界線で立たせる（iOS 設定アプリ的なグルーピング） */
+:root[data-skin="apple"] .shadow-sm,
+:root[data-skin="apple"] .shadow-md {
+  border: 1px solid var(--border);
+}
+
+/* 上部バー・下タブはブラーを使わず、不透明 + 1px の境界線で分離 */
+:root[data-skin="apple"] .backdrop-blur-xl,
+:root[data-skin="apple"] .backdrop-blur-lg,
+:root[data-skin="apple"] .backdrop-blur-md {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 押し込みは控えめ（Apple は大きく縮まない） */
+:root[data-skin="apple"] .active\:scale-\[0\.96\]:active {
+  transform: scale(0.98);
+}

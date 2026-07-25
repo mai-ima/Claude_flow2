@@ -53,8 +53,8 @@ function CellView({ value }: { value: Cell }) {
 export function PlanComparison() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-1">
-      {/* header */}
-      <div className="sticky top-14 z-10 grid grid-cols-[1.6fr_1fr_1fr_1fr] border-b border-border-subtle bg-glass backdrop-blur-xl">
+      {/* header: スクロール中の行が透けないよう不透明な面を使う */}
+      <div className="sticky top-14 z-10 grid grid-cols-[1.9fr_1fr_1fr_1fr] border-b border-border-subtle bg-surface-1 backdrop-blur-xl">
         <div className="px-4 py-3 text-[13px] font-semibold text-text-secondary">機能</div>
         {[
           { name: "フリー", tone: "text-text-primary" },
@@ -75,7 +75,7 @@ export function PlanComparison() {
           {section.rows.map((r) => (
             <div
               key={r.label}
-              className="grid grid-cols-[1.6fr_1fr_1fr_1fr] items-center border-t border-border-subtle"
+              className="grid grid-cols-[1.9fr_1fr_1fr_1fr] items-center border-t border-border-subtle"
             >
               <div className="px-4 py-3 text-[14px]">{r.label}</div>
               <div className="px-2 py-3 text-center">

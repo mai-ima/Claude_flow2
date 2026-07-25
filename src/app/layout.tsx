@@ -26,8 +26,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// テーマ先行適用（フラッシュ防止）
-const themeScript = `(function(){try{var p=localStorage.getItem('tsumiki-theme')||'system';var d=p==='dark'||(p==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
+// テーマ・スキン先行適用（フラッシュ防止）
+const themeScript = `(function(){try{var e=document.documentElement;var p=localStorage.getItem('tsumiki-theme')||'system';var d=p==='dark'||(p==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);e.classList.toggle('dark',d);var s=localStorage.getItem('tsumiki-skin');e.dataset.skin=(s==='apple'||s==='liquidglass')?s:'classic';}catch(e){}})();`;
 
 export default function RootLayout({
   children,

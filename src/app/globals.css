@@ -1,82 +1,36 @@
 @import "tailwindcss";
 
+/* スキン（見た目のテーマ）。既定は classic。
+   各スキンは data-skin 属性で切り替え、専用CSSでトークンを上書きする。 */
+@import "./themes/classic.css";
+@import "./themes/apple.css";
+@import "./themes/liquidglass.css";
+
 /* ダークモードは class 戦略（<html class="dark">） */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ───────────── デザイントークン ───────────── */
+/* ───────────── モーション（全スキン共通の既定値） ─────────────
+   各スキンが性格付けのために上書きする。用途ごとにカーブを分け、
+   「全部同じ動き」に見えないようにする。 */
 :root {
-  /* surface 階層（奥行き） */
-  --surface-0: #f2f2f6; /* ページ背景（システムグレー） */
-  --surface-1: #ffffff; /* カード */
-  --surface-2: #eceef2; /* チップ/入力/トラック（淡い段差） */
-  --surface-3: #e3e5ea;
-  --glass: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.06);
-
-  /* テキスト */
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --text-tertiary: #9a9aa0;
-
-  /* 罫線 */
-  --border: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.14);
-
-  /* アクセント / セマンティック */
-  --accent: #007aff; /* システムブルー */
-  --accent-hover: #0a6cda;
-  --pod: #5856d6; /* 共有帳簿（インディゴ） */
-  --income: #34c759; /* 収入（ミントグリーン） */
-  --expense: #ff3b30; /* 支出 / 超過（レッド） */
-  --warning: #ff9500;
-  --success: #34c759;
-
-  /* 角丸 */
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-
-  /* 影（ごく繊細に） */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 2px 6px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
-
-  /* モーション */
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  /* 減速主体。UI が指から離れて落ち着く動き（Apple の標準的な出方） */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* わずかに行き過ぎて戻る。トグル・タブなど「弾む」要素 */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  /* しっかり弾む。シート・モーダルの登場 */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* 加速主体。消える方向（退場） */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  /* 加減速の対称。位置移動のみの変化 */
+  --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
+
   --dur-1: 0.18s; /* micro: タップ/ホバー */
   --dur-2: 0.28s; /* base: シート/トグル/タブ */
   --dur-3: 0.45s; /* major: テーマ/大きな移動 */
   --dur-reveal: 0.7s; /* reveal/リング */
-}
 
-.dark {
-  --surface-0: #000000;
-  --surface-1: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
-  --glass: rgba(28, 28, 30, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.1);
-
-  --text-primary: #f5f5f7;
-  --text-secondary: #aeaeb2;
-  --text-tertiary: #8e8e93;
-
-  --border: rgba(255, 255, 255, 0.12);
-  --border-strong: rgba(255, 255, 255, 0.2);
-
-  --accent: #0a84ff;
-  --accent-hover: #3a9bff;
-  --pod: #7d7aff;
-  --income: #30d158;
-  --expense: #ff453a;
-  --warning: #ff9f0a;
-  --success: #30d158;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  /* リスト項目の連鎖表示（1項目あたりの遅延） */
+  --stagger: 0.035s;
 }
 
 /* 共有帳簿モード: アクセントをインディゴへクロスフェード */
@@ -86,6 +40,10 @@
 }
 
 @theme inline {
+  /* イージング（ease-bounce / ease-move ユーティリティを有効化） */
+  --ease-bounce: var(--ease-bounce);
+  --ease-move: var(--ease-move);
+
   --color-surface-0: var(--surface-0);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
@@ -144,12 +102,25 @@ html {
 }
 
 body {
-  background: var(--surface-0);
+  background-color: var(--surface-0);
+  /* liquidglass ではガラスが透かす対象としてカラーメッシュを敷く（他スキンは none） */
+  background-image: var(--page-bg-image, none);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
   letter-spacing: -0.011em;
+  /* 日本語を文節単位で改行する（「取引の一括編/集」のような語中改行を防ぐ）。
+     未対応ブラウザは通常の禁則処理にフォールバックする。 */
+  word-break: auto-phrase;
   /* iPhone セーフエリア */
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 単語で折り返さず、はみ出すより省略したい箇所（ボタン内ラベル等）で使う。 */
+.text-nowrap-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* タップ反応を機敏に（ダブルタップズーム遅延の除去） */
@@ -216,11 +187,11 @@ html[data-vt] .transition-theme * {
   animation: ambient-glow 3.6s var(--ease-spring) infinite;
 }
 
-/* トーストの立ち上がり */
+/* トーストの立ち上がり（軽く行き過ぎて収まる） */
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.97);
+    transform: translate3d(0, 16px, 0) scale(0.96);
   }
   to {
     opacity: 1;
@@ -228,23 +199,47 @@ html[data-vt] .transition-theme * {
   }
 }
 .toast-in {
-  animation: toast-in var(--dur-2) var(--ease-spring) both;
+  animation: toast-in var(--dur-2) var(--ease-bounce) both;
 }
 
-/* ページ遷移: ふわっと立ち上がる（template.tsx で適用） */
+/* ページ遷移: わずかに奥から迫り出す（平行移動だけの単調さを避ける） */
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate3d(0, 12px, 0) scale(0.994);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 .page-enter {
-  animation: page-in var(--dur-3) var(--ease-spring) both;
+  animation: page-in var(--dur-3) var(--ease-out) both;
 }
+
+/* 中身の連鎖表示。ページ内の主要ブロックが順に立ち上がる。
+   .stagger を親に付けると、直下の子が --stagger ずつ遅れて現れる。 */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.stagger > * {
+  animation: rise-in var(--dur-2) var(--ease-out) both;
+}
+.stagger > *:nth-child(1) { animation-delay: calc(var(--stagger) * 0); }
+.stagger > *:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.stagger > *:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.stagger > *:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.stagger > *:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.stagger > *:nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+.stagger > *:nth-child(7) { animation-delay: calc(var(--stagger) * 6); }
+.stagger > *:nth-child(n + 8) { animation-delay: calc(var(--stagger) * 7); }
 
 /* スクロール出現（マーケティング） */
 .reveal {

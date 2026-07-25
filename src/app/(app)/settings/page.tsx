@@ -5,6 +5,7 @@ import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { ShieldIcon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { SkinPicker } from "@/components/theme/skin-picker";
 import {
   ProfileForm,
   PaymentMethodsManager,
@@ -59,9 +60,15 @@ export default async function SettingsPage() {
         </ListGroup>
 
         <ListGroup title="外観" padded>
-          <div className="flex items-center justify-between">
-            <span className="text-[14px] text-text-secondary">テーマ</span>
-            <ThemeToggle />
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[14px] text-text-secondary">テーマ</span>
+              <ThemeToggle />
+            </div>
+            <div className="border-t border-border-subtle pt-4">
+              <div className="mb-2.5 text-[14px] text-text-secondary">スキン</div>
+              <SkinPicker />
+            </div>
           </div>
         </ListGroup>
 

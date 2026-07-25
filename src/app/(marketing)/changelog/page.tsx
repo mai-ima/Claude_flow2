@@ -11,7 +11,7 @@ export const metadata: Metadata = pageMetadata({
 
 const RELEASES = [
   {
-    version: "ベータ v1.6.6.0",
+    version: "ベータ v1.2.6.0",
     date: "2026年7月",
     tag: "Beta",
     sections: [

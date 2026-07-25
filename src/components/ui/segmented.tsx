@@ -41,7 +41,8 @@ export function Segmented<T extends string>({
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "relative z-10 flex-1 rounded-lg px-3 py-1.5 text-[14px] font-medium transition-colors duration-[var(--dur-1)] ease-spring",
+            // ラベルは短い語のため、狭い画面でも語中で折り返さない（「ライ/ト」を防ぐ）。
+            "relative z-10 flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-[14px] font-medium transition-colors duration-[var(--dur-1)] ease-spring",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
             value === o.value ? "text-text-primary" : "text-text-secondary hover:text-text-primary",
           )}
