@@ -322,6 +322,17 @@ export function CalendarClient({
         )}
       </div>
 
+      {/* リスト表示と同じ位置に常設の追加ボタン。選択中の日付で開く。 */}
+      {canEdit && (
+        <button
+          onClick={openAdd}
+          aria-label="記録を追加"
+          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition duration-[var(--dur-1)] ease-spring hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
+        >
+          <PlusIcon size={26} />
+        </button>
+      )}
+
       <TransactionSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}

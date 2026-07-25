@@ -199,7 +199,7 @@ html[data-vt] .transition-theme * {
   }
 }
 .toast-in {
-  animation: toast-in var(--dur-2) var(--ease-bounce) both;
+  animation: toast-in var(--dur-2) var(--ease-bounce) backwards;
 }
 
 /* ページ遷移: わずかに奥から迫り出す（平行移動だけの単調さを避ける） */
@@ -213,8 +213,15 @@ html[data-vt] .transition-theme * {
     transform: none;
   }
 }
+/*
+ * fill-mode は必ず backwards にする（both は不可）。
+ * both だと終了後も最終キーフレームの transform が残り、計算値が none ではなく
+ * 単位行列になる。transform を持つ要素は position:fixed の包含ブロックになるため、
+ * 中の FAB（記録を追加ボタン）がスクロールに追従しなくなる。
+ * backwards なら終了後は既定値（transform:none / opacity:1）へ戻る。
+ */
 .page-enter {
-  animation: page-in var(--dur-3) var(--ease-out) both;
+  animation: page-in var(--dur-3) var(--ease-out) backwards;
 }
 
 /* 中身の連鎖表示。ページ内の主要ブロックが順に立ち上がる。
@@ -230,7 +237,8 @@ html[data-vt] .transition-theme * {
   }
 }
 .stagger > * {
-  animation: rise-in var(--dur-2) var(--ease-out) both;
+  /* page-enter と同じ理由で backwards（both は fixed 配置を壊す）。 */
+  animation: rise-in var(--dur-2) var(--ease-out) backwards;
 }
 .stagger > *:nth-child(1) { animation-delay: calc(var(--stagger) * 0); }
 .stagger > *:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
@@ -253,6 +261,9 @@ html[data-vt] .transition-theme * {
 .reveal.is-visible {
   opacity: 1;
   transform: none;
+  /* 表示後は昇格を解除する。will-change が残ると包含ブロックが作られ続け、
+     内側の position:fixed が壊れる（かつ無駄にレイヤーを保持する）。 */
+  will-change: auto;
 }
 
 /* カードのホバー浮き上がり */

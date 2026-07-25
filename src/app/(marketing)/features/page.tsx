@@ -17,6 +17,7 @@ import {
   SlidersIcon,
   ArrowUpIcon,
   WalletIcon,
+  CalendarIcon,
 } from "@/components/icons";
 import { pageMetadata } from "@/lib/seo";
 
@@ -28,6 +29,18 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const SECTIONS = [
+  {
+    icon: CalendarIcon,
+    tag: "カレンダー表示",
+    title: "1ヶ月のお金を、カレンダーで。",
+    body: "収支をカレンダーの形で一覧。どの日にいくら使ったかが、めくるだけでひと目でわかります。日付をタップすればその日の明細が開き、そのまま その日づけで記録も追加できます。",
+  },
+  {
+    icon: ChartIcon,
+    tag: "8つの切り口の分析",
+    title: "同じ数字を、8通りの角度から。",
+    body: "支出・収入・収支・年間支出・年間収入・貯蓄・貯蓄率・予算。タブを切り替えるだけで、円グラフ・棒グラフ・推移グラフが目的に合わせて表示されます。",
+  },
   {
     icon: RepeatIcon,
     tag: "自動化・繰り返し",
@@ -71,7 +84,8 @@ const MORE = [
   { icon: BellIcon, title: "更新リマインダー", body: "更新の当日〜30日前まで、サブスクごとに通知タイミングを設定。アプリ内とメールで静かにお知らせ。" },
   { icon: WalletIcon, title: "予算アラート", body: "カテゴリや全体の予算が80%・100%に達したら通知。使いすぎを早めに防ぎます。" },
   { icon: TargetIcon, title: "予算・貯金目標", body: "予算は円グラフ＋過去平均からの提案。目標は毎月の自動積立と積立履歴・引き出しに対応。" },
-  { icon: ChartIcon, title: "分析・レポート", body: "収支の推移やカテゴリ内訳を、合計・前月比つきの美しいグラフで。" },
+  { icon: CalendarIcon, title: "カレンダー / リスト", body: "同じ家計簿を、カレンダーと一覧のどちらでも。用途に合わせてワンタップで切り替え。" },
+  { icon: ChartIcon, title: "分析・レポート", body: "支出・収入・収支・年間・貯蓄・貯蓄率・予算の8タブ。合計や前月比つきの美しいグラフで。" },
   { icon: SparklesIcon, title: "スマート解約アシスト", body: "主要40以上のサービスに対応。解約ページへ最短でジャンプし、手順もその場で確認。" },
   { icon: ShieldIcon, title: "プライバシー", body: "データはあなたのもの。広告のために売りません。" },
 ];

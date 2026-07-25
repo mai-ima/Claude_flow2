@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getAppContext } from "@/lib/app-context";
 import {
   listRecurring,
@@ -9,7 +8,6 @@ import {
 import { RecurringClient, type RecurringListItem } from "@/modules/transactions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { ButtonLink } from "@/components/ui/button";
-import { ChevronRightIcon } from "@/components/icons";
 import { formatDate } from "@/lib/date";
 import type { BillingCycle } from "@/lib/enums";
 import { pageMetadata } from "@/lib/seo";
@@ -64,15 +62,6 @@ export default async function RecurringPage() {
         currency={currency}
       />
 
-      <div className="mt-6 text-center">
-        <Link
-          href="/transactions"
-          className="inline-flex items-center gap-1 text-[13px] text-text-tertiary hover:text-text-secondary"
-        >
-          通常の家計簿を見る
-          <ChevronRightIcon size={14} />
-        </Link>
-      </div>
     </PageContainer>
   );
 }
