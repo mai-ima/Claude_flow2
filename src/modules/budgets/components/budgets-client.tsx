@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CategoryDonut } from "@/components/ui/chart/charts";
+import { CategoryDonut } from "@/components/ui/chart/lazy";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { BudgetGauge } from "@/components/app/budget-gauge";

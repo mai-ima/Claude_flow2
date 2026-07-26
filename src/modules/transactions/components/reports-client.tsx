@@ -4,13 +4,13 @@ import { useState } from "react";
 import { ScrollTabs } from "@/components/ui/scroll-tabs";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BudgetBars } from "@/components/ui/chart/charts";
 import {
   TrendAreaChart,
   CategoryDonut,
   MonthlyBarChart,
   RateLineChart,
-  BudgetBars,
-} from "@/components/ui/chart/charts";
+} from "@/components/ui/chart/lazy";
 import { CategoryIcon, SparklesIcon, TargetIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";

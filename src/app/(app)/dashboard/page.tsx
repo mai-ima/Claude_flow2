@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { ActivityRing } from "@/components/ui/activity-ring";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CategoryDonut } from "@/components/ui/chart/charts";
+import { CategoryDonut } from "@/components/ui/chart/lazy";
 import { BudgetGauge } from "@/components/app/budget-gauge";
 import { AdSlot } from "@/components/ads/ad-slot";
 import {

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Sheet } from "./sheet";
 import { Button } from "./button";
 
@@ -32,6 +32,15 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       resolverRef.current = resolve;
       setOpts(options);
     });
+  }, []);
+
+  // アンマウント時に未解決の Promise が残ると、await している呼び出し元が
+  // 永久に再開せず「押しても何も起きない」状態になる。false で解決して終わらせる。
+  useEffect(() => {
+    return () => {
+      resolverRef.current?.(false);
+      resolverRef.current = null;
+    };
   }, []);
 
   const settle = useCallback((value: boolean) => {
