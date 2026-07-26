@@ -23,7 +23,7 @@ export default async function SignupPage() {
     <div className="grid min-h-screen place-items-center px-5 py-16">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2 font-semibold">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-white">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent-solid text-white">
             <LogoMark size={22} />
           </span>
           <span className="text-[19px]">{SITE.name}</span>

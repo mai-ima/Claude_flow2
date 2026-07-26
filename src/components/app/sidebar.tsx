@@ -11,7 +11,7 @@ export function Sidebar() {
   return (
     <aside className="hidden w-60 shrink-0 self-start border-r border-border-subtle bg-surface-1 md:sticky md:top-0 md:flex md:h-screen md:flex-col">
       <Link href="/dashboard" className="flex h-14 shrink-0 items-center gap-2 px-5 font-semibold">
-        <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent text-white">
+        <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent-solid text-white">
           <LogoMark size={20} />
         </span>
         <span className="text-[17px]">Tsumiki</span>

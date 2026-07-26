@@ -3,7 +3,15 @@
 import { useRouter, usePathname } from "next/navigation";
 import { ChevronRightIcon } from "@/components/icons";
 
-export function MonthSwitcher({ current }: { current: string }) {
+export function MonthSwitcher({
+  current,
+  todayParam,
+}: {
+  current: string;
+  /** サーバー基準の当月(YYYY-MM)。ブラウザのタイムゾーンで判定すると
+   *  日付境界でサーバーと食い違い、「次の月」の可否がずれる。 */
+  todayParam?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [y, m] = current.split("-").map(Number);
@@ -14,10 +22,12 @@ export function MonthSwitcher({ current }: { current: string }) {
     router.push(`${pathname}?m=${param}`);
   }
 
-  const isCurrent = (() => {
-    const now = new Date();
-    return now.getFullYear() === y && now.getMonth() + 1 === m;
-  })();
+  const isCurrent = todayParam
+    ? todayParam === current
+    : (() => {
+        const now = new Date();
+        return now.getFullYear() === y && now.getMonth() + 1 === m;
+      })();
 
   return (
     <div className="inline-flex items-center gap-1 rounded-xl border border-border-subtle bg-surface-1 p-1">

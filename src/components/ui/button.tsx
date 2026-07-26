@@ -8,12 +8,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        filled: "bg-accent text-white hover:bg-accent-hover shadow-sm",
+        filled: "bg-accent-solid text-white hover:bg-accent-solid-hover shadow-sm",
         tinted:
           "bg-accent/10 text-accent hover:bg-accent/15 dark:bg-accent/20 dark:hover:bg-accent/25",
         plain: "text-accent hover:bg-accent/8",
         gray: "bg-surface-2 text-text-primary hover:bg-surface-3 border border-border-subtle",
-        destructive: "bg-expense text-white hover:opacity-90 shadow-sm",
+        destructive: "bg-expense-solid text-white hover:opacity-90 shadow-sm",
         ghost: "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
       },
       // 見た目の高さは保ちつつ、擬似要素で当たり判定を 44px（Apple HIG 最小）へ広げる。

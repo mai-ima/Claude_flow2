@@ -30,13 +30,16 @@
      素の #007aff / #34c759 は白背景で 3.9:1 / 1.9:1 しかなく、
      小さな文字（金額・ラベル・リンク）が読みにくいため。
      白抜き文字のボタンも、面が濃くなることで同時に読みやすくなる。 */
-  --accent: #0a6cda; /* システムブルー（濃いめ） */
+  --accent: #0a63c8; /* システムブルー（濃いめ） */
   --accent-hover: #0059bd;
   --pod: #4b49c4; /* 共有帳簿（インディゴ） */
-  --income: #1e8a3c; /* 収入（グリーン） */
+  --income: #1a7d36; /* 収入（グリーン） */
   --expense: #d70015; /* 支出 / 超過（レッド） */
   --warning: #b25a00;
   --success: #1e8a3c;
+  --accent-solid: var(--accent);
+  --accent-solid-hover: var(--accent-hover);
+  --expense-solid: var(--expense);
 
   /* 角丸 */
   --radius-sm: 10px;
@@ -75,13 +78,16 @@
   --border: rgba(255, 255, 255, 0.12);
   --border-strong: rgba(255, 255, 255, 0.2);
 
-  --accent: #0a84ff;
+  --accent: #3d9bff;
   --accent-hover: #3a9bff;
-  --pod: #7d7aff;
+  --pod: #9a97ff;
   --income: #30d158;
   --expense: #ff453a;
   --warning: #ff9f0a;
   --success: #30d158;
+  --accent-solid: #0b5ed7;
+  --accent-solid-hover: #0a53bd;
+  --expense-solid: #c9291f;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);

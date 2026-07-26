@@ -27,13 +27,16 @@
 
   /* Apple の Accessible 系システムカラー（ライト）に準拠。
      素の systemBlue/Green は白背景で AA を満たさないため。 */
-  --accent: #0a6cda; /* systemBlue (accessible) */
+  --accent: #0a63c8; /* systemBlue (accessible) */
   --accent-hover: #0059bd;
   --pod: #4b49c4; /* systemIndigo (accessible) */
-  --income: #1e8a3c; /* systemGreen (accessible) */
+  --income: #1a7d36; /* systemGreen (accessible) */
   --expense: #d70015; /* systemRed (accessible) */
   --warning: #b25a00; /* systemOrange (accessible) */
   --success: #1e8a3c;
+  --accent-solid: var(--accent);
+  --accent-solid-hover: var(--accent-hover);
+  --expense-solid: var(--expense);
 
   /* iOS の連続曲率に近い、やや小さめで揃った角丸 */
   --radius-sm: 8px;
@@ -77,13 +80,16 @@
   --border: rgba(84, 84, 88, 0.65);
   --border-strong: rgba(120, 120, 128, 0.8);
 
-  --accent: #0a84ff;
+  --accent: #3d9bff;
   --accent-hover: #409cff;
-  --pod: #5e5ce6;
+  --pod: #9a97ff;
   --income: #30d158;
   --expense: #ff453a;
   --warning: #ff9f0a;
   --success: #30d158;
+  --accent-solid: #0b5ed7;
+  --accent-solid-hover: #0a53bd;
+  --expense-solid: #c9291f;
 
   --shadow-sm: none;
   --shadow-md: 0 1px 0 rgba(255, 255, 255, 0.04);

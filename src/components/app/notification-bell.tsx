@@ -82,7 +82,7 @@ export function NotificationBell({
         {unread > 0 && (
           <span
             aria-label={`未読${unread}件`}
-            className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-expense px-1 text-[10px] font-bold text-white"
+            className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-expense-solid px-1 text-[10px] font-bold text-white"
           >
             {unread > 9 ? "9+" : unread}
           </span>

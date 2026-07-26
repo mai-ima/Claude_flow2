@@ -67,7 +67,7 @@ export function MobileDrawer({
       >
         <div className="flex items-center justify-between px-4 py-4">
           <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2 font-semibold">
-            <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent text-white">
+            <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent-solid text-white">
               <LogoMark size={20} />
             </span>
             <span className="text-[17px]">Tsumiki</span>

@@ -99,7 +99,7 @@ export function SwipeRow({
                 ? "bg-expense"
                 : a.tone === "duplicate"
                   ? "bg-text-tertiary"
-                  : "bg-accent",
+                  : "bg-accent-solid",
             )}
           >
             {a.icon}

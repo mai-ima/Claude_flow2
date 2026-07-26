@@ -43,6 +43,7 @@ export function TransactionSheet({
   initial,
   currency = "JPY",
   beta = false,
+  today,
 }: {
   open: boolean;
   onClose: () => void;
@@ -51,6 +52,9 @@ export function TransactionSheet({
   initial?: TxnFormValue;
   currency?: string;
   beta?: boolean;
+  /** サーバー基準の今日(yyyy-MM-dd)。端末のタイムゾーンが日本時間でないと
+   *  既定の日付がアプリの「今日」とずれるため、サーバーから渡す。 */
+  today?: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -59,7 +63,7 @@ export function TransactionSheet({
   const blank = (): TxnFormValue => ({
     type: "EXPENSE",
     amount: 0,
-    occurredAt: todayStr(),
+    occurredAt: today ?? todayStr(),
     categoryId: "",
     paymentMethodId: "",
     memo: "",

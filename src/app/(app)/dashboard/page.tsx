@@ -68,7 +68,7 @@ export default async function DashboardPage({
       <PageHeader
         title={`こんにちは${user.name ? `、${user.name}さん` : ""}`}
         subtitle={isPod ? "共有帳簿" : undefined}
-        action={<MonthSwitcher current={monthParam(month)} />}
+        action={<MonthSwitcher current={monthParam(month)} todayParam={monthParam(new Date())} />}
       />
 
       {/* クイック操作 */}

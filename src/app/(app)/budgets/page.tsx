@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { TargetIcon } from "@/components/icons";
 import { canUse } from "@/lib/plans";
+import { budgetInsight } from "@/lib/budget-insight";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({ title: "予算", noindex: true });
@@ -54,6 +55,7 @@ export default async function BudgetsPage() {
         currency={currency}
         beta={betaOptIn}
         averages={averages}
+        insight={total ? budgetInsight(total.spent, total.amount) : undefined}
       />
     </PageContainer>
   );

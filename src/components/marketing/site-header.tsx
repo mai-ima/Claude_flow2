@@ -44,7 +44,7 @@ export function SiteHeader() {
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent text-white">
+          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent-solid text-white">
             <LogoMark size={20} />
           </span>
           <span className="text-[17px]">{SITE.name}</span>

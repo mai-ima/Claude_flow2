@@ -8,7 +8,7 @@ import {
 import { RecurringClient, type RecurringListItem } from "@/modules/transactions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { ButtonLink } from "@/components/ui/button";
-import { formatDate } from "@/lib/date";
+import { formatDate, todayLocal } from "@/lib/date";
 import type { BillingCycle } from "@/lib/enums";
 import { pageMetadata } from "@/lib/seo";
 
@@ -55,6 +55,7 @@ export default async function RecurringPage() {
       />
 
       <RecurringClient
+        today={todayLocal()}
         items={items}
         categories={catOpts}
         paymentMethods={pmOpts}

@@ -15,7 +15,6 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   CategoryIcon,
-  PlusIcon,
   RepeatIcon,
   CheckIcon,
   TrashIcon,
@@ -25,6 +24,7 @@ import {
 import { formatMoney } from "@/lib/money";
 import { gradientOf } from "@/lib/colors";
 import { cn } from "@/lib/cn";
+import { Fab } from "@/components/ui/fab";
 
 export interface SubItem {
   id: string;
@@ -418,13 +418,7 @@ export function SubscriptionsClient({
       )}
 
       {canEdit && (
-        <button
-          onClick={openAdd}
-          aria-label="サブスクを追加"
-          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition duration-[var(--dur-1)] ease-spring hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
-        >
-          <PlusIcon size={26} />
-        </button>
+        <Fab onClick={openAdd} label="サブスクを追加" />
       )}
 
       <SubscriptionSheet

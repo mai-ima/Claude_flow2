@@ -11,11 +11,12 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { CategoryIcon, PlusIcon, RepeatIcon, TrashIcon, EditIcon } from "@/components/icons";
+import { CategoryIcon, RepeatIcon, TrashIcon, EditIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { todayLocal } from "@/lib/date";
 import { CYCLE_LABEL, type BillingCycle } from "@/lib/enums";
 import { cn } from "@/lib/cn";
+import { Fab } from "@/components/ui/fab";
 import {
   createRecurring,
   updateRecurring,
@@ -58,8 +59,8 @@ interface FormValue {
   memo: string;
 }
 
-function todayStr() {
-  return todayLocal();
+function todayStr(today?: string) {
+  return today ?? todayLocal();
 }
 
 export function RecurringClient({
@@ -68,12 +69,15 @@ export function RecurringClient({
   paymentMethods,
   canEdit,
   currency = "JPY",
+  today,
 }: {
   items: RecurringListItem[];
   categories: Option[];
   paymentMethods: Option[];
   canEdit: boolean;
   currency?: string;
+  /** サーバー基準の今日(yyyy-MM-dd)。 */
+  today?: string;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -86,7 +90,7 @@ export function RecurringClient({
     type: "EXPENSE",
     amount: 0,
     cycle: "MONTHLY",
-    nextRunAt: todayStr(),
+    nextRunAt: todayStr(today),
     categoryId: "",
     paymentMethodId: "",
     memo: "",
@@ -244,13 +248,7 @@ export function RecurringClient({
       )}
 
       {canEdit && (
-        <button
-          onClick={openAdd}
-          aria-label="定期取引を追加"
-          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition duration-[var(--dur-1)] ease-spring hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
-        >
-          <PlusIcon size={26} />
-        </button>
+        <Fab onClick={openAdd} label="定期取引を追加" />
       )}
 
       <Sheet

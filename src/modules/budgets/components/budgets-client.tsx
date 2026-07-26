@@ -11,6 +11,7 @@ import { CategoryDonut } from "@/components/ui/chart/lazy";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { BudgetGauge } from "@/components/app/budget-gauge";
+import type { BudgetInsight } from "@/lib/budget-insight";
 import { CategoryIcon, TargetIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
@@ -18,6 +19,7 @@ import { evalAmount } from "@/lib/calc";
 import { budgetHealth } from "@/lib/budget-insight";
 import { setBudget, deleteBudget } from "../actions";
 import { cn } from "@/lib/cn";
+import { Fab } from "@/components/ui/fab";
 
 export interface BudgetItem {
   id: string;
@@ -117,6 +119,7 @@ export function BudgetsClient({
   currency = "JPY",
   beta = false,
   averages,
+  insight,
 }: {
   total: BudgetItem | null;
   categories: BudgetItem[];
@@ -125,6 +128,8 @@ export function BudgetsClient({
   currency?: string;
   beta?: boolean;
   averages?: { byCategory: Record<string, number>; total: number };
+  /** サーバーで算出した予算の示唆。端末のタイムゾーンで残り日数がずれないように渡す。 */
+  insight?: BudgetInsight;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -241,7 +246,12 @@ export function BudgetsClient({
                   </button>
                 )}
               </div>
-              <BudgetGauge spent={total.spent} amount={total.amount} currency={currency} />
+              <BudgetGauge
+                spent={total.spent}
+                amount={total.amount}
+                currency={currency}
+                insight={insight}
+              />
             </Card>
           )}
 
@@ -299,13 +309,7 @@ export function BudgetsClient({
       )}
 
       {canEdit && (
-        <button
-          onClick={openNew}
-          aria-label="予算を追加"
-          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition duration-[var(--dur-1)] ease-spring hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
-        >
-          <PlusIcon size={26} />
-        </button>
+        <Fab onClick={openNew} label="予算を追加" />
       )}
 
       <Sheet

@@ -34,6 +34,9 @@
   --expense: #cf0016;
   --warning: #a85400;
   --success: #14803a;
+  --accent-solid: var(--accent);
+  --accent-solid-hover: var(--accent-hover);
+  --expense-solid: var(--expense);
 
   /* ガラス板らしく、大きめで柔らかい角丸 */
   --radius-sm: 14px;
@@ -85,13 +88,16 @@
   --border: rgba(255, 255, 255, 0.16);
   --border-strong: rgba(255, 255, 255, 0.3);
 
-  --accent: #3d9bff;
+  --accent: #66b0ff;
   --accent-hover: #6ab2ff;
-  --pod: #8b80ff;
+  --pod: #9a97ff;
   --income: #34d367;
-  --expense: #ff5a55;
+  --expense: #ff8a84;
   --warning: #ffab2e;
   --success: #34d367;
+  --accent-solid: #0b5ed7;
+  --accent-solid-hover: #0a53bd;
+  --expense-solid: #c9291f;
 
   --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 12px 38px rgba(0, 0, 0, 0.55);

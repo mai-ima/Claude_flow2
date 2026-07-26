@@ -132,7 +132,7 @@ export default async function TransactionsPage({
               <RepeatIcon size={16} />
               定期
             </ButtonLink>
-            <MonthSwitcher current={monthParam(month)} />
+            <MonthSwitcher current={monthParam(month)} todayParam={monthParam(new Date())} />
           </div>
         }
       />
@@ -200,6 +200,7 @@ export default async function TransactionsPage({
             showOwner={isPod}
             currency={currency}
             beta={betaOptIn}
+            today={todayLocal()}
           />
 
           <Pagination page={searchResult!.page} pageCount={searchResult!.pageCount} />

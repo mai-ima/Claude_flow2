@@ -16,10 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { CategoryIcon, PlusIcon, WalletIcon, TrashIcon, CopyIcon, CheckIcon } from "@/components/icons";
+import { CategoryIcon, WalletIcon, TrashIcon, CopyIcon, CheckIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { todayLocal } from "@/lib/date";
 import { cn } from "@/lib/cn";
+import { Fab } from "@/components/ui/fab";
 
 export interface TxnListItem {
   id: string;
@@ -50,6 +51,7 @@ export function TransactionsClient({
   showOwner = false,
   currency = "JPY",
   beta = false,
+  today,
 }: {
   items: TxnListItem[];
   categories: Option[];
@@ -58,6 +60,8 @@ export function TransactionsClient({
   showOwner?: boolean;
   currency?: string;
   beta?: boolean;
+  /** サーバー基準の今日(yyyy-MM-dd)。 */
+  today?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -173,7 +177,7 @@ export function TransactionsClient({
     setEditing({
       type: it.type,
       amount: it.amount,
-      occurredAt: todayLocal(),
+      occurredAt: today ?? todayLocal(),
       categoryId: it.categoryId ?? "",
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
@@ -307,7 +311,7 @@ export function TransactionsClient({
                           className={cn(
                             "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition",
                             checked
-                              ? "border-accent bg-accent text-white"
+                              ? "border-accent bg-accent-solid text-white"
                               : "border-border-strong text-transparent",
                           )}
                         >
@@ -387,13 +391,7 @@ export function TransactionsClient({
       )}
 
       {canEdit && !selectMode && (
-        <button
-          onClick={openAdd}
-          aria-label="記録を追加"
-          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-5 z-30 grid h-14 w-14 place-items-center rounded-full bg-accent text-white shadow-lg transition duration-[var(--dur-1)] ease-spring hover:bg-accent-hover active:scale-95 md:bottom-8 md:right-8"
-        >
-          <PlusIcon size={26} />
-        </button>
+        <Fab onClick={openAdd} label="記録を追加" />
       )}
 
       {/* 一括操作バー（選択モードで選択がある時のみ） */}
@@ -471,6 +469,7 @@ export function TransactionsClient({
         initial={editing}
         currency={currency}
         beta={beta}
+        today={today}
       />
     </div>
   );

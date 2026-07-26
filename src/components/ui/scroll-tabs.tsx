@@ -51,7 +51,7 @@ export function ScrollTabs<T extends string>({
                 "transition-colors duration-[var(--dur-1)] ease-spring",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
                 active
-                  ? "bg-accent text-white"
+                  ? "bg-accent-solid text-white"
                   : "bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text-primary",
               )}
             >

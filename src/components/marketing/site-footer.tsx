@@ -45,7 +45,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
         <div className="sm:col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 font-semibold">
-            <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent text-white">
+            <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent-solid text-white">
               <LogoMark size={20} />
             </span>
             <span className="text-[17px]">{SITE.name}</span>

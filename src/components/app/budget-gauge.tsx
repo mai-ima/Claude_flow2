@@ -24,6 +24,7 @@ export function BudgetGauge({
   amount,
   currency = "JPY",
   month,
+  insight,
   size = 132,
   thickness = 13,
   showInsight = true,
@@ -32,11 +33,15 @@ export function BudgetGauge({
   amount: number;
   currency?: string;
   month?: Date;
+  /** サーバーで算出済みの示唆。クライアント component から描画する場合は必ず渡す。
+   *  Date を渡しても date-fns は実行環境のタイムゾーンで日付を解釈するため、
+   *  端末の設定が日本時間でないと残り日数がサーバーとずれる。 */
+  insight?: BudgetInsight;
   size?: number;
   thickness?: number;
   showInsight?: boolean;
 }) {
-  const ins = budgetInsight(spent, amount, month);
+  const ins = insight ?? budgetInsight(spent, amount, month);
   const color = HEALTH_COLOR[ins.health];
   const pct = Math.min(100, Math.round(ins.ratio * 100));
 
