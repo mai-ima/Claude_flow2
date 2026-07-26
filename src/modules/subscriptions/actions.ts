@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
-import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
+import { getActiveLedgerId, requireLedgerMember, assertLedgerOwnedRefs } from "@/lib/ledger-access";
 import { PLANS } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
 import {
@@ -24,6 +24,7 @@ export const createSubscription = authedAction(
   async (input, user) => {
     const ledgerId = await getActiveLedgerId(user.id);
     await requireLedgerMember(ledgerId, user.id, "EDITOR");
+    await assertLedgerOwnedRefs(ledgerId, input);
 
     const tier = await userTier(user.id);
     const max = PLANS[tier].maxSubscriptions;
@@ -61,6 +62,7 @@ export const updateSubscription = authedAction(
   async (input, user) => {
     const ledgerId = await getActiveLedgerId(user.id);
     await requireLedgerMember(ledgerId, user.id, "EDITOR");
+    await assertLedgerOwnedRefs(ledgerId, input);
     const existing = await db.subscription.findUnique({ where: { id: input.id } });
     if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
     const priceChanged = input.amount !== existing.amount;

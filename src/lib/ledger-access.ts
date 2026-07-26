@@ -82,3 +82,27 @@ export const getActiveLedger = cache(async (userId: string) => {
     ledger.members.find((m) => m.userId === userId)?.role ?? "VIEWER";
   return { ledger, role: role as MemberRole };
 });
+
+/**
+ * 指定のカテゴリ／支払い方法が、その帳簿のものであることを検証する。
+ *
+ * これらは画面から ID をそのまま受け取るため、他帳簿の ID を渡されると
+ * 帳簿をまたいだ参照を作れてしまう（一覧には出ないが集計や表示で露出する）。
+ * 呼び出し側で必ず通す。null / undefined は「未指定」として素通しする。
+ */
+export async function assertLedgerOwnedRefs(
+  ledgerId: string,
+  refs: { categoryId?: string | null; paymentMethodId?: string | null },
+): Promise<void> {
+  const { categoryId, paymentMethodId } = refs;
+  const [cat, pm] = await Promise.all([
+    categoryId
+      ? db.category.findUnique({ where: { id: categoryId }, select: { ledgerId: true } })
+      : Promise.resolve(null),
+    paymentMethodId
+      ? db.paymentMethod.findUnique({ where: { id: paymentMethodId }, select: { ledgerId: true } })
+      : Promise.resolve(null),
+  ]);
+  if (categoryId && cat?.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+  if (paymentMethodId && pm?.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+}

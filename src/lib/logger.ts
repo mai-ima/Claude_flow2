@@ -16,6 +16,16 @@ function sentry(): SentryLike | null {
   return g.Sentry ?? null;
 }
 
+/**
+ * Sentry が「実際に」使える状態か。
+ * DSN が設定されていても SDK が読み込まれていなければ送信されない。
+ * /api/health で「有効」と報告して監視できている気にならないよう、
+ * DSN の有無ではなくこちらを使う。
+ */
+export function isSentryActive(): boolean {
+  return sentry() !== null;
+}
+
 export const logger = {
   info(message: string, meta?: Meta) {
     console.log(JSON.stringify({ level: "info", message, ...meta }));

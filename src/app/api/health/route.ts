@@ -4,9 +4,9 @@ import {
   isStripeEnabled,
   isEmailEnabled,
   isRateLimitEnabled,
-  isSentryEnabled,
 } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { isSentryActive } from "@/lib/logger";
 
 // DB 疎通を確認するため常に動的・Node ランタイムで実行。
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export async function GET() {
       stripe: isStripeEnabled,
       email: isEmailEnabled,
       rateLimit: isRateLimitEnabled,
-      sentry: isSentryEnabled,
+      sentry: isSentryActive(),
     },
     time: new Date().toISOString(),
   };

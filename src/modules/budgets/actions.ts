@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
-import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
+import { getActiveLedgerId, requireLedgerMember, assertLedgerOwnedRefs } from "@/lib/ledger-access";
 import { canUse } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
 import { setBudgetInput, deleteBudgetInput } from "./schema";
@@ -26,6 +26,7 @@ function thisMonthStart(): Date {
 export const setBudget = authedAction(setBudgetInput, async (input, user) => {
   const ledgerId = await getActiveLedgerId(user.id);
   await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  await assertLedgerOwnedRefs(ledgerId, input);
   await requireBudgetsFeature(user.id);
 
   const isTotal = !input.categoryId;

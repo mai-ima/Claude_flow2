@@ -51,6 +51,23 @@ function parseEnv<T extends z.ZodType>(schema: T, raw: unknown, label: string): 
   return result.data;
 }
 
+/**
+ * 本番で危険な既定値のまま起動していないか検査する。
+ * DATABASE_URL や AUTH_SECRET はローカル用の既定値を持たせているため、
+ * 設定漏れに気づかないまま本番が動いてしまうのを防ぐ。
+ */
+function assertProductionSecrets(e: z.infer<typeof serverSchema>) {
+  if (e.NODE_ENV !== "production") return;
+  const bad: string[] = [];
+  if (e.AUTH_SECRET === "dev-insecure-secret-change-me") bad.push("AUTH_SECRET");
+  if (e.DATABASE_URL.includes("localhost")) bad.push("DATABASE_URL");
+  if (bad.length > 0) {
+    throw new Error(
+      `本番環境で既定値のままの環境変数があります: ${bad.join(", ")}。値を設定してください。`,
+    );
+  }
+}
+
 export const env = parseEnv(
   serverSchema,
   {
@@ -76,6 +93,8 @@ export const env = parseEnv(
   },
   "server",
 );
+
+assertProductionSecrets(env);
 
 export const clientEnv = parseEnv(
   clientSchema,

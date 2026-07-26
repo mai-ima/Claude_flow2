@@ -1,9 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { sendEmail, emailLayout } from "@/lib/email";
+import { sendEmail, emailLayout, escapeHtml } from "@/lib/email";
 import { CONTACT } from "@/lib/seo";
 import { logger } from "@/lib/logger";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 // 公開（未認証）フォームのため authedAction は使わず、ここで検証・例外処理を行う。
 const schema = z.object({
@@ -29,14 +30,13 @@ export type ContactResult =
   | { ok: true; sent: boolean }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
-}
-
 export async function submitContactMessage(raw: unknown): Promise<ContactResult> {
+  // 公開フォーム（未認証）。メール中継として悪用されないよう回数を制限する。
+  const ip = await clientIp();
+  const rl = await rateLimit(`contact:${ip}`, 5, 600);
+  if (!rl.ok) {
+    return { ok: false, error: "送信が集中しています。しばらく時間をおいてお試しください。" };
+  }
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const flat = z.flattenError(parsed.error);

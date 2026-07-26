@@ -50,3 +50,15 @@ export function emailLayout(title: string, body: string): string {
   <p style="margin-top:24px;font-size:12px;color:#8e8e93">Tsumiki — 家計とサブスクを、ひとつに。</p>
 </div>`;
 }
+
+/**
+ * HTML メール本文に埋め込む値のエスケープ。
+ * サブスク名など利用者が入力した文字列をそのまま差し込むと、
+ * メール本文の HTML が壊れる／意図しないマークアップが入る。
+ */
+export function escapeHtml(s: string): string {
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
+}

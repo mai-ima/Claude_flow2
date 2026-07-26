@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
-import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
+import { getActiveLedgerId, requireLedgerMember, assertLedgerOwnedRefs } from "@/lib/ledger-access";
 import {
   transactionInput,
   updateTransactionInput,
@@ -21,6 +21,7 @@ export const createTransaction = authedAction(
   async (input, user) => {
     const ledgerId = await getActiveLedgerId(user.id);
     await requireLedgerMember(ledgerId, user.id, "EDITOR");
+    await assertLedgerOwnedRefs(ledgerId, input);
     const txn = await db.transaction.create({
       data: {
         ledgerId,
@@ -44,6 +45,7 @@ export const updateTransaction = authedAction(
   async (input, user) => {
     const ledgerId = await getActiveLedgerId(user.id);
     await requireLedgerMember(ledgerId, user.id, "EDITOR");
+    await assertLedgerOwnedRefs(ledgerId, input);
     const existing = await db.transaction.findUnique({ where: { id: input.id } });
     if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
     await db.transaction.update({
@@ -90,6 +92,7 @@ export const bulkDeleteTransactions = authedAction(bulkDeleteInput, async ({ ids
 export const bulkUpdateTransactions = authedAction(bulkUpdateInput, async (input, user) => {
   const ledgerId = await getActiveLedgerId(user.id);
   await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  await assertLedgerOwnedRefs(ledgerId, input);
   const data: { categoryId?: string | null; paymentMethodId?: string | null } = {};
   if (input.categoryId !== undefined) data.categoryId = input.categoryId || null;
   if (input.paymentMethodId !== undefined) data.paymentMethodId = input.paymentMethodId || null;
@@ -106,6 +109,7 @@ export const bulkUpdateTransactions = authedAction(bulkUpdateInput, async (input
 export const createRecurring = authedAction(recurringInput, async (input, user) => {
   const ledgerId = await getActiveLedgerId(user.id);
   await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  await assertLedgerOwnedRefs(ledgerId, input);
   const r = await db.recurringTransaction.create({
     data: {
       ledgerId,
@@ -126,6 +130,7 @@ export const createRecurring = authedAction(recurringInput, async (input, user) 
 export const updateRecurring = authedAction(updateRecurringInput, async (input, user) => {
   const ledgerId = await getActiveLedgerId(user.id);
   await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  await assertLedgerOwnedRefs(ledgerId, input);
   const existing = await db.recurringTransaction.findUnique({ where: { id: input.id } });
   if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
   await db.recurringTransaction.update({

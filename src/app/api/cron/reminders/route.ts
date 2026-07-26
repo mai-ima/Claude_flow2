@@ -10,7 +10,7 @@ import {
   notifyTrialEnds,
   pruneExpiredData,
 } from "@/lib/orchestrator";
-import { sendEmail, emailLayout } from "@/lib/email";
+import { sendEmail, emailLayout, escapeHtml } from "@/lib/email";
 import { formatMoney } from "@/lib/money";
 import { logger } from "@/lib/logger";
 
@@ -56,7 +56,7 @@ async function handle(req: Request) {
       const rows = list
         .map(
           (r) =>
-            `<li>${r.name}（${formatMoney(r.amount)}）— ${r.daysUntil === 0 ? "本日更新" : `あと${r.daysUntil}日`}</li>`,
+            `<li>${escapeHtml(r.name)}（${formatMoney(r.amount)}）— ${r.daysUntil === 0 ? "本日更新" : `あと${r.daysUntil}日`}</li>`,
         )
         .join("");
       const { sent } = await sendEmail({
