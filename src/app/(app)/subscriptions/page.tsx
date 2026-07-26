@@ -18,6 +18,7 @@ import {
 } from "@/modules/subscriptions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { formatDate, daysUntil, daysSince, advanceRenewal, toDateInput } from "@/lib/date";
+import { advanceTo } from "@/modules/subscriptions/renewal";
 import { formatMoney, toMonthlyAmount, toYearlyAmount } from "@/lib/money";
 import { CYCLE_LABEL, STATUS_LABEL, type BillingCycle } from "@/lib/enums";
 import { findService } from "@/lib/service-catalog";
@@ -130,15 +131,15 @@ export default async function SubscriptionsPage() {
   const bucketMap = new Map(buckets.map((b) => [b.key, b]));
   for (const s of subs) {
     if (s.status !== "ACTIVE" && s.status !== "TRIAL") continue;
-    let next = new Date(s.nextRenewalAt);
+    // 過去のままの更新日から1周期ずつ回すと、週次では打ち切りに達して
+    // 後半の月が 0 件になる。集計開始まで一度に進めてから 12ヶ月分だけ回す。
+    let next = advanceTo(new Date(s.nextRenewalAt), s.cycle as BillingCycle, calStart);
     let guard = 0;
-    while (next < calEnd && guard < 600) {
-      if (next >= calStart) {
-        const b = bucketMap.get(`${next.getFullYear()}-${next.getMonth()}`);
-        if (b) {
-          b.total += s.amount;
-          b.count++;
-        }
+    while (next < calEnd && guard < 80) {
+      const b = bucketMap.get(`${next.getFullYear()}-${next.getMonth()}`);
+      if (b) {
+        b.total += s.amount;
+        b.count++;
       }
       next = advanceRenewal(next, s.cycle as BillingCycle);
       guard++;

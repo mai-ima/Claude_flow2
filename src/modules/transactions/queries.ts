@@ -38,12 +38,16 @@ const txnListSelect = {
   createdBy: { select: { name: true } },
 } satisfies Prisma.TransactionSelect;
 
+/** 1ヶ月分として送る取引の上限（RSC ペイロードの肥大化を防ぐ）。 */
+export const MONTH_TXN_LIMIT = 400;
+
 export async function listTransactions(ledgerId: string, month: Date) {
   const { start, end } = monthRange(month);
   return db.transaction.findMany({
     where: { ledgerId, occurredAt: { gte: start, lte: end } },
     select: txnListSelect,
     orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+    take: MONTH_TXN_LIMIT,
   });
 }
 

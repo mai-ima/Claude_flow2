@@ -5,7 +5,9 @@ import { cn } from "@/lib/cn";
 
 /**
  * スクロールで視界に入ったらふわっと出現させる（マーケティング用）。
- * JS 無効時やリデュースモーション時は最初から表示。
+ * リデュースモーション時は最初から表示。
+ * JS 無効時は layout の <noscript> で .reveal を可視化している
+ * （このコンポーネント自体は JS が動いて初めて機能する）。
  */
 export function Reveal({
   children,

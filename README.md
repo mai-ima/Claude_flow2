@@ -39,7 +39,7 @@ npm run dev                   # http://localhost:3000
 
 スキーマ変更時は `npm run db:migrate`（`prisma migrate dev`）で新しいマイグレーションを作成します。
 
-ログインはメールアドレスのみ（dev はパスワードレス）。
+ログインはメールアドレス + パスワード（8文字以上）。
 
 ## ネット公開（Vercel — ブラウザだけで完結）
 

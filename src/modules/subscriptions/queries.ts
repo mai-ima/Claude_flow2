@@ -7,10 +7,11 @@ export function listSubscriptions(ledgerId: string) {
   return db.subscription.findMany({
     where: { ledgerId },
     include: {
-      category: true,
-      paymentMethod: true,
-      owner: true,
-      priceChanges: { orderBy: { changedAt: "desc" } },
+      category: { select: { id: true, name: true, icon: true, color: true } },
+      paymentMethod: { select: { id: true, name: true } },
+      // owner は passwordHash まで載るうえ画面で未使用だったため落とす。
+      // 価格改定は直近数件しか表示しないので全件送らない。
+      priceChanges: { orderBy: { changedAt: "desc" }, take: 12 },
     },
     orderBy: { nextRenewalAt: "asc" },
   });

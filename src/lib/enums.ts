@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 /**
- * SQLite は Prisma enum 非対応のため、列挙はここを単一ソースとして
- * String 列 + Zod + TS union で担保する。Postgres 移行時もそのまま使える。
+ * 列挙はここを単一ソースとして String 列 + Zod + TS union で担保する。
+ * Prisma enum を使わないことで、DB を差し替えてもアプリ側の定義が変わらない
+ * （現在の接続先は PostgreSQL）。
  */
 
 export const TxnType = z.enum(["INCOME", "EXPENSE"]);
