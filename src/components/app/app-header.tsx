@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useCallback } from "react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useAppChrome } from "./app-chrome";
 import { MobileDrawer } from "./mobile-drawer";
@@ -18,6 +18,7 @@ import {
 import { switchLedger } from "@/modules/ledgers/actions";
 import { logoutAction } from "@/app/(auth)/actions";
 import { cn } from "@/lib/cn";
+import { useDismissable } from "@/lib/use-dismissable";
 
 export interface LedgerOption {
   id: string;
@@ -42,6 +43,9 @@ export function AppHeader({
   unread: number;
 }) {
   const [open, setOpen] = useState(false);
+  const ledgerRef = useRef<HTMLDivElement>(null);
+  const closeLedger = useCallback(() => setOpen(false), []);
+  useDismissable(open, closeLedger, ledgerRef);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const toast = useToast();
   const [pending, start] = useTransition();
@@ -90,9 +94,11 @@ export function AppHeader({
         tier={tier}
       />
       {/* 帳簿切替は可変幅。狭い端末では帳簿名を詰めて横スクロールを防ぐ。 */}
-      <div className="relative min-w-0 flex-1">
+      <div className="relative min-w-0 flex-1" ref={ledgerRef}>
         <button
           onClick={() => setOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={open}
           className={cn(
             "flex min-h-11 w-full items-center gap-2 rounded-xl border border-border-subtle bg-surface-1 px-3 text-[14px] font-medium transition hover:bg-surface-2",
             pending && "opacity-60",
@@ -111,8 +117,7 @@ export function AppHeader({
 
         {open && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute left-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-border-subtle bg-surface-1 shadow-lg">
+            <div className="absolute left-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-border-subtle bg-surface-1 shadow-lg" role="menu">
               <div className="px-3 py-2 text-[11px] font-medium text-text-tertiary">帳簿を切り替え</div>
               {ledgers.map((l) => (
                 <button

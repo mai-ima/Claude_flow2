@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   BellIcon,
@@ -14,6 +14,7 @@ import {
 } from "@/components/icons";
 import { markAllRead, markRead } from "@/modules/notifications/actions";
 import { cn } from "@/lib/cn";
+import { useDismissable } from "@/lib/use-dismissable";
 
 export interface NotifItem {
   id: string;
@@ -44,6 +45,9 @@ export function NotificationBell({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismissable(open, close, wrapRef);
   const [, start] = useTransition();
 
   function openPanel() {
@@ -66,10 +70,12 @@ export function NotificationBell({
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={wrapRef}>
       <button
         onClick={openPanel}
         aria-label="通知"
+        aria-haspopup="menu"
+        aria-expanded={open}
         className="relative grid h-11 w-11 place-items-center rounded-full text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
       >
         <BellIcon size={20} />
@@ -85,8 +91,7 @@ export function NotificationBell({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-20 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-2xl border border-border-subtle bg-surface-1 shadow-lg">
+          <div className="absolute right-0 top-full z-20 mt-2 w-80 max-w-[88vw] overflow-hidden rounded-2xl border border-border-subtle bg-surface-1 shadow-lg" role="menu">
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
               <span className="text-[14px] font-semibold">通知</span>
               {unread > 0 && (
