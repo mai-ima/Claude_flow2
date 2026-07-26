@@ -6,7 +6,6 @@ import { z } from "zod";
  */
 const serverSchema = z.object({
   DATABASE_URL: z.string().min(1).default("postgresql://localhost:5432/tsumiki"),
-  AUTH_SECRET: z.string().min(1).default("dev-insecure-secret-change-me"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   // 収益化（任意）
   STRIPE_SECRET_KEY: z.string().optional(),
@@ -53,13 +52,18 @@ function parseEnv<T extends z.ZodType>(schema: T, raw: unknown, label: string): 
 
 /**
  * 本番で危険な既定値のまま起動していないか検査する。
- * DATABASE_URL や AUTH_SECRET はローカル用の既定値を持たせているため、
+ * DATABASE_URL はローカル用の既定値を持たせているため、
  * 設定漏れに気づかないまま本番が動いてしまうのを防ぐ。
+ * （AUTH_SECRET は実装のどこからも参照されていない死んだ設定だったため削除した。
+ *   セッションは randomBytes によるトークン方式で署名鍵を使わない。）
  */
 function assertProductionSecrets(e: z.infer<typeof serverSchema>) {
   if (e.NODE_ENV !== "production") return;
+  // ビルド時は実行時の環境変数が入っていないのが正常なので検査しない
+  // （ここで throw すると next build が落ちる）。
+  if (process.env.NEXT_PHASE === "phase-production-build") return;
   const bad: string[] = [];
-  if (e.AUTH_SECRET === "dev-insecure-secret-change-me") bad.push("AUTH_SECRET");
+  // localhost のままの接続先は、本番では確実に設定漏れ。
   if (e.DATABASE_URL.includes("localhost")) bad.push("DATABASE_URL");
   if (bad.length > 0) {
     throw new Error(
@@ -72,7 +76,6 @@ export const env = parseEnv(
   serverSchema,
   {
     DATABASE_URL: process.env.DATABASE_URL,
-    AUTH_SECRET: process.env.AUTH_SECRET,
     NODE_ENV: process.env.NODE_ENV,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
