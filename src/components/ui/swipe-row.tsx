@@ -109,6 +109,20 @@ export function SwipeRow({
       </div>
       {/* 前景（コンテンツ） */}
       <div
+        {...(onTap
+          ? {
+              role: "button" as const,
+              tabIndex: 0,
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onTap();
+                } else if (e.key === "Escape" && tx !== 0) {
+                  setTx(0);
+                }
+              },
+            }
+          : {})}
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
@@ -116,6 +130,8 @@ export function SwipeRow({
         style={{ transform: `translateX(${tx}px)`, touchAction: "pan-y" }}
         className={cn(
           "relative bg-surface-1",
+          onTap &&
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/60",
           !dragging && "transition-transform duration-[var(--dur-2)] ease-spring",
         )}
       >

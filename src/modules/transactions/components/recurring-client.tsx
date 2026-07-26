@@ -91,7 +91,7 @@ export function RecurringClient({
     paymentMethodId: "",
     memo: "",
   });
-  const [v, setV] = useState<FormValue>(blank());
+  const [v, setV] = useState<FormValue>(() => ({ ...blank(), nextRunAt: "" }));
 
   function openAdd() {
     setV(blank());

@@ -13,28 +13,25 @@ import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/cn";
 import { postJson } from "@/lib/post-json";
 
-export function PricingTable({
-  stripeEnabled,
-  isAuthed,
-}: {
-  stripeEnabled: boolean;
-  isAuthed: boolean;
-}) {
+export function PricingTable({ stripeEnabled }: { stripeEnabled: boolean }) {
   const [cycle, setCycle] = useState<"monthly" | "yearly">("yearly");
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
   const toast = useToast();
 
   async function subscribe(tier: string) {
-    if (!isAuthed) {
-      router.push("/login?next=/pricing");
-      return;
-    }
     setLoading(tier);
     try {
       const res = await postJson<{ url?: string }>("/api/stripe/checkout", { tier, cycle });
-      if (res.ok && res.data?.url) window.location.href = res.data.url;
-      else toast.error(res.message ?? "現在この操作は利用できません。");
+      if (res.ok && res.data?.url) {
+        window.location.href = res.data.url;
+        return;
+      }
+      if (res.status === 401) {
+        router.push("/login?next=/pricing");
+        return;
+      }
+      toast.error(res.message ?? "現在この操作は利用できません。");
     } finally {
       setLoading(null);
     }

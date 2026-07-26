@@ -62,7 +62,7 @@ export function TransactionSheet({
     paymentMethodId: "",
     memo: "",
   });
-  const [v, setV] = useState<TxnFormValue>(initial ?? blank());
+  const [v, setV] = useState<TxnFormValue>(() => initial ?? { ...blank(), occurredAt: "" });
 
   // open が切り替わった瞬間にフォームを初期化（描画中の状態調整＝React 推奨パターン）
   const [wasOpen, setWasOpen] = useState(open);

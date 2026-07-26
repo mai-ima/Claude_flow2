@@ -347,7 +347,7 @@ export function TransactionsClient({
                             onPointerDown={(e) => e.stopPropagation()}
                             onClick={() => remove(it.id)}
                             aria-label="削除"
-                            className="hidden h-8 w-8 place-items-center rounded-full text-text-tertiary opacity-0 transition hover:bg-expense/10 hover:text-expense group-hover:opacity-100 md:grid"
+                            className="hidden h-8 w-8 place-items-center rounded-full text-text-tertiary opacity-0 transition hover:bg-expense/10 hover:text-expense group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 md:grid"
                           >
                             <TrashIcon size={17} />
                           </button>

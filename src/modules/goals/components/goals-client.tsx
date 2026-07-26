@@ -75,7 +75,7 @@ export function GoalsClient({
     id: "",
     name: "",
     targetAmount: 0,
-    deadline: todayPlus(6),
+    deadline: "",
     color: "blue",
     autoOn: false,
     autoAmount: 0,

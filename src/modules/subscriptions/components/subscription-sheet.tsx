@@ -82,7 +82,7 @@ export function SubscriptionSheet({
   const toast = useToast();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string>();
-  const [v, setV] = useState<SubFormValue>(initial ?? defaults());
+  const [v, setV] = useState<SubFormValue>(() => initial ?? { ...defaults(), nextRenewalAt: "" });
 
   // open 切替時にフォームを初期化（描画中の状態調整）
   const [wasOpen, setWasOpen] = useState(open);

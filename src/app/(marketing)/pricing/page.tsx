@@ -4,7 +4,6 @@ import { PlanComparison } from "@/components/marketing/plan-comparison";
 import { MarketingCta } from "@/components/marketing/marketing-cta";
 import { pageMetadata, jsonLd } from "@/lib/seo";
 import { isStripeEnabled } from "@/lib/env";
-import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = pageMetadata({
   title: "料金プラン",
@@ -32,8 +31,7 @@ const FAQ = [
   },
 ];
 
-export default async function PricingPage() {
-  const user = await getCurrentUser();
+export default function PricingPage() {
   const faqLd = jsonLd({
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -57,7 +55,7 @@ export default async function PricingPage() {
       </div>
 
       <div className="mt-14">
-        <PricingTable stripeEnabled={isStripeEnabled} isAuthed={Boolean(user)} />
+        <PricingTable stripeEnabled={isStripeEnabled} />
       </div>
 
       <div className="mx-auto mt-24 max-w-3xl">
