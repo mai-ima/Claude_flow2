@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ChevronDownIcon } from "@/components/icons";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -10,6 +11,72 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const RELEASES = [
+  {
+    version: "ベータ v1.2.6.2",
+    date: "2026年7月",
+    tag: "Beta",
+    sections: [
+      {
+        h: "日付・金額のずれを修正",
+        items: [
+          "サーバーの時刻が日本時間になっておらず、深夜〜早朝に「今月」「今日」が1日ずれることがあった問題を修正。カレンダーの今日の位置、月の集計、更新リマインダーの残り日数、予算の残り日数などがまとめて正しくなりました",
+          "サブスクの次回更新日や目標の期日の初期値が、月末（1月31日など）で1か月飛んでしまう不具合を修正",
+          "自動積立と手動の積み立てが同時に走ったとき、片方の金額が反映されないことがある不具合を修正",
+          "更新リマインダーの「あと何日」の数え方が、通知の判定と表示で食い違っていたのを統一",
+          "同じ支払いが二重に記録されることがある不具合を修正（自動記帳・定期取引・自動積立）",
+          "解約したサブスクも登録数に数えられ、上限に達していないのに追加できないことがあった問題を修正",
+        ],
+      },
+      {
+        h: "取り込み・書き出しの修正",
+        items: [
+          "CSV の書き出しで、カテゴリ名などに「\"」が含まれると列がずれて壊れる不具合を修正",
+          "書き出した CSV を表計算ソフトで開いたとき、内容が数式として実行されないように対策しました",
+          "CSV の取り込みで、通貨の表記が不正だと金額表示が壊れる不具合を修正。1度に取り込める行数の上限も設けました",
+        ],
+      },
+      {
+        h: "操作できなかった箇所の修正",
+        items: [
+          "画面をスクロールすると「＋（追加）」ボタンが一緒に流れてしまい、押したいときに見えなくなる不具合を修正。常に右下に留まります",
+          "カレンダー表示に「＋」ボタンがなく、下までスクロールしないと記録を追加できなかった問題を修正",
+          "権限が足りないときやプランの上限に達したときに、何も表示されず「ボタンが効かない」ように見えていた箇所を修正",
+          "通信に失敗したときに、読み込み表示が消えるだけで何も起きない状態になる不具合を修正",
+          "お名前を空のまま保存すると、実際には変わっていないのに「保存しました」と出ていたのを修正",
+          "サブスクの仕分けで、保存に失敗しても次のカードへ進んでしまう不具合を修正",
+          "予算の保存ボタンを連打すると失敗することがある不具合を修正",
+        ],
+      },
+      {
+        h: "表示の修正",
+        items: [
+          "カレンダーの金額表示が 9,950 円などで「10千」と出ていたのを「1万」に修正",
+          "サブスクの「暦」で、年に一度の支払いがある月のバーが常に振り切れていたのを修正",
+          "読み込み中の表示と実際のレイアウトがずれて、表示後にガタつく問題を修正",
+          "金額が一瞬「¥0」と表示されてから跳ね上がる問題を修正",
+          "電卓と予算欄の数式入力で計算結果が違う問題を修正（括弧も使えるように統一）",
+        ],
+      },
+      {
+        h: "キーボード・読み上げ対応",
+        items: [
+          "取引の行をキーボードだけで開けるように（Enter で編集、Escape で戻す）",
+          "画面に出ていないボタンにキーボードで移動してしまう問題を修正",
+          "通知パネルと帳簿の切り替えを Escape で閉じられるように",
+          "入力シートを閉じたとき、元のボタンにフォーカスが戻るように",
+          "入力中にキーボードショートカットが誤って動き、書きかけの内容が消える問題を修正",
+        ],
+      },
+      {
+        h: "表示速度の改善",
+        items: [
+          "グラフを必要な画面でだけ読み込むようにして、初回表示を軽くしました",
+          "料金ページを静的化し、表示を高速化",
+          "1ヶ月分の取引が多いときの通信量を抑えました",
+        ],
+      },
+    ],
+  },
   {
     version: "ベータ v1.2.6.1",
     date: "2026年7月",
@@ -26,37 +93,12 @@ const RELEASES = [
         ],
       },
       {
-        h: "日付・金額のずれを修正",
-        items: [
-          "サーバーの時刻が日本時間になっておらず、深夜〜早朝に「今月」「今日」が1日ずれることがあった問題を修正。カレンダーの今日の位置、月の集計、更新リマインダーの残り日数、予算の残り日数などがまとめて正しくなりました",
-          "サブスクの次回更新日や目標の期日の初期値が、月末（1月31日など）で1か月飛んでしまう不具合を修正",
-          "自動積立と手動の積み立てが同時に走ったとき、片方の金額が反映されないことがある不具合を修正",
-          "更新リマインダーの「あと何日」の数え方が、通知の判定と表示で食い違っていたのを統一",
-        ],
-      },
-      {
-        h: "取り込み・書き出しの修正",
-        items: [
-          "CSV の書き出しで、カテゴリ名などに「\"」が含まれると列がずれて壊れる不具合を修正",
-          "書き出した CSV を表計算ソフトで開いたとき、内容が数式として実行されないように対策しました",
-          "CSV の取り込みで、通貨の表記が不正だと金額表示が壊れる不具合を修正。1度に取り込める行数の上限も設けました",
-        ],
-      },
-      {
         h: "不具合の修正",
         items: [
-          "画面をスクロールすると「＋（追加）」ボタンが一緒に流れてしまい、押したいときに見えなくなる不具合を修正。常に右下に留まります",
-          "権限が足りないときやプランの上限に達したときに、何も表示されず「ボタンが効かない」ように見えていた箇所を修正。理由がメッセージで出るようになりました",
-          "通信に失敗したときに、読み込み表示が消えるだけで何も起きない状態になる不具合を修正",
-          "お名前を空のまま保存すると、実際には変わっていないのに「保存しました」と出ていたのを修正",
-          "サブスクの仕分けで、保存に失敗しても次のカードへ進んでしまう不具合を修正",
-          "カレンダーの金額表示が 9,950 円などで「10千」と出ていたのを「1万」に修正",
-          "キーボード操作で、画面に出ていないボタンに移動してしまう問題を修正",
-          "JavaScript が読み込まれる前に、トップページの本文が見えないままになることがある問題を修正",
-          "カレンダー表示に「＋」ボタンがなく、下までスクロールしないと記録を追加できなかった問題を修正",
           "「取引の一括編集」のように、言葉の途中で不自然に改行される問題を修正。文節の切れ目で折り返すようになりました",
           "テーマの切り替えボタンで「ライト」「ダーク」が縦に割れて表示される問題を修正",
           "料金の比較表で、スクロール中に見出しの下へ文字が透けて見える問題を修正",
+          "JavaScript が読み込まれる前に、トップページの本文が見えないままになることがある問題を修正",
           "定期取引の画面で「家計簿へ戻る」が上下に二重に表示されていたのを整理",
         ],
       },
@@ -466,35 +508,43 @@ export default function ChangelogPage() {
       </p>
 
       <div className="mt-12 space-y-6">
-        {RELEASES.map((r) => (
-          <Card key={r.version} className="p-5 sm:p-7">
-            {/* 狭い画面ではバージョン名・日付が語中で折り返さないよう、行ごと折り返す。 */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <h2 className="whitespace-nowrap text-[22px] font-bold tracking-tight">
-                {r.version}
-              </h2>
-              <Badge tone="accent" size="md">
-                {r.tag}
-              </Badge>
-              <span className="ml-auto whitespace-nowrap text-[13px] text-text-tertiary">
-                {r.date}
-              </span>
-            </div>
-            <div className="mt-5 space-y-5">
-              {r.sections.map((s) => (
-                <div key={s.h}>
-                  <h3 className="text-[14px] font-semibold text-text-secondary">{s.h}</h3>
-                  <ul className="mt-2 space-y-1.5">
-                    {s.items.map((it) => (
-                      <li key={it} className="flex gap-2 text-[14px] leading-relaxed text-text-secondary">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                        {it}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+        {RELEASES.map((r, i) => (
+          <Card key={r.version} className="overflow-hidden p-0">
+            <details open={i === 0} className="group">
+              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-2 p-5 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/60 sm:p-7">
+                <h2 className="whitespace-nowrap text-[22px] font-bold tracking-tight">
+                  {r.version}
+                </h2>
+                <Badge tone="accent" size="md">
+                  {r.tag}
+                </Badge>
+                <span className="ml-auto flex items-center gap-2 whitespace-nowrap text-[13px] text-text-tertiary">
+                  {r.date}
+                  <ChevronDownIcon
+                    size={18}
+                    className="transition-transform duration-[var(--dur-2)] ease-spring group-open:rotate-180"
+                  />
+                </span>
+              </summary>
+              <div className="space-y-5 px-5 pb-5 sm:px-7 sm:pb-7">
+                {r.sections.map((s) => (
+                  <div key={s.h}>
+                    <h3 className="text-[14px] font-semibold text-text-secondary">{s.h}</h3>
+                    <ul className="mt-2 space-y-1.5">
+                      {s.items.map((it) => (
+                        <li
+                          key={it}
+                          className="flex gap-2 text-[14px] leading-relaxed text-text-secondary"
+                        >
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                          {it}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </details>
           </Card>
         ))}
       </div>
