@@ -11,6 +11,14 @@
   --surface-1: #ffffff; /* secondarySystemGroupedBackground */
   --surface-2: #e9e9ef;
   --surface-3: #dededf;
+
+  /* 操作部品の面。表示面(surface-*)とは別に持つ。
+     表示面は半透明でも成立するが、操作部品は「選択されているか」が
+     必ず見て取れる必要がある（WCAG 2.2 SC 1.4.11 非テキストコントラスト 3:1）。
+     境界となる --control-border がトラック/つまみの双方に対して 3:1 を満たす。 */
+  --control-track: #e9e9ef;
+  --control-thumb: #ffffff;
+  --control-border: #83838c;
   --glass: rgba(249, 249, 249, 0.94); /* ほぼ不透明。ブラーに依存しない */
   --glass-border: rgba(0, 0, 0, 0.12);
 
@@ -70,6 +78,9 @@
   --surface-1: #1c1c1e;
   --surface-2: #2c2c2e;
   --surface-3: #3a3a3c;
+  --control-track: #2c2c2e;
+  --control-thumb: #48484c;
+  --control-border: #9a9aa0;
   --glass: rgba(30, 30, 32, 0.94);
   --glass-border: rgba(255, 255, 255, 0.16);
 
@@ -98,10 +109,14 @@
 
 /* ── apple スキン固有の質感 ───────────────────────────── */
 
-/* カードは影ではなく境界線で立たせる（iOS 設定アプリ的なグルーピング） */
-:root[data-skin="apple"] .shadow-sm,
-:root[data-skin="apple"] .shadow-md {
-  border: 1px solid var(--border);
+/* カードは影ではなく境界線で立たせる（iOS 設定アプリ的なグルーピング）。
+   @layer base に入れること。レイヤー外に置くと border-control-border など
+   個別に罫線色を指定した要素まで塗り替えてしまい、操作部品の輪郭が消える。 */
+@layer base {
+  :root[data-skin="apple"] .shadow-sm,
+  :root[data-skin="apple"] .shadow-md {
+    border: 1px solid var(--border);
+  }
 }
 
 /* 上部バー・下タブはブラーを使わず、不透明 + 1px の境界線で分離 */

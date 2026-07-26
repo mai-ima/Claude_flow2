@@ -11,6 +11,14 @@
   --surface-1: #ffffff; /* カード */
   --surface-2: #eceef2; /* チップ/入力/トラック（淡い段差） */
   --surface-3: #e3e5ea;
+
+  /* 操作部品の面。表示面(surface-*)とは別に持つ。
+     表示面は半透明でも成立するが、操作部品は「選択されているか」が
+     必ず見て取れる必要がある（WCAG 2.2 SC 1.4.11 非テキストコントラスト 3:1）。
+     境界となる --control-border がトラック/つまみの双方に対して 3:1 を満たす。 */
+  --control-track: #e3e5ea;
+  --control-thumb: #ffffff;
+  --control-border: #7f7f88;
   --glass: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.06);
 
@@ -68,6 +76,9 @@
   --surface-1: #1c1c1e;
   --surface-2: #2c2c2e;
   --surface-3: #3a3a3c;
+  --control-track: #2c2c2e;
+  --control-thumb: #48484c;
+  --control-border: #9a9aa0;
   --glass: rgba(28, 28, 30, 0.72);
   --glass-border: rgba(255, 255, 255, 0.1);
 

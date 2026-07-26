@@ -19,7 +19,7 @@ export function Segmented<T extends string>({
 
   return (
     <div
-      className={cn("relative inline-flex rounded-xl bg-surface-2 p-1", className)}
+      className={cn("relative inline-flex rounded-xl bg-control-track p-1", className)}
       /*
        * tabpanel を伴わない排他選択なので radiogroup が正しい。
        * tablist は aria-controls で結び付く tabpanel と矢印キー移動が前提で、
@@ -31,7 +31,11 @@ export function Segmented<T extends string>({
       {idx >= 0 && (
         <span
           aria-hidden
-          className="absolute inset-y-1 rounded-lg bg-surface-1 shadow-sm transition-transform duration-[var(--dur-2)] ease-spring"
+          /*
+           * 選択ピルは面の色だけでは識別できない（トラックとの差が 1.2:1 前後にしかならず、
+           * SC 1.4.11 の 3:1 に届かない）。輪郭線で境界を示し、そこで 3:1 を担保する。
+           */
+          className="absolute inset-y-1 rounded-lg border border-control-border bg-control-thumb shadow-sm transition-transform duration-[var(--dur-2)] ease-spring"
           style={{
             left: 4,
             width: `calc((100% - 8px) / ${n})`,

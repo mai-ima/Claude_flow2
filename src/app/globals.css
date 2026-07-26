@@ -58,6 +58,10 @@
   --color-border-subtle: var(--border);
   --color-border-strong: var(--border-strong);
 
+  --color-control-track: var(--control-track);
+  --color-control-thumb: var(--control-thumb);
+  --color-control-border: var(--control-border);
+
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   /* 白文字を載せる「塗り」用。文字色としての --accent は暗い面で明るくする必要があり、
@@ -90,8 +94,16 @@
     system-ui, sans-serif;
 }
 
-* {
-  border-color: var(--border);
+/*
+ * 既定の罫線色。@layer base に入れること。
+ * Tailwind v4 ではレイヤー外の指定が @layer utilities より優先されるため、
+ * ここを裸で書くと border-accent / border-control-border などの
+ * 罫線色ユーティリティが全て打ち消される（詳細度ではなくレイヤー順で負ける）。
+ */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 }
 
 html {
