@@ -58,6 +58,10 @@ function parseEnv<T extends z.ZodType>(schema: T, raw: unknown, label: string): 
  *   セッションは randomBytes によるトークン方式で署名鍵を使わない。）
  */
 function assertProductionSecrets(e: z.infer<typeof serverSchema>) {
+  // このモジュールは clientEnv 経由でクライアントにも読み込まれる。
+  // ブラウザには DATABASE_URL 等が渡らず既定値になるため、
+  // サーバー以外では検査しない（検査するとページが丸ごと落ちる）。
+  if (typeof window !== "undefined") return;
   if (e.NODE_ENV !== "production") return;
   // ビルド時は実行時の環境変数が入っていないのが正常なので検査しない
   // （ここで throw すると next build が落ちる）。
