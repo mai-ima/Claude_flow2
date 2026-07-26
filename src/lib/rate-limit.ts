@@ -11,6 +11,10 @@ export interface RateResult {
 /**
  * 固定ウィンドウのレート制限（Upstash Redis REST・env 差込み式）。
  * キーが無ければ常に許可（no-op）。サーバーレスでも共有可能。
+ *
+ * INCR の後の EXPIRE が失敗すると TTL の無いキーが残り、
+ * 上限に達したまま永久にブロックされる。失敗時はキーを削除して
+ * 次回やり直せるようにする。
  */
 export async function rateLimit(
   key: string,
@@ -29,7 +33,16 @@ export async function rateLimit(
     const data = (await res.json()) as { result: number };
     const count = data.result;
     if (count === 1) {
-      await fetch(`${base}/expire/${encodeURIComponent(k)}/${windowSec}`, { headers: auth, cache: "no-store" });
+      const exp = await fetch(`${base}/expire/${encodeURIComponent(k)}/${windowSec}`, {
+        headers: auth,
+        cache: "no-store",
+      });
+      if (!exp.ok) {
+        await fetch(`${base}/del/${encodeURIComponent(k)}`, { headers: auth, cache: "no-store" }).catch(
+          () => {},
+        );
+        return { ok: true, remaining: limit };
+      }
     }
     return { ok: count <= limit, remaining: Math.max(0, limit - count) };
   } catch (err) {

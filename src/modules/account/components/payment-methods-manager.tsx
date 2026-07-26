@@ -30,11 +30,13 @@ export function PaymentMethodsManager({ methods }: { methods: PM[] }) {
   function add() {
     start(async () => {
       const res = await createPaymentMethod(form);
-      if (res.ok) {
-        setForm({ name: "", type: "CARD", color: "blue" });
-        setAdding(false);
-        router.refresh();
+      if (!res.ok) {
+        toast.error(res.fieldErrors?.name?.[0] ?? res.error);
+        return;
       }
+      setForm({ name: "", type: "CARD", color: "blue" });
+      setAdding(false);
+      router.refresh();
     });
   }
   async function remove(id: string) {

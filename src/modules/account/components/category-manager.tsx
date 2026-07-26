@@ -35,11 +35,13 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
     if (!form.name) return;
     start(async () => {
       const res = await createCategory(form);
-      if (res.ok) {
-        setForm({ name: "", type: form.type, icon: "tag", color: "blue" });
-        setAdding(false);
-        router.refresh();
+      if (!res.ok) {
+        toast.error(res.fieldErrors?.name?.[0] ?? res.error);
+        return;
       }
+      setForm({ name: "", type: form.type, icon: "tag", color: "blue" });
+      setAdding(false);
+      router.refresh();
     });
   }
   function archive(id: string, archived: boolean) {

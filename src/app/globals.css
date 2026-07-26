@@ -123,6 +123,19 @@ body {
   text-overflow: ellipsis;
 }
 
+/*
+ * フォーカスリングの既定。個別に focus-visible を書いていない要素でも
+ * キーボード操作時にアクセント色のリングが出るようにする
+ * （65個の button のうち指定があったのは一部だけで、UA 既定のリングが
+ *   出る場所と出ない場所が混在していた）。
+ * 個別に focus-visible: を指定している要素はそちらが優先される。
+ */
+:where(button, a[href], [role="button"], [role="radio"], [role="switch"], summary, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 /* タップ反応を機敏に（ダブルタップズーム遅延の除去） */
 button,
 a,
