@@ -69,6 +69,9 @@ async function handle(req: Request) {
     logger.info("reminder emails", { count: emailsSent });
   }
 
+  // 応答には件数のみを載せる。
+  // 以前は対象者のメールアドレスとサブスク名を全件返しており、
+  // 実行できる者に全テナントの個人情報が渡っていた。
   return NextResponse.json({
     ok: true,
     autoPosted: posted,
@@ -79,14 +82,25 @@ async function handle(req: Request) {
     budgetAlerts,
     trialAlerts,
     emailsSent,
-    reminders: reminders.map((r) => ({
-      name: r.name,
-      daysUntil: r.daysUntil,
-      to: r.ownerEmail,
-    })),
+    reminders: reminders.length,
     emailEnabled: isEmailEnabled,
   });
 }
 
-export const GET = handle;
+/**
+ * 自動記帳・通知送信・古いデータの削除を行う破壊的処理のため POST のみ。
+ * GET は副作用なしでなければならない（プリフェッチやクローラで発火するため）。
+ * Vercel Cron は GET で叩くので、cron からは Bearer 認証つきの GET を許可する。
+ */
+export async function GET(req: Request) {
+  const auth = req.headers.get("authorization");
+  if (!env.CRON_SECRET || auth !== `Bearer ${env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "method not allowed" }, { status: 405 });
+  }
+  return handle(req);
+}
+
 export const POST = handle;
+
+/** Vercel の関数タイムアウト。7つのバッチを順に実行するため長めに取る。 */
+export const maxDuration = 300;

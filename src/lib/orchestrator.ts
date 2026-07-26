@@ -15,7 +15,7 @@ import type { BillingCycle } from "./enums";
 export async function processRenewals(now: Date = new Date()): Promise<number> {
   const due = await db.subscription.findMany({
     where: { status: "ACTIVE", nextRenewalAt: { lte: now } },
-    include: { ledger: { include: { owner: true } } },
+    include: { ledger: { select: { ownerId: true } } },
   });
 
   let created = 0;
@@ -355,7 +355,7 @@ export async function notifyDueRenewals(now: Date = new Date()): Promise<number>
 export async function dueReminders(now: Date = new Date()): Promise<ReminderItem[]> {
   const subs = await db.subscription.findMany({
     where: { status: "ACTIVE" },
-    include: { owner: true },
+    include: { owner: { select: { id: true, email: true, name: true } } },
   });
   const items: ReminderItem[] = [];
   for (const s of subs) {

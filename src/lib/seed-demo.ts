@@ -6,38 +6,17 @@ import { DEFAULT_CATEGORIES } from "./default-categories";
 export const DEMO_EMAIL = "demo@tsumiki.app";
 export const DEMO_PASSWORD = "demo1234";
 
-export const ADMIN_ACCOUNTS = [
-  { email: "admin@tsumiki.app", password: "admin1234", name: "管理者", tier: "PRO" as const },
-  { email: "staff@tsumiki.app", password: "staff1234", name: "管理者（動作確認用）", tier: "PLUS" as const },
-];
-
-/** 管理者アカウントを作成（個人帳簿 + 既定カテゴリ付き）。べき等。 */
-async function seedAdmins() {
-  for (const a of ADMIN_ACCOUNTS) {
-    await db.user.deleteMany({ where: { email: a.email } });
-    const u = await db.user.create({
-      data: {
-        email: a.email,
-        name: a.name,
-        isAdmin: true,
-        currency: "JPY",
-        passwordHash: hashPassword(a.password),
-      },
-    });
-    await db.billingProfile.create({ data: { userId: u.id, tier: a.tier } });
-    const l = await db.ledger.create({
-      data: {
-        name: `${a.name}の家計簿`,
-        type: "PERSONAL",
-        ownerId: u.id,
-        members: { create: { userId: u.id, role: "OWNER" } },
-      },
-    });
-    await db.category.createMany({
-      data: DEFAULT_CATEGORIES.map((c) => ({ ...c, ledgerId: l.id })),
-    });
-  }
-}
+/**
+ * 管理者アカウントの投入は、この経路からは一切行わない。
+ *
+ * 以前はここで `db.user.deleteMany()` してから作り直していたため、
+ * 公開ページの「デモを見る」を押すだけで既存の管理者アカウントと
+ * その帳簿（Ledger は ownerId が onDelete: Cascade）が消えていた。
+ * また固定の平文パスワードを埋め込んでいた。
+ *
+ * 管理者の用意が必要な場合は、環境変数で資格情報を渡したうえで
+ * `scripts/seed.mjs` から明示的に行う（既存ユーザーは決して削除しない）。
+ */
 
 function daysAgo(n: number): Date {
   const d = new Date();
@@ -50,9 +29,11 @@ function daysAhead(n: number): Date {
   return d;
 }
 
-/** デモアカウント（山田太郎）のデータを作り直す。べき等。 */
+/**
+ * デモアカウント（山田太郎）のデータを作り直す。べき等。
+ * 触れるのは固定のデモアカウントのみで、他のユーザーには一切影響しない。
+ */
 export async function seedDemo() {
-  await seedAdmins();
   await db.user.deleteMany({ where: { email: DEMO_EMAIL } });
 
   const user = await db.user.create({
@@ -160,8 +141,6 @@ export async function seedDemo() {
     ],
   });
 
-  return {
-    demo: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
-    admins: ADMIN_ACCOUNTS.map((a) => ({ email: a.email, password: a.password, name: a.name })),
-  };
+  // 資格情報は返さない（レスポンスに載せると経路次第で外部へ露出する）。
+  return { demo: { email: DEMO_EMAIL } };
 }

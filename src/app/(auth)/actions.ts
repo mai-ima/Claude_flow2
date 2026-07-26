@@ -18,8 +18,17 @@ export type AuthState = { error?: string } | undefined;
 // 後方互換
 export type LoginState = AuthState;
 
+/**
+ * 遷移先を自サイト内のパスに限定する。
+ * `startsWith("/")` だけでは `//evil.com` や `/\evil.com` が
+ * プロトコル相対URLとして外部へ飛ぶ（オープンリダイレクト）。
+ */
 function safeNext(next?: string): string {
-  return next && next.startsWith("/") ? next : "/billing";
+  if (!next) return "/billing";
+  if (!next.startsWith("/")) return "/billing";
+  // 2文字目が / または \ のものはプロトコル相対URL扱いになるため拒否
+  if (next.length > 1 && (next[1] === "/" || next[1] === "\\")) return "/billing";
+  return next;
 }
 
 export async function loginAction(
@@ -48,6 +57,12 @@ export async function loginAction(
     }
     if (code === "INVALID_PASSWORD") {
       return { error: "パスワードが正しくありません。" };
+    }
+    if (code === "PASSWORD_NOT_SET") {
+      return {
+        error:
+          "このアカウントにはパスワードが設定されていません。お問い合わせから再設定をご依頼ください。",
+      };
     }
     if (code === "WEAK_PASSWORD") {
       return { error: "パスワードは8文字以上で入力してください。" };

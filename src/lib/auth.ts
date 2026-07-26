@@ -53,7 +53,8 @@ export type AuthError =
   | "INVALID_PASSWORD"
   | "WEAK_PASSWORD"
   | "EMAIL_TAKEN"
-  | "NO_ACCOUNT";
+  | "NO_ACCOUNT"
+  | "PASSWORD_NOT_SET";
 
 /**
  * メール + パスワードでサインイン / 新規登録。
@@ -85,15 +86,12 @@ export async function signInWithEmail(
     });
   } else {
     if (!user) throw new Error("NO_ACCOUNT");
-    if (user.passwordHash) {
-      if (!verifyPassword(password, user.passwordHash)) {
-        throw new Error("INVALID_PASSWORD");
-      }
-    } else {
-      await db.user.update({
-        where: { id: user.id },
-        data: { passwordHash: hashPassword(password) },
-      });
+    // パスワード未設定のアカウント（OAuth 等で作成）に対して、任意のパスワードで
+    // ログインさせてはならない（そのまま乗っ取りになる）。照合は必ず行い、
+    // 未設定なら別経路（パスワード再設定）へ誘導する。
+    if (!user.passwordHash) throw new Error("PASSWORD_NOT_SET");
+    if (!verifyPassword(password, user.passwordHash)) {
+      throw new Error("INVALID_PASSWORD");
     }
   }
   await bootstrapUser(user.id, user.name);

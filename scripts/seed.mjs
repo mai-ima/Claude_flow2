@@ -95,16 +95,48 @@ async function seedDemoData(userId, ledgerId) {
 }
 
 async function main() {
-  await ensureUser({ email: "admin@tsumiki.app", password: "admin1234", name: "管理者", isAdmin: true, tier: "PRO" });
-  await ensureUser({ email: "staff@tsumiki.app", password: "staff1234", name: "管理者（動作確認用）", isAdmin: true, tier: "PLUS" });
-  const demo = await ensureUser({ email: "demo@tsumiki.app", password: "demo1234", name: "山田 太郎", tier: "PRO", wage: 2000 });
+  // 管理者アカウントは、環境変数で資格情報を明示したときだけ作成する。
+  // 以前は admin1234 / staff1234 を毎デプロイで投入しており、
+  // 公開URLと固定パスワードだけで管理画面に入れる状態だった。
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    if (adminPassword.length < 12) {
+      console.warn("[seed] ADMIN_PASSWORD が短すぎます（12文字以上）。管理者の作成をスキップします。");
+    } else {
+      await ensureUser({
+        email: adminEmail,
+        password: adminPassword,
+        name: "管理者",
+        isAdmin: true,
+        tier: "PRO",
+      });
+      console.log("[seed] admin ready:", adminEmail);
+    }
+  } else {
+    console.log("[seed] ADMIN_EMAIL / ADMIN_PASSWORD 未設定のため管理者は作成しません。");
+  }
+
+  // デモアカウントは本番では既定で作らない（作る場合は SEED_DEMO=1）。
+  const wantDemo = process.env.SEED_DEMO === "1" || process.env.NODE_ENV !== "production";
+  if (!wantDemo) {
+    console.log("[seed] デモアカウントは作成しません（SEED_DEMO=1 で有効化）。");
+    return;
+  }
+  const demoPassword = process.env.DEMO_PASSWORD || "demo1234";
+  const demo = await ensureUser({
+    email: "demo@tsumiki.app",
+    password: demoPassword,
+    name: "山田 太郎",
+    tier: "PRO",
+    wage: 2000,
+  });
   if (demo.created && demo.ledgerId) {
     await seedDemoData(demo.userId, demo.ledgerId);
     console.log("[seed] demo data created");
   } else {
     console.log("[seed] demo already exists; data skipped");
   }
-  console.log("[seed] accounts ready: demo@ / admin@ / staff@");
 }
 
 main()
