@@ -48,9 +48,17 @@ export function CalendarClient({
   canEdit,
   currency = "JPY",
   beta = false,
+  todayKey,
 }: {
   /** 表示対象月（yyyy-MM） */
   month: string;
+  /**
+   * 今日の日付（yyyy-MM-dd）。サーバーで確定した値を受け取る。
+   * クライアントで `new Date()` から求めると、サーバー(UTC)と端末(JST)で
+   * 日付が食い違い、ハイドレーション不一致（今日の丸の位置・初期選択日のずれ）
+   * が起きるため。
+   */
+  todayKey: string;
   days: DayTotalItem[];
   items: TxnListItem[];
   categories: Option[];
@@ -70,7 +78,6 @@ export function CalendarClient({
   const [y, m] = month.split("-").map(Number);
   const monthDate = new Date(y, m - 1, 1);
   const weeks = buildCalendarWeeks(monthDate);
-  const todayKey = toDateInput(new Date());
 
   // 初期選択日: 今日が当月ならば今日、そうでなければ月初。
   const firstKey = toDateInput(monthDate);

@@ -21,7 +21,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { RepeatIcon } from "@/components/icons";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
-import { formatDate } from "@/lib/date";
+import { formatDate, todayLocal } from "@/lib/date";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({ title: "家計簿", noindex: true });
@@ -77,15 +77,20 @@ export default async function TransactionsPage({
   const type = sp.type === "INCOME" || sp.type === "EXPENSE" ? sp.type : undefined;
   const page = Number(sp.page) || 1;
 
-  const [result, categories, paymentMethods, calendar] = await Promise.all([
-    searchTransactions(ledgerId, {
-      month,
-      keyword: sp.q?.trim() || undefined,
-      type,
-      categoryId: sp.cat || undefined,
-      paymentMethodId: sp.pm || undefined,
-      page,
-    }),
+  // カレンダー表示では一覧の検索・ページングは使わないため実行しない
+  // （同じ月のデータを3回引かないようにする）。集計はどちらの表示でも要るので
+  // カレンダー時は dailyTotals の結果から合算する。
+  const [searchResult, categories, paymentMethods, calendar] = await Promise.all([
+    view === "calendar"
+      ? Promise.resolve(null)
+      : searchTransactions(ledgerId, {
+          month,
+          keyword: sp.q?.trim() || undefined,
+          type,
+          categoryId: sp.cat || undefined,
+          paymentMethodId: sp.pm || undefined,
+          page,
+        }),
     listCategories(ledgerId),
     listPaymentMethods(ledgerId),
     view === "calendar"
@@ -93,8 +98,18 @@ export default async function TransactionsPage({
       : Promise.resolve(null),
   ]);
 
-  const { items: txns, summary, pageCount } = result;
-  const items: TxnListItem[] = txns.map(toListItem);
+  const summary = calendar
+    ? calendar[0].reduce(
+        (a, d) => {
+          a.income += d.income;
+          a.expense += d.expense;
+          a.balance = a.income - a.expense;
+          return a;
+        },
+        { income: 0, expense: 0, balance: 0 },
+      )
+    : searchResult!.summary;
+  const items: TxnListItem[] = searchResult ? searchResult.items.map(toListItem) : [];
 
   const catOpts = categories.map((c) => ({ id: c.id, name: c.name, type: c.type }));
   const pmOpts = paymentMethods.map((p) => ({ id: p.id, name: p.name }));
@@ -154,6 +169,7 @@ export default async function TransactionsPage({
           canEdit={canEdit}
           currency={currency}
           beta={betaOptIn}
+          todayKey={todayLocal()}
         />
       ) : (
         <>
@@ -178,7 +194,7 @@ export default async function TransactionsPage({
             beta={betaOptIn}
           />
 
-          <Pagination page={result.page} pageCount={pageCount} />
+          <Pagination page={searchResult!.page} pageCount={searchResult!.pageCount} />
         </>
       )}
     </PageContainer>

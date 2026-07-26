@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { addMonths } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Sheet } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
@@ -39,10 +40,12 @@ export interface GoalItem {
 
 const COLORS = ["blue", "teal", "green", "mint", "orange", "pink", "purple", "indigo"];
 
+/**
+ * Date#setMonth は月末が繰り上がる（1/31 に +1 すると 3/3 になり 2 月が飛ぶ）。
+ * date-fns の addMonths は月末を丸めるため、そちらを使う。
+ */
 function todayPlus(months: number) {
-  const d = new Date();
-  d.setMonth(d.getMonth() + months);
-  return toDateInput(d);
+  return toDateInput(addMonths(new Date(), months));
 }
 
 export function GoalsClient({

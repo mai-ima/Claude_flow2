@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { addMonths } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -39,8 +40,9 @@ interface Option {
 }
 
 function defaults(): SubFormValue {
-  const d = new Date();
-  d.setMonth(d.getMonth() + 1);
+  // Date#setMonth は月末が繰り上がる（1/31 に +1 で 3/3 になり 2 月が飛ぶ）。
+  // date-fns の addMonths は月末を丸める。
+  const d = addMonths(new Date(), 1);
   return {
     name: "",
     amount: 0,

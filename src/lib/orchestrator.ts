@@ -132,9 +132,11 @@ export async function processAutoContributions(now: Date = new Date()): Promise<
       guard++;
     }
     if (added > 0) {
+      // 読み取った値に足して書き戻すと、同時に走る手動積立の分を打ち消す
+      // （ロストアップデート）。DB 側でインクリメントさせる。
       await db.goal.update({
         where: { id: g.id },
-        data: { currentAmount: g.currentAmount + added, nextAutoContributionAt: next },
+        data: { currentAmount: { increment: added }, nextAutoContributionAt: next },
       });
     }
   }
