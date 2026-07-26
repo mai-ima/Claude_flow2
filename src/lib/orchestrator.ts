@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { daysUntil, monthRange } from "./date";
-import { renewalCatchup } from "@/modules/subscriptions/renewal";
+import { renewalCatchup, isReminderDue } from "@/modules/subscriptions/renewal";
 import type { BillingCycle } from "./enums";
 
 /**
@@ -361,8 +361,10 @@ export async function dueReminders(now: Date = new Date()): Promise<ReminderItem
   });
   const items: ReminderItem[] = [];
   for (const s of subs) {
+    // 判定ロジックはテストのある isReminderDue に一本化する。
+    if (!isReminderDue(s.nextRenewalAt, s.reminderDaysBefore, now)) continue;
     const d = daysUntil(s.nextRenewalAt, now);
-    if (d >= 0 && d <= s.reminderDaysBefore) {
+    {
       items.push({
         subscriptionId: s.id,
         ledgerId: s.ledgerId,

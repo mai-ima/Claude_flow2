@@ -1,5 +1,6 @@
 import { advanceRenewal } from "@/lib/date";
 import type { BillingCycle } from "@/lib/enums";
+import { daysUntil } from "@/lib/date";
 
 /**
  * 更新日が現在以前なら、取りこぼした周期分の発生日を列挙し、次回更新日を返す。
@@ -22,13 +23,18 @@ export function renewalCatchup(
   return { occurrences, nextRenewalAt: next };
 }
 
-/** 更新が reminderDaysBefore 以内（当日〜）かどうか。 */
+/**
+ * 更新が reminderDaysBefore 以内（当日〜）かどうか。
+ *
+ * 判定は「暦日の差」で行う。ミリ秒差を切り上げると時刻に左右され、
+ * 例えば 6/1 01:00 時点で 6/4 23:00 の更新が「4日後」となり通知されない。
+ * 利用者の感覚（あと何日）に合うのは暦日差。
+ */
 export function isReminderDue(
   nextRenewalAt: Date,
   reminderDaysBefore: number,
   now: Date,
 ): boolean {
-  const ms = nextRenewalAt.getTime() - now.getTime();
-  const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+  const days = daysUntil(nextRenewalAt, now);
   return days >= 0 && days <= reminderDaysBefore;
 }

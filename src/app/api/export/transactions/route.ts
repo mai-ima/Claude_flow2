@@ -6,6 +6,19 @@ import { tierAtLeast } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
 import type { PlanTier } from "@/lib/enums";
 
+/**
+ * CSV の1セルを安全に整形する。
+ * - " のエスケープは全列に適用する（以前はメモ列だけで、カテゴリ名に " が
+ *   入ると列がずれて壊れていた）。
+ * - 先頭が = + - @ の値は Excel/Sheets が数式として実行するため（CSV インジェクション）、
+ *   先頭にシングルクォートを付けて文字列として扱わせる。
+ */
+function csvCell(value: string): string {
+  let v = value ?? "";
+  if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
+  return `"${v.replace(/"/g, '""')}"`;
+}
+
 /** CSV エクスポート（PRO 限定）。 */
 export async function GET() {
   const user = await getCurrentUser();
@@ -38,12 +51,10 @@ export async function GET() {
     t.currency,
     t.category?.name ?? "",
     t.paymentMethod?.name ?? "",
-    (t.memo ?? "").replace(/"/g, '""'),
+    t.memo ?? "",
   ]);
 
-  const csv = [header, ...rows]
-    .map((cols) => cols.map((c) => `"${c}"`).join(","))
-    .join("\r\n");
+  const csv = [header, ...rows].map((cols) => cols.map(csvCell).join(",")).join("\r\n");
   const bom = "﻿"; // Excel 向け BOM
 
   return new NextResponse(bom + csv, {
