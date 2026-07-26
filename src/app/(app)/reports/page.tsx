@@ -21,6 +21,7 @@ import { monthEndForecast } from "@/lib/insight";
 import { formatMonth } from "@/lib/date";
 import { pageMetadata } from "@/lib/seo";
 import { getDate } from "date-fns";
+import { ExportButton } from "@/modules/transactions";
 
 export const metadata: Metadata = pageMetadata({ title: "分析", noindex: true });
 
@@ -91,12 +92,7 @@ export default async function ReportsPage() {
               <div className="text-[12px] text-text-tertiary">CSV エクスポート</div>
               {tier !== "PRO" && <Badge tone="pod" size="sm">PRO</Badge>}
             </div>
-            <a
-              href={tier === "PRO" ? "/api/export/transactions" : "/billing"}
-              className="mt-2 inline-block text-[14px] font-medium text-accent"
-            >
-              {tier === "PRO" ? "ダウンロード" : "PROで利用可能"}
-            </a>
+            <ExportButton enabled={tier === "PRO"} />
           </Card>
         </>
       )}

@@ -90,7 +90,7 @@ export function DeleteAllData() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder={CONFIRM_WORD}
-              aria-label="確認のため削除と入力"
+              aria-label="全データ削除の確認: 削除と入力"
               autoFocus
             />
           </div>

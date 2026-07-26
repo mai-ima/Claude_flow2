@@ -21,3 +21,4 @@ export { ReportsClient, type ReportsData } from "./components/reports-client";
 export { TransactionFilters, Pagination, ViewSwitcher } from "./components/transaction-filters";
 export { TransactionSheet, type TxnFormValue } from "./components/transaction-sheet";
 export { RecurringClient, type RecurringListItem } from "./components/recurring-client";
+export { ExportButton } from "./components/export-button";
