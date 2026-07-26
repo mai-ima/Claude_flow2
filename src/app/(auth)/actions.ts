@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { signInWithEmail, signOut, loginAsDemo } from "@/lib/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { safeNext } from "@/lib/safe-next";
 
 const baseSchema = {
   email: z.string().email("メールアドレスの形式が正しくありません。"),
@@ -18,18 +19,6 @@ export type AuthState = { error?: string } | undefined;
 // 後方互換
 export type LoginState = AuthState;
 
-/**
- * 遷移先を自サイト内のパスに限定する。
- * `startsWith("/")` だけでは `//evil.com` や `/\evil.com` が
- * プロトコル相対URLとして外部へ飛ぶ（オープンリダイレクト）。
- */
-function safeNext(next?: string): string {
-  if (!next) return "/billing";
-  if (!next.startsWith("/")) return "/billing";
-  // 2文字目が / または \ のものはプロトコル相対URL扱いになるため拒否
-  if (next.length > 1 && (next[1] === "/" || next[1] === "\\")) return "/billing";
-  return next;
-}
 
 export async function loginAction(
   _prev: AuthState,
