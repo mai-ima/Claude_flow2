@@ -117,7 +117,7 @@ export function BudgetsClient({
   allCategories,
   canEdit,
   currency = "JPY",
-  beta = false,
+  betaFormula = false,
   averages,
   insight,
 }: {
@@ -126,7 +126,8 @@ export function BudgetsClient({
   allCategories: Option[];
   canEdit: boolean;
   currency?: string;
-  beta?: boolean;
+  /** ベータ: 予算額の数式入力 */
+  betaFormula?: boolean;
   averages?: { byCategory: Record<string, number>; total: number };
   /** サーバーで算出した予算の示唆。端末のタイムゾーンで残り日数がずれないように渡す。 */
   insight?: BudgetInsight;
@@ -350,7 +351,7 @@ export function BudgetsClient({
             </button>
           )}
 
-          {beta ? (
+          {betaFormula ? (
             <Field label="月の予算額">
               <Input
                 inputMode="text"

@@ -50,7 +50,9 @@ export function TransactionsClient({
   canEdit,
   showOwner = false,
   currency = "JPY",
-  beta = false,
+  betaAmountPad = false,
+  betaDuplicate = false,
+  betaHaptics = false,
   today,
 }: {
   items: TxnListItem[];
@@ -59,7 +61,12 @@ export function TransactionsClient({
   canEdit: boolean;
   showOwner?: boolean;
   currency?: string;
-  beta?: boolean;
+  /** ベータ: 電卓キーパッド */
+  betaAmountPad?: boolean;
+  /** ベータ: スワイプで複製 */
+  betaDuplicate?: boolean;
+  /** ベータ: 触覚フィードバック */
+  betaHaptics?: boolean;
   /** サーバー基準の今日(yyyy-MM-dd)。 */
   today?: string;
 }) {
@@ -328,7 +335,7 @@ export function TransactionsClient({
                   // ベータ時のみ「複製」アクションとハプティックを追加。
                   if (canEdit) {
                     const actions: SwipeAction[] = [
-                      ...(beta
+                      ...(betaDuplicate
                         ? [
                             {
                               label: "複製",
@@ -352,7 +359,7 @@ export function TransactionsClient({
                         className="border-t border-border-subtle first:border-t-0"
                         onTap={() => openEdit(it)}
                         actions={actions}
-                        haptics={beta}
+                        haptics={betaHaptics}
                       >
                         <div className="group flex items-center gap-3 px-4 py-3">
                           {icon}
@@ -468,7 +475,7 @@ export function TransactionsClient({
         paymentMethods={paymentMethods}
         initial={editing}
         currency={currency}
-        beta={beta}
+        beta={betaAmountPad}
         today={today}
       />
     </div>

@@ -54,7 +54,8 @@ export function CalendarClient({
   paymentMethods,
   canEdit,
   currency = "JPY",
-  beta = false,
+  betaAmountPad = false,
+  betaHaptics = false,
   todayKey,
 }: {
   /** 表示対象月（yyyy-MM） */
@@ -72,7 +73,10 @@ export function CalendarClient({
   paymentMethods: Option[];
   canEdit: boolean;
   currency?: string;
-  beta?: boolean;
+  /** ベータ: 電卓キーパッド */
+  betaAmountPad?: boolean;
+  /** ベータ: 触覚フィードバック */
+  betaHaptics?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -294,7 +298,7 @@ export function CalendarClient({
                   className="border-t border-border-subtle first:border-t-0"
                   onTap={canEdit ? () => openEdit(it) : undefined}
                   actions={actions}
-                  haptics={beta}
+                  haptics={betaHaptics}
                 >
                   <div className="flex items-center gap-3 px-4 py-3">
                     <span
@@ -349,7 +353,7 @@ export function CalendarClient({
         paymentMethods={paymentMethods}
         initial={editing}
         currency={currency}
-        beta={beta}
+        beta={betaAmountPad}
         today={todayKey}
       />
     </div>

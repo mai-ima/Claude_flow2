@@ -7,6 +7,8 @@ import { authedAction } from "@/lib/safe-action";
 import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
 import { signOut } from "@/lib/auth";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
+import { isBetaFeatureKey, enabledBetaFeatures } from "@/lib/beta-features";
+import { Prisma } from "@/generated/prisma";
 
 export const updateProfile = authedAction(
   z.object({
@@ -30,12 +32,56 @@ export const updateProfile = authedAction(
   },
 );
 
+/**
+ * 親スイッチの切り替え。
+ * オンにするときは、それまでの個別設定を引き継ぐ（未設定なら全機能を有効に倒す）。
+ */
 export const updateBetaOptIn = authedAction(
   z.object({ enabled: z.coerce.boolean() }),
   async ({ enabled }, user) => {
-    await db.user.update({ where: { id: user.id }, data: { betaOptIn: enabled } });
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        betaOptIn: enabled,
+        // 個別に全部オフのまま親をオンにすると何も起きず、壊れて見える。
+        // その場合だけ「全機能オン」に倒す。
+        ...(enabled && Array.isArray(user.betaFeatures) && user.betaFeatures.length === 0
+          ? { betaFeatures: Prisma.DbNull }
+          : {}),
+      },
+    });
     revalidatePath("/", "layout");
     return { ok: true };
+  },
+);
+
+/** 個別のベータ機能を1つだけ切り替える。 */
+export const updateBetaFeature = authedAction(
+  z.object({ key: z.string(), enabled: z.coerce.boolean() }),
+  async ({ key, enabled }, user) => {
+    if (!isBetaFeatureKey(key)) {
+      return { ok: false as const, error: "不明な機能です。" };
+    }
+    // 未指定(null)は「親スイッチがオンなら全て有効」を意味する。
+    // 親を見ずに展開すると、親オフの状態で1つ入れたときに全機能が点いてしまう。
+    const current = enabledBetaFeatures({
+      optIn: user.betaOptIn,
+      features: user.betaFeatures,
+    });
+    const next = enabled
+      ? [...new Set([...current, key])]
+      : current.filter((k) => k !== key);
+
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        betaFeatures: next,
+        // 1つでもオンにしたなら親スイッチも入れる（個別操作だけで使えるように）。
+        ...(enabled ? { betaOptIn: true } : {}),
+      },
+    });
+    revalidatePath("/", "layout");
+    return { ok: true, data: { features: next } };
   },
 );
 

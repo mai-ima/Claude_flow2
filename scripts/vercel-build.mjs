@@ -7,6 +7,15 @@ function run(cmd) {
   execSync(cmd, { stdio: "inherit" });
 }
 
+function tryRun(cmd) {
+  try {
+    execSync(cmd, { stdio: "inherit" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 run("npx prisma generate");
 
 // Vercel Postgres/Neon等の統合は、DATABASE_URLではなく別名(POSTGRES_URL等)で
@@ -21,10 +30,22 @@ const dbUrl = process.env.DATABASE_URL ?? FALLBACK_KEYS.map((k) => process.env[k
 
 if (dbUrl) {
   if (!process.env.DATABASE_URL) process.env.DATABASE_URL = dbUrl;
-  // スキーマの反映は db push に一本化している。
-  // migrations ディレクトリは現行スキーマから乖離したまま誰も実行しておらず、
-  // 残しておくと migrate deploy を実行したときに誤ったスキーマになるため削除した。
-  run("npx prisma db push --accept-data-loss");
+
+  // スキーマの反映は migrate deploy に一本化する。
+  // db push は差分を推測して実行するため、列の改名やNULL制約の変更が
+  // 「削除して作り直し」に化けることがあり、本番データを失う。
+  //
+  // 既に db push で作られた本番DBには履歴テーブルが無く、そのままでは
+  // 初回の migrate deploy が P3005 で止まる。その場合に限り、
+  // ベースライン(0_init)を「適用済み」として記録してから再実行する。
+  // 0_init は db push が作った現行スキーマと同じ内容なので、
+  // 実行せずに記録するのが正しい。
+  if (!tryRun("npx prisma migrate deploy")) {
+    console.warn("[vercel-build] migrate deploy に失敗。ベースラインを記録して再試行します。");
+    run("npx prisma migrate resolve --applied 0_init");
+    run("npx prisma migrate deploy");
+  }
+
   run("node scripts/seed.mjs");
 } else {
   console.warn(

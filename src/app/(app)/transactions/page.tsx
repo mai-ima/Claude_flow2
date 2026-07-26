@@ -70,7 +70,7 @@ export default async function TransactionsPage({
 }: {
   searchParams: Promise<SP>;
 }) {
-  const { ledgerId, canEdit, isPod, currency, betaOptIn } = await getAppContext();
+  const { ledgerId, canEdit, isPod, currency, beta } = await getAppContext();
   const sp = await searchParams;
   const month = resolveMonth(sp.m);
   const view = sp.view === "calendar" ? "calendar" : "list";
@@ -176,7 +176,8 @@ export default async function TransactionsPage({
           paymentMethods={pmOpts}
           canEdit={canEdit}
           currency={currency}
-          beta={betaOptIn}
+          betaAmountPad={beta("amount_pad")}
+          betaHaptics={beta("haptics")}
           todayKey={todayLocal()}
         />
       ) : (
@@ -199,7 +200,9 @@ export default async function TransactionsPage({
             canEdit={canEdit}
             showOwner={isPod}
             currency={currency}
-            beta={betaOptIn}
+            betaAmountPad={beta("amount_pad")}
+            betaDuplicate={beta("swipe_duplicate")}
+            betaHaptics={beta("haptics")}
             today={todayLocal()}
           />
 

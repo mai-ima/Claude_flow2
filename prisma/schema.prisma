@@ -28,7 +28,11 @@ model User {
   currency         String    @default("JPY")
   themePref        String    @default("system") // system | light | dark
   assumedHourlyWage Int?     // コストタイム用の想定時給(円)
-  betaOptIn        Boolean   @default(false) // ベータ機能の有効化
+  betaOptIn        Boolean   @default(false) // ベータ機能の親スイッチ
+  // 個別に有効化したベータ機能のキー配列。
+  // null = 未設定（betaOptIn が真なら全て有効／既存ユーザーの挙動を維持）
+  // 配列 = ここに載っているものだけ有効
+  betaFeatures     Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

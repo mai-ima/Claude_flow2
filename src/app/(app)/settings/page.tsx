@@ -20,6 +20,7 @@ import { BillingCard } from "@/modules/billing";
 import { PLANS, tierAtLeast } from "@/lib/plans";
 import { isStripeEnabled } from "@/lib/env";
 import { SITE, APP_VERSION, pageMetadata } from "@/lib/seo";
+import { enabledBetaFeatures } from "@/lib/beta-features";
 
 export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true });
 
@@ -56,7 +57,10 @@ export default async function SettingsPage() {
         </ListGroup>
 
         <ListGroup title="ベータ機能" padded>
-          <BetaFeaturesToggle enabled={ctx.betaOptIn} />
+          <BetaFeaturesToggle
+            enabled={ctx.betaOptIn}
+            features={enabledBetaFeatures({ optIn: ctx.betaOptIn, features: ctx.user.betaFeatures })}
+          />
         </ListGroup>
 
         <ListGroup title="外観" padded>

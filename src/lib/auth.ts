@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
 import { db } from "./db";
 import { DEFAULT_CATEGORIES } from "./default-categories";
+import { parseBetaFeatures, type BetaFeatureKey } from "./beta-features";
 import { hashPassword, verifyPassword } from "./password";
 
 const SESSION_COOKIE = "tsumiki_session";
@@ -20,6 +21,8 @@ export type SessionUser = {
   tier: string;
   isAdmin: boolean;
   betaOptIn: boolean;
+  /** 個別に有効化したベータ機能。null は未指定（親スイッチに従い全て有効）。 */
+  betaFeatures: BetaFeatureKey[] | null;
 };
 
 /** 新規ユーザーの初期データ（個人帳簿・メンバー・課金プロフィール・既定カテゴリ）を用意。 */
@@ -172,6 +175,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     tier: u.billing?.tier ?? "FREE",
     isAdmin: u.isAdmin,
     betaOptIn: u.betaOptIn,
+    betaFeatures: parseBetaFeatures(u.betaFeatures),
   };
 });
 

@@ -10,6 +10,7 @@ import { listUserLedgers, getActiveLedgerId } from "@/lib/ledger-access";
 import { listNotifications, unreadCount } from "@/modules/notifications/queries";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/cn";
+import { isBetaEnabled } from "@/lib/beta-features";
 
 export default async function AppLayout({
   children,
@@ -63,7 +64,9 @@ export default async function AppLayout({
       </AppChromeProvider>
       <BottomBar />
       <CommandPalette />
-      <KeyboardShortcuts enabled={user.betaOptIn} />
+      <KeyboardShortcuts
+        enabled={isBetaEnabled({ optIn: user.betaOptIn, features: user.betaFeatures }, "keyboard_shortcuts")}
+      />
     </div>
   );
 }

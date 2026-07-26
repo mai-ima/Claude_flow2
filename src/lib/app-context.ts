@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "./auth";
 import { getActiveLedger } from "./ledger-access";
 import type { MemberRole, PlanTier } from "./enums";
+import { isBetaEnabled, type BetaFeatureKey } from "./beta-features";
 
 /**
  * 認証済みページ用: ユーザー + アクティブ帳簿 + 権限 + プランをまとめて取得。
@@ -23,6 +24,9 @@ export const getAppContext = cache(async () => {
     tier: user.tier as PlanTier,
     currency: ledger.currency,
     betaOptIn: user.betaOptIn,
+    /** 機能ごとの判定。beta={betaOptIn} の代わりにこれを使う。 */
+    beta: (key: BetaFeatureKey) =>
+      isBetaEnabled({ optIn: user.betaOptIn, features: user.betaFeatures }, key),
   };
 });
 

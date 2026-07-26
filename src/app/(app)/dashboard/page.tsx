@@ -43,7 +43,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ m?: string }>;
 }) {
-  const { ledgerId, user, tier, isPod, currency, betaOptIn } = await getAppContext();
+  const { ledgerId, user, tier, isPod, currency, beta } = await getAppContext();
   const { m } = await searchParams;
   const month = resolveMonth(m);
 
@@ -303,7 +303,7 @@ export default async function DashboardPage({
       )}
 
       {/* ベータ: 今日あといくら使える（全体予算 × 当月のみ） */}
-      {betaOptIn && totalBudget && isCurrentMonth && (() => {
+      {beta("today_allowance") && totalBudget && isCurrentMonth && (() => {
         const ins = budgetInsight(totalBudget.spent, totalBudget.amount, month, now);
         return (
           <Card className="mb-5">

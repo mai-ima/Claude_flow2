@@ -14,7 +14,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({ title: "予算", noindex: true });
 
 export default async function BudgetsPage() {
-  const { ledgerId, canEdit, tier, currency, betaOptIn } = await getAppContext();
+  const { ledgerId, canEdit, tier, currency, beta } = await getAppContext();
 
   if (!canUse(tier, "budgets")) {
     return (
@@ -53,7 +53,7 @@ export default async function BudgetsPage() {
         allCategories={expenseCats.map((c) => ({ id: c.id, name: c.name }))}
         canEdit={canEdit}
         currency={currency}
-        beta={betaOptIn}
+        betaFormula={beta("budget_formula")}
         averages={averages}
         insight={total ? budgetInsight(total.spent, total.amount) : undefined}
       />
