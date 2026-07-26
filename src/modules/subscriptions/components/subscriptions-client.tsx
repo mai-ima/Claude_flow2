@@ -100,6 +100,8 @@ export function SubscriptionsClient({
   const toast = useToast();
   const confirm = useConfirm();
   const [view, setView] = useState<"list" | "stack" | "calendar">("list");
+  /** 「暦」タブのバーの基準値（最も請求額が大きい月）。 */
+  const calendarMax = Math.max(0, ...calendar.map((c) => c.total));
   const [sortBy, setSortBy] = useState<"renewal" | "amount" | "name">("renewal");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "PAUSED" | "CANCELED">("ALL");
   const [sheetOpen, setSheetOpen] = useState(
@@ -383,7 +385,10 @@ export function SubscriptionsClient({
                 <div
                   className="h-full rounded-full bg-accent transition-all"
                   style={{
-                    width: `${Math.min(100, totals.monthly > 0 ? (mo.total / (totals.monthly * 1.5)) * 100 : 0)}%`,
+                    // 月ごとの実請求額どうしを比べるので、基準は「最大の月」。
+                    // 月額換算(totals.monthly)で割ると、年額の請求が来る月が
+                    // 常に上限に張り付いてしまう。
+                    width: `${calendarMax > 0 ? Math.max(2, (mo.total / calendarMax) * 100) : 0}%`,
                   }}
                 />
               </div>

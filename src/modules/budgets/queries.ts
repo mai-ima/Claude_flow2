@@ -55,7 +55,12 @@ export async function listBudgetsWithSpending(
   const { start, end } = monthRange(month);
 
   const [budgets, categories, expenseByCat, totalExpenseAgg] = await Promise.all([
-    db.budget.findMany({ where: { ledgerId } }),
+    // 予算は「継続的な月次予算」で、カテゴリごとに1件だけ持つ設計
+    // （/budgets に月切替は無く、常に当月の実績と突き合わせる）。
+    // スキーマの startMonth は作成時の記録用で、抽出条件には使わない。
+    // 万一同一カテゴリで複数行が存在しても二重表示にならないよう、
+    // 新しいものを優先して1件に畳む。
+    db.budget.findMany({ where: { ledgerId }, orderBy: { createdAt: "desc" } }),
     db.category.findMany({ where: { ledgerId } }),
     db.transaction.groupBy({
       by: ["categoryId"],
@@ -74,9 +79,15 @@ export async function listBudgetsWithSpending(
 
   let total: BudgetRow | null = null;
   const categoryRows: BudgetRow[] = [];
+  const seenCategory = new Set<string>();
 
   for (const b of budgets) {
+    if (b.categoryId) {
+      if (seenCategory.has(b.categoryId)) continue;
+      seenCategory.add(b.categoryId);
+    }
     if (b.isTotalBudget || !b.categoryId) {
+      if (total) continue; // 全体予算も1件に畳む
       total = {
         id: b.id,
         categoryId: null,

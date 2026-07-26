@@ -22,7 +22,13 @@ function thisMonthStart(): Date {
   return d;
 }
 
-/** 全体予算 or カテゴリ予算を設定（既存があれば更新）。 */
+/**
+ * 全体予算 or カテゴリ予算を設定（既存があれば更新）。
+ *
+ * 予算は「継続的な月次予算」で、カテゴリごとに1件だけ持つ。
+ * そのため startMonth は抽出条件に使わず、既存行があれば金額だけ更新する
+ * （月ごとに別レコードを作ると、当月の予算だけ見る UI と噛み合わない）。
+ */
 export const setBudget = authedAction(setBudgetInput, async (input, user) => {
   const ledgerId = await getActiveLedgerId(user.id);
   await requireLedgerMember(ledgerId, user.id, "EDITOR");

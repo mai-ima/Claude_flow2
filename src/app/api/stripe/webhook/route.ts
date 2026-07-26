@@ -79,8 +79,12 @@ export async function POST(req: Request) {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = typeof sub.customer === "string" ? sub.customer : null;
         if (!customerId) break;
+        // 現在保持している契約と一致するときだけ FREE に落とす。
+        // Webhook は順序が保証されないため、古い契約の deleted が
+        // 新しい契約の created より後に届くと、課金中の利用者が
+        // 無条件に FREE へ落ちてしまう。
         await db.billingProfile.updateMany({
-          where: { stripeCustomerId: customerId },
+          where: { stripeCustomerId: customerId, stripeSubscriptionId: sub.id },
           data: { tier: "FREE", stripeSubscriptionId: null, cancelAtPeriodEnd: false },
         });
         break;

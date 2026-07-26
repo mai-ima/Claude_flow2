@@ -52,7 +52,12 @@ export interface AdminUserRow {
   createdAt: Date;
 }
 
-/** ユーザー一覧（新しい順）。 */
+/** 登録ユーザーの総数（一覧の取得上限とは別に、実数を表示するため）。 */
+export async function countUsers(): Promise<number> {
+  return db.user.count();
+}
+
+/** ユーザー一覧（新しい順）。上限あり。 */
 export async function listUsers(limit = 100): Promise<AdminUserRow[]> {
   const users = await db.user.findMany({
     orderBy: { createdAt: "desc" },

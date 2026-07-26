@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { NAV_ITEMS } from "./nav-items";
 import { SearchIcon, StarIcon, WalletIcon, RepeatIcon, type IconProps } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 
 interface Command {
   label: string;
@@ -63,10 +64,9 @@ export function CommandPalette() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    if (!open) return;
+    lockScroll();
+    return () => unlockScroll();
   }, [open]);
 
   function run(href: string) {

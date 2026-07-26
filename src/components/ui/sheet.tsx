@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef } from "react";
 import { cn } from "@/lib/cn";
 import { XIcon } from "@/components/icons";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 
 /**
  * iOS 風ハーフシート。モバイルは下からせり上がり、PC は中央寄りカード。
@@ -29,6 +30,9 @@ export function Sheet({
 
   useEffect(() => {
     if (!open) return;
+    // 開く直前のフォーカス位置を覚えておき、閉じたときに戻す。
+    // 戻さないとフォーカスが body に落ち、キーボード操作の位置を見失う。
+    const opener = document.activeElement as HTMLElement | null;
 
     function focusable(): HTMLElement[] {
       const panel = panelRef.current;
@@ -62,7 +66,7 @@ export function Sheet({
       }
     };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    lockScroll();
 
     // 開いた直後、先頭の操作要素へフォーカス（入力動線を即時に）。
     const t = window.setTimeout(() => {
@@ -73,8 +77,9 @@ export function Sheet({
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      unlockScroll();
       window.clearTimeout(t);
+      if (opener && document.contains(opener)) opener.focus();
     };
   }, [open, onClose]);
 

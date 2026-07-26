@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { MenuIcon, XIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 
 const LINKS = [
   { href: "/features", label: "機能" },
@@ -18,10 +19,9 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    if (!open) return;
+    lockScroll();
+    return () => unlockScroll();
   }, [open]);
 
   return (

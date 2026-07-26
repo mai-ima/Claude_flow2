@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -70,14 +71,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setItems((s) => s.filter((t) => t.id !== id));
   }, []);
 
+  const timersRef = useRef<number[]>([]);
   const show = useCallback(
     (message: string, tone: ToastTone = "info") => {
       const id = (idRef.current += 1);
       setItems((s) => [...s.slice(-2), { id, tone, message }]);
-      setTimeout(() => remove(id), 3600);
+      // アンマウント後に発火しないよう保持してクリアする。
+      const t = window.setTimeout(() => remove(id), 3600);
+      timersRef.current.push(t);
     },
     [remove],
   );
+
+  useEffect(() => {
+    const timers = timersRef;
+    return () => {
+      timers.current.forEach((t) => window.clearTimeout(t));
+      timers.current = [];
+    };
+  }, []);
 
   const api = useMemo<ToastApi>(
     () => ({
@@ -98,7 +110,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             className="pointer-events-none fixed inset-x-0 z-[70] flex flex-col items-center gap-2 px-4"
             style={{ bottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
             role="status"
-            aria-live="polite"
+            /* エラーも同じ領域に出るため assertive。polite だと
+               読み上げが後回しになり、失敗に気づけないことがある。 */
+            aria-live="assertive"
           >
             {items.map((t) => (
               <ToastView key={t.id} item={t} onClose={() => remove(t.id)} />

@@ -4,32 +4,29 @@ import { useState } from "react";
 import { haptic } from "@/lib/haptics";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/cn";
+import { evalAmount } from "@/lib/calc";
 
-/** 四則演算つき式を整数評価（×÷ を先に処理）。安全のため数字と演算子のみ。 */
+/**
+ * キーパッドの式を整数評価する。
+ *
+ * 計算そのものは lib/calc.ts の evalAmount に委譲する。
+ * 以前はここに独自実装があり、括弧が使えない・0除算で左辺を返すなど
+ * 予算欄の数式入力（evalAmount）と結果が食い違っていた。
+ * キーパッドの都合（未入力や不正な式は 0、金額なので負はクランプ）だけを
+ * ここで吸収する。
+ */
 export function evalExpr(expr: string): number {
-  const tokens = expr.match(/\d+|[+\-*/]/g);
-  if (!tokens || tokens.length === 0) return 0;
-  // pass 1: * /
-  const mid: (number | string)[] = [];
-  for (let i = 0; i < tokens.length; i++) {
-    const t = tokens[i];
-    if (t === "*" || t === "/") {
-      const prev = Number(mid.pop() ?? 0);
-      const next = Number(tokens[++i] ?? 0);
-      mid.push(t === "*" ? prev * next : next === 0 ? prev : prev / next);
-    } else {
-      mid.push(/^\d+$/.test(t) ? Number(t) : t);
+  const v = evalAmount(expr);
+  if (v === null) {
+    // 末尾が演算子の途中入力（例 "1200+"）は、演算子を落として再評価する。
+    const trimmed = expr.replace(/[+\-*/×÷.]+$/, "");
+    if (trimmed !== expr && trimmed !== "") {
+      const again = evalAmount(trimmed);
+      if (again !== null) return Math.max(0, again);
     }
+    return 0;
   }
-  // pass 2: + -
-  let acc = Number(mid[0] ?? 0);
-  for (let i = 1; i < mid.length; i += 2) {
-    const op = mid[i];
-    const n = Number(mid[i + 1] ?? 0);
-    if (op === "+") acc += n;
-    else if (op === "-") acc -= n;
-  }
-  return Math.max(0, Math.round(acc));
+  return Math.max(0, v);
 }
 
 const QUICK = [500, 1000, 3000, 5000, 10000];
@@ -71,6 +68,7 @@ export function AmountPad({
   function clearAll() {
     update("");
   }
+  /** クイック金額は現在の入力を置き換える（加算ではない）。 */
   function setQuick(n: number) {
     update(String(n));
   }
@@ -113,7 +111,7 @@ export function AmountPad({
             key={n}
             type="button"
             onClick={() => setQuick(n)}
-            aria-label={`${formatMoney(n, currency)} を加算`}
+            aria-label={`${formatMoney(n, currency)} を入力`}
             className="rounded-full bg-surface-2 px-3.5 py-1.5 text-[13px] font-medium text-text-secondary transition duration-[var(--dur-1)] ease-spring active:scale-95 hover:bg-surface-3"
           >
             {formatMoney(n, currency)}

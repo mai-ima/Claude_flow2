@@ -130,7 +130,7 @@ export function BudgetsClient({
   const toast = useToast();
   const confirm = useConfirm();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [, start] = useTransition();
+  const [pending, start] = useTransition();
   const [error, setError] = useState<string>();
   const [form, setForm] = useState<{ categoryId: string; amount: number }>({
     categoryId: "",
@@ -313,8 +313,9 @@ export function BudgetsClient({
         onClose={() => setSheetOpen(false)}
         title="予算を設定"
         footer={
-          <Button full size="lg" onClick={save} disabled={form.amount <= 0}>
-            保存する
+          // 連打による二重送信（unique 衝突）を防ぐため pending 中は無効化する
+          <Button full size="lg" onClick={save} disabled={pending || form.amount <= 0}>
+            {pending ? "保存中…" : "保存する"}
           </Button>
         }
       >

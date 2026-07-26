@@ -43,8 +43,9 @@ export async function subscriptionTotals(ledgerId: string) {
   return { monthly, yearly, count: subs.length };
 }
 
+/** プラン上限の判定に使う件数。解約済みは含めない（表示と揃える）。 */
 export async function countSubscriptions(ledgerId: string) {
-  return db.subscription.count({ where: { ledgerId } });
+  return db.subscription.count({ where: { ledgerId, status: { not: "CANCELED" } } });
 }
 
 /** 決済手段ごとにサブスクをまとめる（サブスク・スタック用）。 */

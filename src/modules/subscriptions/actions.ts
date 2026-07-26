@@ -29,7 +29,12 @@ export const createSubscription = authedAction(
     const tier = await userTier(user.id);
     const max = PLANS[tier].maxSubscriptions;
     if (max !== null) {
-      const count = await db.subscription.count({ where: { ledgerId } });
+      // 解約済み(CANCELED)は「登録数」の表示から除かれているため、
+      // 上限判定でも数えない。数えると画面が「3件」なのに
+      // 「上限に達しました」と出て食い違う。
+      const count = await db.subscription.count({
+        where: { ledgerId, status: { not: "CANCELED" } },
+      });
       if (count >= max) throw new Error("SUB_LIMIT");
     }
 

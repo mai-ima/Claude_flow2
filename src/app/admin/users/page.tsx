@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth";
-import { listUsers } from "@/modules/admin/queries";
+import { listUsers, countUsers } from "@/modules/admin/queries";
 import { AdminUsersTable, type AdminUser } from "@/modules/admin/components/admin-users-table";
 import { formatDate } from "@/lib/date";
 import { pageMetadata } from "@/lib/seo";
@@ -9,7 +9,8 @@ export const metadata: Metadata = pageMetadata({ title: "ユーザー管理", no
 
 export default async function AdminUsersPage() {
   const admin = await requireAdmin();
-  const users = await listUsers(200);
+  const LIMIT = 200;
+  const [users, total] = await Promise.all([listUsers(LIMIT), countUsers()]);
 
   const rows: AdminUser[] = users.map((u) => ({
     id: u.id,
@@ -26,7 +27,9 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="text-[28px] font-bold tracking-[-0.02em]">ユーザー管理</h1>
         <p className="mt-1 text-[14px] text-text-secondary">
-          全{rows.length}件。プラン変更・管理者権限・削除ができます。
+          全{total}件
+          {total > rows.length && `（新しい ${rows.length} 件を表示）`}
+          。プラン変更・管理者権限・削除ができます。
         </p>
       </div>
       <AdminUsersTable users={rows} selfId={admin.id} />

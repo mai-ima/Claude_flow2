@@ -26,7 +26,15 @@ export async function processRenewals(now: Date = new Date()): Promise<number> {
       now,
     );
     if (sub.autoPostTransaction) {
+      // 同じ (サブスク, 発生日) の記帳が既にあればスキップする。
+      // cron が再実行されたときに二重計上されるのを防ぐ。
+      const existing = await db.transaction.findMany({
+        where: { subscriptionId: sub.id, occurredAt: { in: occurrences } },
+        select: { occurredAt: true },
+      });
+      const done = new Set(existing.map((t) => t.occurredAt.getTime()));
       for (const occurredAt of occurrences) {
+        if (done.has(occurredAt.getTime())) continue;
         await db.transaction.create({
           data: {
             ledgerId: sub.ledgerId,
@@ -70,7 +78,14 @@ export async function processRecurring(now: Date = new Date()): Promise<number> 
       r.cycle as BillingCycle,
       now,
     );
+    // 同じ (定期取引, 発生日) の記帳が既にあればスキップ（再実行時の二重計上防止）。
+    const existingRec = await db.transaction.findMany({
+      where: { recurringTransactionId: r.id, occurredAt: { in: occurrences } },
+      select: { occurredAt: true },
+    });
+    const doneRec = new Set(existingRec.map((t) => t.occurredAt.getTime()));
     for (const occurredAt of occurrences) {
+      if (doneRec.has(occurredAt.getTime())) continue;
       await db.transaction.create({
         data: {
           ledgerId: r.ledgerId,
@@ -123,6 +138,16 @@ export async function processAutoContributions(now: Date = new Date()): Promise<
     let added = 0;
     let guard = 0;
     while (next <= now && guard < 24) {
+      // 同じ (目標, 実行日) の自動積立が既にあればスキップ（再実行時の二重計上防止）。
+      const dup = await db.goalContribution.findFirst({
+        where: { goalId: g.id, occurredAt: next, auto: true },
+        select: { id: true },
+      });
+      if (dup) {
+        next = advanceMonthly(next);
+        guard++;
+        continue;
+      }
       await db.goalContribution.create({
         data: { goalId: g.id, amount, occurredAt: next, auto: true, note: "自動積立" },
       });
