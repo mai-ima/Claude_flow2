@@ -10,14 +10,17 @@ import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 
 export const updateProfile = authedAction(
   z.object({
-    name: z.string().max(40).optional(),
+    // 空欄での保存は「名前を消したい」ではなく入力漏れとして扱い、
+    // 黙って無視せずエラーを返す（以前は undefined になり更新がスキップされ、
+    // それでも「保存しました」と表示されていた）。
+    name: z.string().trim().min(1, "お名前を入力してください。").max(40),
     assumedHourlyWage: z.coerce.number().int().min(0).max(1_000_000).optional(),
   }),
   async (input, user) => {
     await db.user.update({
       where: { id: user.id },
       data: {
-        name: input.name?.trim() || undefined,
+        name: input.name,
         assumedHourlyWage: input.assumedHourlyWage ?? null,
       },
     });

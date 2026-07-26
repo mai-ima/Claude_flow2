@@ -31,11 +31,17 @@ const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 /** 金額を日セル内に収めるための短縮表記（1.2万 など）。 */
 function compact(amount: number): string {
+  // 丸めてから桁を判定する。先に桁で分岐すると 9,950 が「10千」になる。
   if (amount >= 10000) {
     const man = amount / 10000;
     return `${man >= 10 ? Math.round(man) : Math.round(man * 10) / 10}万`;
   }
-  if (amount >= 1000) return `${Math.round(amount / 100) / 10}千`;
+  if (amount >= 1000) {
+    const sen = Math.round(amount / 100) / 10;
+    // 9,950 → 10.0千 になるケースは「1万」へ繰り上げる。
+    if (sen >= 10) return "1万";
+    return `${sen}千`;
+  }
   return String(amount);
 }
 

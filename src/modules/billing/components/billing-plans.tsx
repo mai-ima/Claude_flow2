@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/money";
 import type { PlanTier } from "@/lib/enums";
 import { setDemoPlan } from "../actions";
 import { cn } from "@/lib/cn";
+import { postJson } from "@/lib/post-json";
 
 export function BillingPlans({
   currentTier,
@@ -29,14 +30,9 @@ export function BillingPlans({
   async function realCheckout(tier: string) {
     setLoading(tier);
     try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, cycle }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setMsg(data.message ?? "現在この操作は利用できません。");
+      const res = await postJson<{ url?: string }>("/api/stripe/checkout", { tier, cycle });
+      if (res.ok && res.data?.url) window.location.href = res.data.url;
+      else setMsg(res.message ?? "現在この操作は利用できません。");
     } finally {
       setLoading(null);
     }

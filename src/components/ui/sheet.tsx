@@ -105,6 +105,14 @@ export function Sheet({
         open ? "pointer-events-auto" : "pointer-events-none",
       )}
       aria-hidden={!open}
+      /*
+       * 閉じている間は中身をフォーカス不能にする。
+       * aria-hidden だけでは Tab で中の「キャンセル/OK」に入れてしまい、
+       * 支援技術から隠した要素にフォーカスが移る（axe: aria-hidden-focus）。
+       * Sheet は ConfirmProvider 経由で全ページに常設されているため、
+       * ここ1箇所で全画面の問題が解消する。
+       */
+      inert={!open}
     >
       {/* backdrop */}
       <div

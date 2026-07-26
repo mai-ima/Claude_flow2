@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
 import { CategoryIcon, PlusIcon, ArchiveIcon } from "@/components/icons";
+import { useToast } from "@/components/ui/toast";
 import { colorOf } from "@/lib/colors";
 import { createCategory, toggleArchiveCategory } from "../actions";
 import { cn } from "@/lib/cn";
@@ -24,6 +25,7 @@ const COLORS = ["blue", "teal", "green", "mint", "yellow", "orange", "pink", "re
 
 export function CategoryManager({ categories }: { categories: Cat[] }) {
   const router = useRouter();
+  const toast = useToast();
   const [, start] = useTransition();
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: "", type: "EXPENSE" as "INCOME" | "EXPENSE", icon: "tag", color: "blue" });
@@ -42,7 +44,11 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
   }
   function archive(id: string, archived: boolean) {
     start(async () => {
-      await toggleArchiveCategory({ id, archived });
+      const res = await toggleArchiveCategory({ id, archived });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
       router.refresh();
     });
   }

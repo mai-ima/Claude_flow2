@@ -16,6 +16,7 @@ export function ProfileForm({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string>();
   const [v, setV] = useState({ name, wage: wage ? String(wage) : "" });
 
   function save() {
@@ -27,7 +28,10 @@ export function ProfileForm({
       });
       if (res.ok) {
         setSaved(true);
+        setError(undefined);
         router.refresh();
+      } else {
+        setError(res.fieldErrors?.name?.[0] ?? res.error);
       }
     });
   }
@@ -50,6 +54,11 @@ export function ProfileForm({
           {pending ? "保存中…" : "保存する"}
         </Button>
         {saved && <span className="text-[13px] text-success">保存しました</span>}
+        {error && (
+          <span role="alert" className="text-[13px] text-expense">
+            {error}
+          </span>
+        )}
       </div>
     </div>
   );

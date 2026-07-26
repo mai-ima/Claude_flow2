@@ -123,7 +123,11 @@ export function SubscriptionsClient({
   }
   function used(id: string) {
     start(async () => {
-      await markUsed({ id });
+      const res = await markUsed({ id });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
       router.refresh();
     });
   }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CategoryIcon, XIcon, CheckIcon, SparklesIcon, ClockIcon } from "@/components/icons";
+import { useToast } from "@/components/ui/toast";
 import { formatMoney } from "@/lib/money";
 import { recordReview } from "../actions";
 import { cn } from "@/lib/cn";
@@ -30,6 +31,7 @@ export function SubscriptionReview({
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [reviewIds, setReviewIds] = useState<string[]>([]);
+  const toast = useToast();
   const [, start] = useTransition();
 
   const done = index >= items.length;
@@ -37,15 +39,20 @@ export function SubscriptionReview({
 
   function decide(decision: "KEEP" | "REVIEW") {
     if (!current) return;
-    start(() => {
-      recordReview({ id: current.id, decision });
+    // 保存の成否を見ずに次のカードへ進めると「仕分け済み」の嘘になるため待つ。
+    start(async () => {
+      const res = await recordReview({ id: current.id, decision });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (decision === "REVIEW") {
+        setReviewIds((s) => [...s, current.id]);
+        setFlipped(true);
+        return;
+      }
+      advance();
     });
-    if (decision === "REVIEW") {
-      setReviewIds((s) => [...s, current.id]);
-      setFlipped(true);
-      return;
-    }
-    advance();
   }
 
   function advance() {

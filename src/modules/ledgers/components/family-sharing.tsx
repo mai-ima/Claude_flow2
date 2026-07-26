@@ -63,7 +63,11 @@ export function FamilySharing({
   }
   function kick(userId: string) {
     start(async () => {
-      await removeMember({ ledgerId, userId });
+      const res = await removeMember({ ledgerId, userId });
+      if (!res.ok) {
+        setMsg(ERROR_LABEL[res.error] ?? res.error);
+        return;
+      }
       router.refresh();
     });
   }

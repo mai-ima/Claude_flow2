@@ -11,6 +11,7 @@ import { CheckIcon } from "@/components/icons";
 import { PLAN_LIST } from "@/lib/plans";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/cn";
+import { postJson } from "@/lib/post-json";
 
 export function PricingTable({
   stripeEnabled,
@@ -31,14 +32,9 @@ export function PricingTable({
     }
     setLoading(tier);
     try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, cycle }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else toast.error(data.message ?? "現在この操作は利用できません。");
+      const res = await postJson<{ url?: string }>("/api/stripe/checkout", { tier, cycle });
+      if (res.ok && res.data?.url) window.location.href = res.data.url;
+      else toast.error(res.message ?? "現在この操作は利用できません。");
     } finally {
       setLoading(null);
     }

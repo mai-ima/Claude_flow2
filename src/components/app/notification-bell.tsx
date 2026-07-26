@@ -51,7 +51,8 @@ export function NotificationBell({
   }
   function readAll() {
     start(async () => {
-      await markAllRead({});
+      const res = await markAllRead({});
+      if (!res.ok) return; // 既読化の失敗は表示を壊さないので静かに無視
       router.refresh();
     });
   }

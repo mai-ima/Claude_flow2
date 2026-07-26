@@ -4,6 +4,10 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { DownloadIcon, ChevronRightIcon } from "@/components/icons";
+import { postJson } from "@/lib/post-json";
+
+/** CSV 取り込みの上限（サーバー側と揃える）。 */
+const MAX_CSV_BYTES = 2 * 1024 * 1024;
 
 export function DataTools({ isPro }: { isPro: boolean }) {
   const router = useRouter();
@@ -31,18 +35,22 @@ export function DataTools({ isPro }: { isPro: boolean }) {
     setBusy(true);
     setMsg(undefined);
     try {
+      // サーバー側の上限(2MB)に達する前に、手元で弾いて無駄な送信を避ける。
+      if (file.size > MAX_CSV_BYTES) {
+        setMsg("ファイルが大きすぎます（2MBまで）。期間を分けて取り込んでください。");
+        return;
+      }
       const csv = await file.text();
-      const res = await fetch("/api/import/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setMsg(`${data.created}件を取り込みました${data.skipped ? `（${data.skipped}件スキップ）` : ""}。`);
+      const res = await postJson<{ ok?: boolean; created?: number; skipped?: number; message?: string }>(
+        "/api/import/transactions",
+        { csv },
+      );
+      if (res.ok && res.data?.ok) {
+        const d = res.data;
+        setMsg(`${d.created}件を取り込みました${d.skipped ? `（${d.skipped}件スキップ）` : ""}。`);
         router.refresh();
       } else {
-        setMsg(data.message ?? "取り込みに失敗しました。");
+        setMsg(res.data?.message ?? res.message ?? "取り込みに失敗しました。");
       }
     } finally {
       setBusy(false);

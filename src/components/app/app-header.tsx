@@ -6,6 +6,7 @@ import { useAppChrome } from "./app-chrome";
 import { MobileDrawer } from "./mobile-drawer";
 import { NotificationBell, type NotifItem } from "./notification-bell";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 import {
   ChevronDownIcon,
   UsersIcon,
@@ -42,6 +43,7 @@ export function AppHeader({
 }) {
   const [open, setOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const toast = useToast();
   const [pending, start] = useTransition();
   const active = ledgers.find((l) => l.id === activeId) ?? ledgers[0];
   const { title, promoted } = useAppChrome();
@@ -49,8 +51,9 @@ export function AppHeader({
   function choose(id: string) {
     setOpen(false);
     if (id === activeId) return;
-    start(() => {
-      switchLedger({ ledgerId: id });
+    start(async () => {
+      const res = await switchLedger({ ledgerId: id });
+      if (!res.ok) toast.error(res.error);
     });
   }
 

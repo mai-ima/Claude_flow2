@@ -36,6 +36,17 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning className="h-full">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/*
+          スクロール出現演出(.reveal)は opacity:0 から始まり、可視化は
+          IntersectionObserver（= JS）で行う。JS が無効／読み込み前だと
+          マーケティングページの本文が最後まで見えないため、
+          JS 無効時は最初から表示させる。
+        */}
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html: `<style>.reveal{opacity:1!important;transform:none!important}</style>`,
+          }}
+        />
       </head>
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>

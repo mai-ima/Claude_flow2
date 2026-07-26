@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { PLANS } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
+import { postJson } from "@/lib/post-json";
 
 export function BillingCard({
   tier,
@@ -21,10 +22,9 @@ export function BillingCard({
   async function portal() {
     setLoading(true);
     try {
-      const res = await fetch("/api/stripe/portal", { method: "POST" });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else toast.error(data.message ?? "現在ご利用いただけません。");
+      const res = await postJson<{ url?: string }>("/api/stripe/portal");
+      if (res.ok && res.data?.url) window.location.href = res.data.url;
+      else toast.error(res.message ?? "現在ご利用いただけません。");
     } finally {
       setLoading(false);
     }
