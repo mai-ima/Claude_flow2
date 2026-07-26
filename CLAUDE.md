@@ -11,7 +11,7 @@
 - **Server Action は必ず `src/lib/safe-action.ts` の `authedAction` で包む**（認証 + Zod 検証 + 例外捕捉を一元化、`{ ok, data | fieldErrors }` を返す）。
 - **データ層で認可**: 全ドメインクエリは `ledgerId` でスコープし、`requireLedgerMember` で権限検証。
 - **金額は最小単位の整数**（JPY=円）。整形は `src/lib/money.ts`。
-- **列挙は String 列 + `src/lib/enums.ts` の Zod/TS union**（SQLite は Prisma enum 非対応。Postgres 移行も無改修）。
+- **列挙は String 列 + `src/lib/enums.ts` の Zod/TS union**（Prisma enum を使わず DB 非依存に保つ。接続先は PostgreSQL）。
 
 ## 厳守事項
 - **絵文字禁止**。アイコンは `src/components/icons` のインライン SVG のみ。

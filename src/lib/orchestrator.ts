@@ -2,7 +2,16 @@ import "server-only";
 import { db } from "./db";
 import { daysUntil, monthRange } from "./date";
 import { renewalCatchup, isReminderDue } from "@/modules/subscriptions/renewal";
-import type { BillingCycle } from "./enums";
+import type { BillingCycle, NotificationType } from "./enums";
+
+interface NotificationDraft {
+  userId: string;
+  ledgerId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  href: string;
+}
 
 /**
  * モジュール横断の連携をここに集約（transactions ⇄ subscriptions の相互 import を避ける）。
@@ -214,7 +223,7 @@ export async function notifyBudgetOverages(now: Date = new Date()): Promise<numb
     keysByUser.set(n.userId, set);
   }
 
-  const toCreate: { userId: string; ledgerId: string; type: string; title: string; body: string; href: string }[] = [];
+  const toCreate: NotificationDraft[] = [];
   for (const b of budgets) {
     if (b.amount <= 0) continue;
     const label = b.isTotalBudget || !b.categoryId ? "全体予算" : (b.category?.name ?? "カテゴリ予算");
@@ -267,7 +276,7 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
     keysByUser.set(n.userId, set);
   }
 
-  const toCreate: { userId: string; ledgerId: string; type: string; title: string; body: string; href: string }[] = [];
+  const toCreate: NotificationDraft[] = [];
   for (const s of subs) {
     const d = daysUntil(s.trialEndsAt!, now);
     if (d < 0 || d > s.reminderDaysBefore) continue;

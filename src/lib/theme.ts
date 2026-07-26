@@ -73,7 +73,7 @@ export function setStoredTheme(theme: Theme): void {
 
 /* ───────────── スキン（見た目のテーマ） ───────────── */
 
-export function isSkin(v: unknown): v is Skin {
+function isSkin(v: unknown): v is Skin {
   return v === "classic" || v === "apple" || v === "liquidglass";
 }
 
@@ -89,7 +89,7 @@ export function getStoredSkin(): Skin {
 }
 
 /** <html data-skin> に反映。CSS 側はこの属性でトークンを切り替える。 */
-export function applySkin(skin: Skin): void {
+function applySkin(skin: Skin): void {
   if (typeof document === "undefined") return;
   document.documentElement.dataset.skin = skin;
 }

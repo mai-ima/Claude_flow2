@@ -100,7 +100,7 @@ export async function signInWithEmail(
 }
 
 /** セッション発行 + Cookie 設定（期限切れの掃除込み）。 */
-export async function establishSession(userId: string) {
+async function establishSession(userId: string) {
   await db.session.deleteMany({
     where: { userId, expires: { lt: new Date() } },
   });

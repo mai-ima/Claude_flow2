@@ -21,6 +21,9 @@ const dbUrl = process.env.DATABASE_URL ?? FALLBACK_KEYS.map((k) => process.env[k
 
 if (dbUrl) {
   if (!process.env.DATABASE_URL) process.env.DATABASE_URL = dbUrl;
+  // スキーマの反映は db push に一本化している。
+  // migrations ディレクトリは現行スキーマから乖離したまま誰も実行しておらず、
+  // 残しておくと migrate deploy を実行したときに誤ったスキーマになるため削除した。
   run("npx prisma db push --accept-data-loss");
   run("node scripts/seed.mjs");
 } else {

@@ -12,7 +12,6 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "node scripts/seed.mjs",
     "db:studio": "prisma studio",

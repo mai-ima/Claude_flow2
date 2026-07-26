@@ -1,5 +1,5 @@
 /** カテゴリ等の色名 → HEX。チャートとアイコン背景で共有（純関数・client/server 両用）。 */
-export const PALETTE: Record<string, string> = {
+const PALETTE: Record<string, string> = {
   orange: "#ff9500",
   teal: "#30b0c7",
   indigo: "#5856d6",
@@ -19,7 +19,7 @@ export function colorOf(name: string): string {
 }
 
 /** 色名 → Tailwind グラデーション（サブスク・スタック等のカード用）。 */
-export const GRADIENTS: Record<string, string> = {
+const GRADIENTS: Record<string, string> = {
   blue: "from-[#007aff] to-[#0a84ff]",
   purple: "from-[#5856d6] to-[#7d7aff]",
   indigo: "from-[#5856d6] to-[#7d7aff]",

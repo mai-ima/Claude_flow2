@@ -22,9 +22,6 @@ const serverSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   // 監視（任意・Sentry）
   SENTRY_DSN: z.string().optional(),
-  // OAuth（任意）
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
   // cron 保護 / デモ投入の本番許可
   CRON_SECRET: z.string().optional(),
   // デモ投入用。未設定なら CRON_SECRET にフォールバック（既存デプロイ互換）。
@@ -92,8 +89,6 @@ export const env = parseEnv(
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     SENTRY_DSN: process.env.SENTRY_DSN,
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
     SEED_DEMO_SECRET: process.env.SEED_DEMO_SECRET,
     ALLOW_DEMO_SEED: process.env.ALLOW_DEMO_SEED,
@@ -114,11 +109,7 @@ export const clientEnv = parseEnv(
 
 export const isStripeEnabled = Boolean(env.STRIPE_SECRET_KEY);
 export const isEmailEnabled = Boolean(env.RESEND_API_KEY);
-export const isAdsEnabled = Boolean(clientEnv.NEXT_PUBLIC_ADSENSE_CLIENT);
 export const isRateLimitEnabled = Boolean(
   env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN,
 );
 export const isSentryEnabled = Boolean(env.SENTRY_DSN);
-export const isGoogleAuthEnabled = Boolean(
-  env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET,
-);

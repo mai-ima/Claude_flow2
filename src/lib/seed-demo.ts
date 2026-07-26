@@ -4,7 +4,7 @@ import { hashPassword } from "./password";
 import { DEFAULT_CATEGORIES } from "./default-categories";
 
 export const DEMO_EMAIL = "demo@tsumiki.app";
-export const DEMO_PASSWORD = "demo1234";
+const DEMO_PASSWORD = "demo1234";
 
 /**
  * 管理者アカウントの投入は、この経路からは一切行わない。
