@@ -31,6 +31,14 @@ export function KeyboardShortcuts({ enabled }: { enabled: boolean }) {
     function onKey(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (isTyping(e.target)) return;
+      // シートやダイアログが開いている間は無効にする。
+      // 入力欄の外にフォーカスがある状態で n を押すと、書きかけの内容を
+      // 捨てて別ページへ遷移してしまう。
+      // 閉じたシートは inert が付いた祖先の中にあるので除外する。
+      const modalOpen = Array.from(
+        document.querySelectorAll('[role="dialog"][aria-modal="true"]'),
+      ).some((el) => !el.closest("[inert]"));
+      if (modalOpen) return;
 
       const k = e.key.toLowerCase();
       const now = Date.now();

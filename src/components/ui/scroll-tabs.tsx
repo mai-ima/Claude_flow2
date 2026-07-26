@@ -29,7 +29,12 @@ export function ScrollTabs<T extends string>({
     <div className={cn("relative", className)}>
       <div
         ref={listRef}
-        role="tablist"
+        /*
+       * tabpanel を伴わない排他選択なので radiogroup が正しい。
+       * tablist は aria-controls で結び付く tabpanel と矢印キー移動が前提で、
+       * それが無いまま使うと支援技術に誤った操作方法を伝えてしまう。
+       */
+      role="radiogroup"
         className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0"
       >
         {options.map((o) => {
@@ -37,9 +42,9 @@ export function ScrollTabs<T extends string>({
           return (
             <button
               key={o.value}
-              role="tab"
+              role="radio"
               data-value={o.value}
-              aria-selected={active}
+              aria-checked={active}
               onClick={() => onChange(o.value)}
               className={cn(
                 "min-h-11 shrink-0 snap-start whitespace-nowrap rounded-full px-4 text-[14px] font-medium",

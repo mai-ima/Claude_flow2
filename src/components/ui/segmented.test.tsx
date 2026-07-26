@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Segmented } from "./segmented";
 
 describe("Segmented", () => {
-  it("選択中の項目に aria-selected が付く", () => {
+  it("選択中の項目に aria-checked が付く", () => {
     render(
       <Segmented
         value="dark"
@@ -15,8 +15,8 @@ describe("Segmented", () => {
         ]}
       />,
     );
-    expect(screen.getByRole("tab", { name: "ダーク" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "ライト" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("radio", { name: "ダーク" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "ライト" })).toHaveAttribute("aria-checked", "false");
   });
 
   it("ラベルが語中で折り返さない（「ライ/ト」防止）", () => {
@@ -31,7 +31,7 @@ describe("Segmented", () => {
       />,
     );
     // whitespace-nowrap が外れると狭い画面で2行に割れる回帰が起きる
-    expect(screen.getByRole("tab", { name: "ライト" }).className).toContain("whitespace-nowrap");
+    expect(screen.getByRole("radio", { name: "ライト" }).className).toContain("whitespace-nowrap");
   });
 
   it("クリックで onChange に値が渡る", () => {
@@ -46,7 +46,7 @@ describe("Segmented", () => {
         ]}
       />,
     );
-    screen.getByRole("tab", { name: "ダーク" }).click();
+    screen.getByRole("radio", { name: "ダーク" }).click();
     expect(onChange).toHaveBeenCalledWith("dark");
   });
 });

@@ -20,7 +20,12 @@ export function Segmented<T extends string>({
   return (
     <div
       className={cn("relative inline-flex rounded-xl bg-surface-2 p-1", className)}
-      role="tablist"
+      /*
+       * tabpanel を伴わない排他選択なので radiogroup が正しい。
+       * tablist は aria-controls で結び付く tabpanel と矢印キー移動が前提で、
+       * それが無いまま使うと支援技術に誤った操作方法を伝えてしまう。
+       */
+      role="radiogroup"
     >
       {/* スライドする選択インジケータ */}
       {idx >= 0 && (
@@ -37,8 +42,8 @@ export function Segmented<T extends string>({
       {options.map((o) => (
         <button
           key={o.value}
-          role="tab"
-          aria-selected={value === o.value}
+          role="radio"
+          aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
             // ラベルは短い語のため、狭い画面でも語中で折り返さない（「ライ/ト」を防ぐ）。

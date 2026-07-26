@@ -81,7 +81,9 @@ export function SwipeRow({
   return (
     <div className={cn("relative overflow-hidden", className)}>
       {/* アクション層 */}
-      <div className="absolute inset-y-0 right-0 flex">
+      {/* 引き出していない間はフォーカス対象にしない。
+          20件並ぶと最大60個の不可視ボタンに Tab が入ってしまう。 */}
+      <div className="absolute inset-y-0 right-0 flex" inert={tx === 0}>
         {actions.map((a) => (
           <button
             key={a.label}
