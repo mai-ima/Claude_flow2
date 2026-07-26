@@ -4,7 +4,7 @@ import {
   searchTransactions,
   listTransactions,
   dailyTotals,
-  listCategories,
+  listAllCategories,
   listPaymentMethods,
 } from "@/modules/transactions/queries";
 import {
@@ -91,7 +91,7 @@ export default async function TransactionsPage({
           paymentMethodId: sp.pm || undefined,
           page,
         }),
-    listCategories(ledgerId),
+    listAllCategories(ledgerId),
     listPaymentMethods(ledgerId),
     view === "calendar"
       ? Promise.all([dailyTotals(ledgerId, month), listTransactions(ledgerId, month)])
@@ -111,7 +111,15 @@ export default async function TransactionsPage({
     : searchResult!.summary;
   const items: TxnListItem[] = searchResult ? searchResult.items.map(toListItem) : [];
 
-  const catOpts = categories.map((c) => ({ id: c.id, name: c.name, type: c.type }));
+  // 入力欄にはアーカイブ済みを出さない。絞り込みは過去データを追えるよう全件を出す。
+  const catOpts = categories
+    .filter((c) => !c.isArchived)
+    .map((c) => ({ id: c.id, name: c.name, type: c.type }));
+  const filterCatOpts = categories.map((c) => ({
+    id: c.id,
+    name: c.isArchived ? `${c.name}（アーカイブ済み）` : c.name,
+    type: c.type,
+  }));
   const pmOpts = paymentMethods.map((p) => ({ id: p.id, name: p.name }));
 
   return (
@@ -174,7 +182,7 @@ export default async function TransactionsPage({
       ) : (
         <>
           <TransactionFilters
-            categories={catOpts}
+            categories={filterCatOpts}
             paymentMethods={pmOpts}
             current={{
               q: sp.q ?? "",

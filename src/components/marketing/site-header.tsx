@@ -18,18 +18,26 @@ const NAV = [
 export function SiteHeader() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  // 途中までスクロールした位置で再読み込みすると、初期値 false の描画が一度出てから
+  // 影が付き直してちらつく。最初の反映だけトランジションを外す。
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
+    const raf = requestAnimationFrame(() => setReady(true));
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b bg-glass backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-300",
+        "sticky top-0 z-40 border-b bg-glass backdrop-blur-xl backdrop-saturate-150",
+        ready && "transition-[box-shadow,border-color] duration-300 ease-out",
         scrolled ? "border-border-subtle shadow-sm" : "border-transparent",
       )}
       style={{ paddingTop: "env(safe-area-inset-top)" }}

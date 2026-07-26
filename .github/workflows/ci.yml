@@ -5,14 +5,18 @@ on:
     branches: ["**"]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # ビルド/型チェックは DB 接続不要（env.ts はデフォルトを持つ）
+      # ビルド/型チェック/テストは DB 接続不要（env.ts が既定値を持つ）
       DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
-      AUTH_SECRET: "ci-secret-placeholder"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      TZ: "Asia/Tokyo"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

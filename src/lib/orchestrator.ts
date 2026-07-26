@@ -339,9 +339,13 @@ export interface ReminderItem {
 /**
  * リマインダー対象に対して、アプリ内通知(RENEWAL)を作成する。
  * 同一サブスクで直近5日以内の通知があれば重複作成しない。生成件数を返す。
+ * items を渡すと dueReminders の再取得を省ける（cron が同じ一覧をメールにも使うため）。
  */
-export async function notifyDueRenewals(now: Date = new Date()): Promise<number> {
-  const reminders = await dueReminders(now);
+export async function notifyDueRenewals(
+  now: Date = new Date(),
+  items?: ReminderItem[],
+): Promise<number> {
+  const reminders = items ?? (await dueReminders(now));
   if (reminders.length === 0) return 0;
 
   // 直近5日の RENEWAL 通知を対象ユーザー分まとめて取得（ループ内 N+1 を回避）。

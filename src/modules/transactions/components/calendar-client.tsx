@@ -122,6 +122,7 @@ export function CalendarClient({
       amount: it.amount,
       occurredAt: toDateInput(new Date(it.occurredAt)),
       categoryId: it.categoryId ?? "",
+      categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
       memo: it.memo ?? "",
     });

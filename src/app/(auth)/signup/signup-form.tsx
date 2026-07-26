@@ -18,6 +18,16 @@ export function SignupForm() {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
+      {/* 「登録済みのメールです」等はフォーム全体の結果。
+          パスワード欄の下に出すと原因を取り違えるため、先頭にまとめて出す。 */}
+      {state?.error && (
+        <p
+          role="alert"
+          className="rounded-xl border border-expense/30 bg-expense/5 px-3.5 py-2.5 text-[13px] text-expense"
+        >
+          {state.error}
+        </p>
+      )}
       <Field label="お名前（任意）">
         <Input name="name" placeholder="やまだ たろう" autoComplete="name" />
       </Field>
@@ -32,7 +42,6 @@ export function SignupForm() {
       </Field>
       <Field
         label="パスワード（8文字以上）"
-        error={state?.error}
         hint="安全のため、推測されにくいパスワードを設定してください。"
       >
         <Input

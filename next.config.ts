@@ -50,8 +50,38 @@ const securityHeaders = [
   },
 ];
 
+/**
+ * Prisma の生成クライアントはエンジンをパス解決で読み込むため、
+ * ビルド時のファイルトレースがプロジェクト全体を巻き込み、
+ * サーバー関数に開発用の依存まで同梱されてしまう（起動が遅くなる）。
+ * 実行時に不要なものを明示的に外す。
+ */
+const tracingExcludes = [
+  "node_modules/.cache/**",
+  "node_modules/typescript/**",
+  "node_modules/prettier/**",
+  "node_modules/eslint/**",
+  "node_modules/eslint-*/**",
+  "node_modules/@eslint/**",
+  "node_modules/@typescript-eslint/**",
+  "node_modules/vitest/**",
+  "node_modules/@vitest/**",
+  "node_modules/playwright/**",
+  "node_modules/playwright-core/**",
+  "node_modules/prisma/**",
+  "node_modules/@prisma/engines/**",
+  "node_modules/esbuild/**",
+  "node_modules/@esbuild/**",
+  "node_modules/@swc/**",
+  "public/**",
+  "scripts/**",
+  "**/*.test.ts",
+  "**/*.test.tsx",
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingExcludes: { "**/*": tracingExcludes },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

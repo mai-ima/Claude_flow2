@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useOptimistic } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TransactionSheet, type TxnFormValue } from "./transaction-sheet";
 import {
@@ -69,6 +69,14 @@ export function TransactionsClient({
   const [editing, setEditing] = useState<TxnFormValue | undefined>();
   const [pending, start] = useTransition();
 
+  // 削除は往復を待たずに行を消す。トランジション終了時に props の items へ戻るため、
+  // 失敗した場合は自動的に元へ復帰する（別途の巻き戻し処理は不要）。
+  const [visibleItems, hideOptimistically] = useOptimistic(
+    items,
+    (state: TxnListItem[], removedIds: string[]) =>
+      state.filter((it) => !removedIds.includes(it.id)),
+  );
+
   // 一括操作（選択モード）
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -89,7 +97,7 @@ export function TransactionsClient({
     setSelected(new Set());
   }
   function selectAll() {
-    setSelected(new Set(items.map((it) => it.id)));
+    setSelected(new Set(visibleItems.map((it) => it.id)));
   }
 
   async function bulkRemove() {
@@ -103,6 +111,7 @@ export function TransactionsClient({
     });
     if (!ok) return;
     start(async () => {
+      hideOptimistically(ids);
       const res = await bulkDeleteTransactions({ ids });
       if (!res.ok) {
         toast.error(res.error);
@@ -152,6 +161,7 @@ export function TransactionsClient({
       amount: it.amount,
       occurredAt: it.occurredAt.slice(0, 10),
       categoryId: it.categoryId ?? "",
+      categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
       memo: it.memo ?? "",
     });
@@ -165,6 +175,7 @@ export function TransactionsClient({
       amount: it.amount,
       occurredAt: todayLocal(),
       categoryId: it.categoryId ?? "",
+      categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
       memo: it.memo ?? "",
     });
@@ -179,6 +190,7 @@ export function TransactionsClient({
     });
     if (!ok) return;
     start(async () => {
+      hideOptimistically([id]);
       const res = await deleteTransaction({ id });
       if (!res.ok) {
         toast.error(res.error);
@@ -191,7 +203,7 @@ export function TransactionsClient({
 
   // 日付ごとにグループ化
   const groups = new Map<string, TxnListItem[]>();
-  for (const it of items) {
+  for (const it of visibleItems) {
     const arr = groups.get(it.dateLabel) ?? [];
     arr.push(it);
     groups.set(it.dateLabel, arr);
@@ -199,7 +211,7 @@ export function TransactionsClient({
 
   return (
     <div className={cn(pending && "opacity-70")}>
-      {canEdit && items.length > 0 && (
+      {canEdit && visibleItems.length > 0 && (
         <div className="mb-3 flex items-center justify-between">
           {selectMode ? (
             <>
@@ -207,7 +219,7 @@ export function TransactionsClient({
                 onClick={selectAll}
                 className="text-[13px] font-medium text-accent"
               >
-                すべて選択（{items.length}）
+                すべて選択（{visibleItems.length}）
               </button>
               <button
                 onClick={exitSelect}
@@ -228,7 +240,7 @@ export function TransactionsClient({
         </div>
       )}
 
-      {items.length === 0 ? (
+      {visibleItems.length === 0 ? (
         <EmptyState
           icon={<WalletIcon size={28} />}
           title="まだ記録がありません"

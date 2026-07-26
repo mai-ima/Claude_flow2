@@ -18,6 +18,16 @@ export function LoginForm() {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
+      {/* 「アカウントが見つかりません」等はフォーム全体の結果。
+          パスワード欄の下に出すと原因を取り違えるため、先頭にまとめて出す。 */}
+      {state?.error && (
+        <p
+          role="alert"
+          className="rounded-xl border border-expense/30 bg-expense/5 px-3.5 py-2.5 text-[13px] text-expense"
+        >
+          {state.error}
+        </p>
+      )}
       <Field label="メールアドレス">
         <Input
           name="email"
@@ -27,7 +37,7 @@ export function LoginForm() {
           autoComplete="email"
         />
       </Field>
-      <Field label="パスワード" error={state?.error}>
+      <Field label="パスワード">
         <Input
           name="password"
           type="password"

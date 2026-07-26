@@ -19,6 +19,8 @@ export interface TxnFormValue {
   amount: number;
   occurredAt: string; // yyyy-mm-dd
   categoryId: string;
+  /** 選択中カテゴリの表示名。アーカイブ済みで一覧に無い場合の補完に使う。 */
+  categoryName?: string;
   paymentMethodId: string;
   memo: string;
 }
@@ -76,6 +78,12 @@ export function TransactionSheet({
   }
 
   const cats = categories.filter((c) => c.type === v.type);
+  // アーカイブ済みカテゴリは一覧に出ないため、編集中の値が選択肢から消えて
+  // 保存時に黙って「未分類」へ書き換わってしまう。現在値は必ず選択肢に残す。
+  const orphanCategory =
+    v.categoryId && !cats.some((c) => c.id === v.categoryId)
+      ? { id: v.categoryId, name: v.categoryName ?? "アーカイブ済みのカテゴリ" }
+      : null;
 
   function submit(keepOpen = false) {
     setError(undefined);
@@ -177,6 +185,9 @@ export function TransactionSheet({
             onChange={(e) => setV((s) => ({ ...s, categoryId: e.target.value }))}
           >
             <option value="">未分類</option>
+            {orphanCategory && (
+              <option value={orphanCategory.id}>{orphanCategory.name}（アーカイブ済み）</option>
+            )}
             {cats.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}

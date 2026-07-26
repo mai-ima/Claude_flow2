@@ -33,14 +33,24 @@ async function handle(req: Request) {
   }
 
   const now = new Date();
-  const posted = await processRenewals(now);
-  const recurring = await processRecurring(now);
-  const contributed = await processAutoContributions(now);
-  const notified = await notifyDueRenewals(now);
-  const budgetAlerts = await notifyBudgetOverages(now);
-  const trialAlerts = await notifyTrialEnds(now);
-  const pruned = await pruneExpiredData(now);
+
+  // 第1段: 記帳を伴うバッチ。互いに独立なので並行実行する。
+  // 第2段の通知・集計はこれらが作った取引を読むため、段は直列に保つ。
+  const [posted, recurring, contributed] = await Promise.all([
+    processRenewals(now),
+    processRecurring(now),
+    processAutoContributions(now),
+  ]);
+
+  // 更新日を進めた後の一覧。アプリ内通知とメールで共用する。
   const reminders = await dueReminders(now);
+
+  const [notified, budgetAlerts, trialAlerts, pruned] = await Promise.all([
+    notifyDueRenewals(now, reminders),
+    notifyBudgetOverages(now),
+    notifyTrialEnds(now),
+    pruneExpiredData(now),
+  ]);
 
   // メール送信（env 差込み式・キーが無ければ no-op）。オーナーごとに1通。
   let emailsSent = 0;
@@ -52,19 +62,25 @@ async function handle(req: Request) {
       arr.push(r);
       byEmail.set(r.ownerEmail, arr);
     }
-    for (const [to, list] of byEmail) {
-      const rows = list
-        .map(
-          (r) =>
-            `<li>${escapeHtml(r.name)}（${formatMoney(r.amount)}）— ${r.daysUntil === 0 ? "本日更新" : `あと${r.daysUntil}日`}</li>`,
-        )
-        .join("");
-      const { sent } = await sendEmail({
-        to,
-        subject: "まもなく更新されるサブスクがあります",
-        html: emailLayout("更新のお知らせ", `<ul>${rows}</ul>`),
-      });
-      if (sent) emailsSent++;
+    // 宛先ごとに1通。送信は独立なので並行に投げ、1件の失敗で全体を止めない。
+    const results = await Promise.allSettled(
+      [...byEmail].map(([to, list]) => {
+        const rows = list
+          .map(
+            (r) =>
+              `<li>${escapeHtml(r.name)}（${formatMoney(r.amount)}）— ${r.daysUntil === 0 ? "本日更新" : `あと${r.daysUntil}日`}</li>`,
+          )
+          .join("");
+        return sendEmail({
+          to,
+          subject: "まもなく更新されるサブスクがあります",
+          html: emailLayout("更新のお知らせ", `<ul>${rows}</ul>`),
+        });
+      }),
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value.sent) emailsSent++;
+      else if (r.status === "rejected") logger.error("reminder email failed", { error: r.reason });
     }
     logger.info("reminder emails", { count: emailsSent });
   }
