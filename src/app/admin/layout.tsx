@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { ShieldIcon, ChartIcon, UsersIcon, LogoutIcon, ClockIcon, BoltIcon, SparklesIcon, BellIcon, SlidersIcon } from "@/components/icons";
+import { ShieldIcon, ChartIcon, UsersIcon, LogoutIcon, ClockIcon, BoltIcon, SparklesIcon, BellIcon, SlidersIcon, CardIcon } from "@/components/icons";
 import { effectiveAdminRole, hasAdminRole, ADMIN_ROLE_LABEL } from "@/lib/admin-role";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -49,6 +49,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
             >
               <BoltIcon size={17} /> 運用
+            </Link>
+            <Link
+              href="/admin/billing"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+            >
+              <CardIcon size={17} /> 課金
             </Link>
             <Link
               href="/admin/content"
