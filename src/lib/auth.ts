@@ -6,6 +6,8 @@ import { db } from "./db";
 import { DEFAULT_CATEGORIES } from "./default-categories";
 import { parseBetaFeatures, type BetaFeatureKey } from "./beta-features";
 import { effectiveAdminRole, hasAdminRole, type AdminRole } from "./admin-role";
+import { isSchemaDrift, driftTarget } from "./schema-drift";
+import { logger } from "./logger";
 import { hashPassword, verifyPassword } from "./password";
 
 const SESSION_COOKIE = "tsumiki_session";
@@ -83,7 +85,18 @@ export async function signInWithEmail(
     throw new Error("WEAK_PASSWORD");
   }
 
-  let user = await db.user.findUnique({ where: { email: normalized } });
+  let user;
+  try {
+    user = await db.user.findUnique({ where: { email: normalized } });
+  } catch (err) {
+    // 列が足りない = マイグレーション未適用。
+    // 「ログインに失敗しました」で片付けると原因に辿り着けない。
+    if (isSchemaDrift(err)) {
+      logger.error("schema drift", err, { missing: driftTarget(err) });
+      throw new Error("SCHEMA_DRIFT");
+    }
+    throw err;
+  }
 
   if (mode === "signup") {
     if (user) throw new Error("EMAIL_TAKEN");
@@ -177,10 +190,21 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const session = await db.session.findUnique({
-    where: { sessionToken: token },
-    include: { user: { include: { billing: true } } },
-  });
+  let session;
+  try {
+    session = await db.session.findUnique({
+      where: { sessionToken: token },
+      include: { user: { include: { billing: true } } },
+    });
+  } catch (err) {
+    // マイグレーション未適用のままデプロイされると、ここが列不足で落ちて
+    // 画面には内容のない 500 だけが出る。原因が分かる形でログに残す。
+    if (isSchemaDrift(err)) {
+      logger.error("schema drift", err, { missing: driftTarget(err) });
+      throw new Error("SCHEMA_DRIFT");
+    }
+    throw err;
+  }
   if (!session) return null;
   if (session.expires < new Date()) {
     // 期限切れセッションは破棄

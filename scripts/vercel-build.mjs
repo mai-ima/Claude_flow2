@@ -1,6 +1,4 @@
 // Vercelデプロイ用のビルド手順。
-// データベース(DATABASE_URL)が未設定でもビルド自体は成功させ、マーケティングページ等の
-// 公開を先に進められるようにする。ログイン・家計簿機能はDB接続後に有効になる。
 import { execSync } from "node:child_process";
 
 function run(cmd) {
@@ -14,6 +12,11 @@ function tryRun(cmd) {
   } catch {
     return false;
   }
+}
+
+function die(message) {
+  console.error(`\n[vercel-build] ${message}\n`);
+  process.exit(1);
 }
 
 run("npx prisma generate");
@@ -47,11 +50,27 @@ if (dbUrl) {
   }
 
   run("node scripts/seed.mjs");
-} else {
+} else if (process.env.ALLOW_BUILD_WITHOUT_DB === "1") {
+  // データベース接続前の「マーケティングページだけ先に公開する」段階。
+  // アプリ側（ログイン・家計簿）は動かないことを承知のうえでビルドする。
   console.warn(
-    "[vercel-build] DATABASE_URL が未設定のため、データベースの同期とデータ投入をスキップします。\n" +
-      "  マーケティングページ等は公開されますが、ログイン・家計簿機能はデータベース接続後に有効になります。\n" +
-      "  Vercel の Storage タブから Postgres を追加すると、次回のデプロイから自動的に有効になります。",
+    "[vercel-build] ALLOW_BUILD_WITHOUT_DB=1 のため、データベースの同期を省略します。\n" +
+      "  ログイン・家計簿はデータベースを接続するまで動作しません。",
+  );
+} else {
+  // ここで止めるのは、黙って進むと「新しいコード × 古いデータベース」が
+  // そのまま公開され、ログインなどが 500 になるため。
+  // ビルドを失敗させれば、直前の正常なデプロイが残る。
+  die(
+    "DATABASE_URL が見つからないため、データベースの更新を実行できません。\n" +
+      "  このまま公開すると、コードが必要とする列がデータベースに無い状態になり、\n" +
+      "  ログインなどがサーバーエラーになります。\n\n" +
+      "  対処:\n" +
+      "  1. Vercel の Settings → Environment Variables で DATABASE_URL が\n" +
+      "     「Production」だけでなく Build でも参照できるか確認してください。\n" +
+      "     （Storage タブから接続した場合は自動で入ります）\n" +
+      "  2. データベース接続前で、マーケティングページだけ公開したい場合は\n" +
+      "     ALLOW_BUILD_WITHOUT_DB=1 を設定してください。",
   );
 }
 

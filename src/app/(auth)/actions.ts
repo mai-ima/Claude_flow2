@@ -56,6 +56,12 @@ export async function loginAction(
     if (code === "WEAK_PASSWORD") {
       return { error: "パスワードは8文字以上で入力してください。" };
     }
+    if (code === "SCHEMA_DRIFT") {
+      return {
+        error:
+          "サーバー側の準備が完了していません。時間をおいて再度お試しください。（管理者の方はデプロイのマイグレーションをご確認ください）",
+      };
+    }
     if (code === "ACCOUNT_SUSPENDED") {
       return {
         error:
