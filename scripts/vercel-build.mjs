@@ -1,5 +1,11 @@
 // Vercelデプロイ用のビルド手順。
 import { execSync } from "node:child_process";
+import { config as loadEnv } from "dotenv";
+
+// Vercel では環境変数がプロセスに入っているが、ローカルでは .env にある。
+// 読み込まないと、手元のビルドだけ「DATABASE_URL が無い」経路に落ちて
+// 本番と挙動が変わる。override:false で実環境変数を優先する。
+loadEnv({ override: false });
 
 function run(cmd) {
   execSync(cmd, { stdio: "inherit" });
@@ -28,11 +34,21 @@ const FALLBACK_KEYS = [
   "POSTGRES_URL_NON_POOLING",
   "POSTGRES_URL",
   "DATABASE_URL_UNPOOLED",
+  // Neon / Supabase 連携が発行する名前。
+  "POSTGRES_URL_NO_SSL",
+  "NEON_DATABASE_URL",
+  "SUPABASE_DB_URL",
 ];
 const dbUrl = process.env.DATABASE_URL ?? FALLBACK_KEYS.map((k) => process.env[k]).find(Boolean);
 
 if (dbUrl) {
   if (!process.env.DATABASE_URL) process.env.DATABASE_URL = dbUrl;
+  // どの変数から採ったかを出す。取り違えの調査に効く（値は出さない）。
+  const source =
+    process.env.DATABASE_URL === dbUrl && "DATABASE_URL" in process.env
+      ? (FALLBACK_KEYS.find((k) => process.env[k] === dbUrl) ?? "DATABASE_URL")
+      : "DATABASE_URL";
+  console.log(`[vercel-build] データベース接続文字列: ${source} を使用します。`);
 
   // スキーマの反映は migrate deploy に一本化する。
   // db push は差分を推測して実行するため、列の改名やNULL制約の変更が

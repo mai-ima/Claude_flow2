@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/vercel-build.mjs",
     "vercel-build": "node scripts/vercel-build.mjs",
     "start": "next start",
     "lint": "eslint",
@@ -15,7 +15,10 @@
     "db:push": "prisma db push",
     "db:seed": "node scripts/seed.mjs",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "build:next": "next build",
+    "db:migrate": "prisma migrate deploy",
+    "db:status": "prisma migrate status"
   },
   "overrides": {
     "postcss": "^8.5.15"
