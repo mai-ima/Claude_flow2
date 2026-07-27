@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
-import { requireLedgerMember, setActiveLedger } from "@/lib/ledger-access";
+import { requireLedgerMember, setActiveLedger, clearActiveLedger } from "@/lib/ledger-access";
 import { PLANS, canUse } from "@/lib/plans";
 import { Currency, type PlanTier } from "@/lib/enums";
 
@@ -82,9 +82,16 @@ export const inviteMember = authedAction(
       where: { ledgerId_userId: { ledgerId, userId: invitee.id } },
     });
 
-    // 新規追加時のみ人数上限を判定（既存メンバーの役割変更は対象外）
+    // 新規追加時のみ人数上限を判定（既存メンバーの役割変更は対象外）。
+    // 判定は「帳簿オーナーの tier」で行う。招待した人や画面を開いた人の tier で
+    // 判定すると、同じ帳簿なのに見る人によって上限が変わって食い違う。
     if (!existing) {
-      const max = PLANS[await userTier(user.id)].maxMembers;
+      const ledger = await db.ledger.findUnique({
+        where: { id: ledgerId },
+        select: { ownerId: true },
+      });
+      if (!ledger) throw new Error("NOT_FOUND");
+      const max = PLANS[await userTier(ledger.ownerId)].maxMembers;
       const count = await db.ledgerMember.count({ where: { ledgerId } });
       if (count >= max) {
         throw new Error("MEMBER_LIMIT");
@@ -97,6 +104,133 @@ export const inviteMember = authedAction(
       update: { role },
     });
     revalidatePath("/settings");
+    return { ok: true };
+  },
+);
+
+/**
+ * オーナーを別のメンバーへ譲る。
+ *
+ * オーナーの所在は Ledger.ownerId と LedgerMember.role の2箇所に書かれている。
+ * どちらか一方だけ書き換えると権限判定と表示が食い違うため、必ず同じ
+ * トランザクションで揃える。
+ */
+export const transferOwnership = authedAction(
+  z.object({ ledgerId: z.string(), toUserId: z.string() }),
+  async ({ ledgerId, toUserId }, user) => {
+    await requireLedgerMember(ledgerId, user.id, "OWNER");
+    if (toUserId === user.id) throw new Error("SELF_FORBIDDEN");
+
+    const ledger = await db.ledger.findUnique({ where: { id: ledgerId } });
+    if (!ledger) throw new Error("NOT_FOUND");
+    if (ledger.type === "PERSONAL") throw new Error("PERSONAL_LEDGER");
+
+    const target = await db.ledgerMember.findUnique({
+      where: { ledgerId_userId: { ledgerId, userId: toUserId } },
+    });
+    if (!target) throw new Error("NOT_A_MEMBER");
+
+    await db.$transaction([
+      db.ledger.update({ where: { id: ledgerId }, data: { ownerId: toUserId } }),
+      db.ledgerMember.update({
+        where: { ledgerId_userId: { ledgerId, userId: toUserId } },
+        data: { role: "OWNER" },
+      }),
+      db.ledgerMember.update({
+        where: { ledgerId_userId: { ledgerId, userId: user.id } },
+        data: { role: "EDITOR" },
+      }),
+      db.notification.create({
+        data: {
+          userId: toUserId,
+          ledgerId,
+          type: "SYSTEM",
+          title: "帳簿のオーナーになりました",
+          body: `「${ledger.name}」のオーナーがあなたに移りました。`,
+          href: "/settings",
+        },
+      }),
+    ]);
+    revalidatePath("/", "layout");
+    return { ok: true };
+  },
+);
+
+/**
+ * 帳簿から自分が抜ける。
+ * オーナーのまま抜けると帳簿の持ち主が居なくなるため、先に移譲を求める。
+ */
+export const leaveLedger = authedAction(
+  z.object({ ledgerId: z.string() }),
+  async ({ ledgerId }, user) => {
+    const member = await requireLedgerMember(ledgerId, user.id);
+    const ledger = await db.ledger.findUnique({ where: { id: ledgerId } });
+    if (!ledger) throw new Error("NOT_FOUND");
+    if (ledger.type === "PERSONAL") throw new Error("PERSONAL_LEDGER");
+
+    if (ledger.ownerId === user.id || member.role === "OWNER") {
+      const others = await db.ledgerMember.count({
+        where: { ledgerId, userId: { not: user.id } },
+      });
+      throw new Error(others === 0 ? "LAST_MEMBER" : "OWNER_MUST_TRANSFER");
+    }
+
+    await db.ledgerMember.delete({
+      where: { ledgerId_userId: { ledgerId, userId: user.id } },
+    });
+    // 抜けた帳簿を選択したままにしない。
+    await clearActiveLedger();
+    revalidatePath("/", "layout");
+    return { ok: true };
+  },
+);
+
+/**
+ * 帳簿ごと削除する。取引・サブスク・予算・目標が全て消える。
+ * 取り違えを防ぐため、帳簿名の入力一致を要求する。
+ */
+export const deleteLedger = authedAction(
+  z.object({ ledgerId: z.string(), confirmName: z.string() }),
+  async ({ ledgerId, confirmName }, user) => {
+    await requireLedgerMember(ledgerId, user.id, "OWNER");
+    const ledger = await db.ledger.findUnique({
+      where: { id: ledgerId },
+      include: { members: { select: { userId: true } } },
+    });
+    if (!ledger) throw new Error("NOT_FOUND");
+    if (ledger.type === "PERSONAL") throw new Error("PERSONAL_LEDGER");
+    if (confirmName.trim() !== ledger.name) throw new Error("NAME_MISMATCH");
+
+    // 削除すると通知も一緒に消えるため、先に他メンバーへ知らせる…のではなく、
+    // 消える帳簿に紐づかない形（ledgerId を持たせない）では通知できないため、
+    // 削除前に個人帳簿宛てとして送る。
+    const others = ledger.members.map((m) => m.userId).filter((id) => id !== user.id);
+    if (others.length > 0) {
+      const personals = await db.ledger.findMany({
+        where: { ownerId: { in: others }, type: "PERSONAL" },
+        select: { id: true, ownerId: true },
+      });
+      const personalByUser = new Map(personals.map((p) => [p.ownerId, p.id]));
+      const drafts = others
+        .map((userId) => {
+          const target = personalByUser.get(userId);
+          if (!target) return null;
+          return {
+            userId,
+            ledgerId: target,
+            type: "SYSTEM",
+            title: "共有帳簿が削除されました",
+            body: `「${ledger.name}」がオーナーによって削除されました。`,
+            href: "/settings",
+          };
+        })
+        .filter((d): d is NonNullable<typeof d> => d !== null);
+      if (drafts.length > 0) await db.notification.createMany({ data: drafts });
+    }
+
+    await db.ledger.delete({ where: { id: ledgerId } });
+    await clearActiveLedger();
+    revalidatePath("/", "layout");
     return { ok: true };
   },
 );

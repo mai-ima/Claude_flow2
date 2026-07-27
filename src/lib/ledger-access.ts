@@ -55,6 +55,12 @@ export async function setActiveLedger(ledgerId: string) {
   store.set(LEDGER_COOKIE, ledgerId, { path: "/", sameSite: "lax" });
 }
 
+/** 選択中の帳簿を解除する（退出・削除の直後に呼ぶ）。次回は個人帳簿へ戻る。 */
+export async function clearActiveLedger() {
+  const store = await cookies();
+  store.delete(LEDGER_COOKIE);
+}
+
 /** 帳簿メンバーであることを検証。権限不足/非メンバーは FORBIDDEN。 */
 export async function requireLedgerMember(
   ledgerId: string,

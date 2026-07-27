@@ -28,6 +28,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   STRIPE_ACTIVE: "決済が有効なため、この操作はできません。",
   SELF_FORBIDDEN: "自分自身に対しては実行できません。",
   NOT_FOUND: "対象が見つかりません。",
+  OWNER_MUST_TRANSFER:
+    "あなたはこの帳簿のオーナーです。退出する前に、他のメンバーにオーナーを譲るか帳簿を削除してください。",
+  PERSONAL_LEDGER: "個人の家計簿はこの操作の対象外です。",
+  NOT_A_MEMBER: "その方はこの帳簿のメンバーではありません。",
+  LAST_MEMBER: "自分ひとりの帳簿です。オーナーを譲る相手がいません。",
+  NAME_MISMATCH: "帳簿の名前が一致しません。",
+  OWNS_SHARED_LEDGER:
+    "オーナーになっている共有帳簿があります。先にオーナーを譲るか帳簿を削除してください。",
 };
 
 /**

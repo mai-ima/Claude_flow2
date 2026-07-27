@@ -43,6 +43,9 @@ export function DangerZone() {
           <p className="text-[14px] text-text-secondary">
             アカウントとすべてのデータ（帳簿・取引・サブスク・予算）が完全に削除されます。この操作は取り消せません。
           </p>
+          <p className="text-[13px] text-text-tertiary">
+            共有帳簿でオーナーになっている場合は退会できません。先にオーナーを譲るか、帳簿を削除してください。
+          </p>
           <div>
             <p className="mb-1.5 text-[13px] text-text-secondary">
               確認のため <b className="text-text-primary">{CONFIRM_WORD}</b> と入力してください。

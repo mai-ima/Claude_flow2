@@ -174,7 +174,26 @@ export const deleteAllDataAction = authedAction(z.object({}), async (_input, use
 
 /** アカウント削除（関連データもカスケード削除）。遷移はクライアント側で行う。 */
 export const deleteAccountAction = authedAction(z.object({}), async (_input, user) => {
+  // Ledger.ownerId は Cascade のままなので、オーナーが退会すると共有帳簿が
+  // 丸ごと消え、他のメンバーの記録まで失われる。先に移譲か削除を求める。
+  const ownedShared = await db.ledger.count({
+    where: { ownerId: user.id, type: "POD", members: { some: { userId: { not: user.id } } } },
+  });
+  if (ownedShared > 0) throw new Error("OWNS_SHARED_LEDGER");
+
   await db.user.delete({ where: { id: user.id } });
   await signOut();
   return { ok: true };
+});
+
+/** 退会前の確認用。オーナーとして他メンバーを抱えている共有帳簿を返す。 */
+export const listBlockingLedgers = authedAction(z.object({}), async (_input, user) => {
+  const ledgers = await db.ledger.findMany({
+    where: { ownerId: user.id, type: "POD", members: { some: { userId: { not: user.id } } } },
+    select: { id: true, name: true, _count: { select: { members: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  return {
+    ledgers: ledgers.map((l) => ({ id: l.id, name: l.name, memberCount: l._count.members })),
+  };
 });

@@ -7,7 +7,9 @@ import { Input, Select } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { UsersIcon, PlusIcon, TrashIcon } from "@/components/icons";
-import { createPod, inviteMember, removeMember } from "../actions";
+import { createPod, inviteMember, removeMember, transferOwnership, leaveLedger, deleteLedger } from "../actions";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 
 interface Member {
   userId: string;
@@ -16,13 +18,9 @@ interface Member {
   isOwner: boolean;
 }
 
-const ERROR_LABEL: Record<string, string> = {
-  MEMBER_LIMIT: "現在のプランの人数上限に達しています。",
-  USER_NOT_FOUND: "そのメールのユーザーが見つかりません（先に登録が必要です）。",
-};
-
 export function FamilySharing({
   ledgerId,
+  ledgerName,
   isPod,
   isOwner,
   members,
@@ -30,6 +28,7 @@ export function FamilySharing({
   tier,
 }: {
   ledgerId: string;
+  ledgerName: string;
   isPod: boolean;
   isOwner: boolean;
   members: Member[];
@@ -37,6 +36,11 @@ export function FamilySharing({
   tier: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const toast = useToast();
+  const [transferTo, setTransferTo] = useState("");
+  const [deleteName, setDeleteName] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string>();
   const [podName, setPodName] = useState("");
@@ -58,21 +62,84 @@ export function FamilySharing({
       if (res.ok) {
         setEmail("");
         router.refresh();
-      } else setMsg(ERROR_LABEL[res.error] ?? res.error);
+      } else setMsg(res.error);
     });
   }
   function kick(userId: string) {
     start(async () => {
       const res = await removeMember({ ledgerId, userId });
       if (!res.ok) {
-        setMsg(ERROR_LABEL[res.error] ?? res.error);
+        setMsg(res.error);
         return;
       }
       router.refresh();
     });
   }
 
-  if (tier === "FREE") {
+  // 確認ダイアログは start() の外で待つこと。
+  // トランジション内で await すると pending が立ったまま入力待ちになり、
+  // ダイアログを開く state 更新が反映されず「押しても何も起きない」になる。
+  async function transfer() {
+    if (!transferTo) return;
+    const target = members.find((m) => m.userId === transferTo);
+    setMsg(undefined);
+    const ok = await confirm({
+      title: `オーナーを ${target?.name ?? "選択した相手"} に譲りますか？`,
+      body: "譲ったあとは、あなたは編集可のメンバーになります。",
+      confirmText: "譲る",
+    });
+    if (!ok) return;
+    start(async () => {
+      const res = await transferOwnership({ ledgerId, toUserId: transferTo });
+      if (!res.ok) {
+        setMsg(res.error);
+        return;
+      }
+      toast.success("オーナーを譲りました");
+      setTransferTo("");
+      router.refresh();
+    });
+  }
+
+  async function leave() {
+    setMsg(undefined);
+    const ok = await confirm({
+      title: "この帳簿から抜けますか？",
+      body: "あなたが記録した内容は帳簿に残ります。再び参加するには招待が必要です。",
+      confirmText: "抜ける",
+      danger: true,
+    });
+    if (!ok) return;
+    start(async () => {
+      const res = await leaveLedger({ ledgerId });
+      if (!res.ok) {
+        setMsg(res.error);
+        return;
+      }
+      toast.success("帳簿から抜けました");
+      router.refresh();
+    });
+  }
+
+  function removeLedger() {
+    setMsg(undefined);
+    start(async () => {
+      const res = await deleteLedger({ ledgerId, confirmName: deleteName });
+      if (!res.ok) {
+        setMsg(res.error);
+        return;
+      }
+      toast.success("帳簿を削除しました");
+      setDeleting(false);
+      setDeleteName("");
+      router.refresh();
+    });
+  }
+
+  // プラン制限がかかるのは「共有帳簿を作ること」であって、参加すること自体ではない。
+  // 招待された側が FREE でもメンバー一覧や退出は使えないと、抜ける手段が
+  // 退会しか無くなってしまう。
+  if (tier === "FREE" && !isPod) {
     return (
       <div className="flex items-center gap-3 rounded-xl bg-surface-2 px-4 py-4">
         <UsersIcon size={22} className="text-pod" />
@@ -94,6 +161,7 @@ export function FamilySharing({
         </p>
         <div className="flex gap-2">
           <Input
+            aria-label="共有帳簿の名前"
             placeholder="共有帳簿の名前"
             value={podName}
             onChange={(e) => setPodName(e.target.value)}
@@ -145,12 +213,14 @@ export function FamilySharing({
           <div className="flex gap-2">
             <Input
               type="email"
+              aria-label="招待するメールアドレス"
               placeholder="招待するメールアドレス"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
             <Select
               className="w-28 shrink-0"
+              aria-label="招待する相手の権限"
               value={role}
               onChange={(e) => setRole(e.target.value as "EDITOR" | "VIEWER")}
             >
@@ -161,8 +231,108 @@ export function FamilySharing({
           <Button size="sm" onClick={invite} disabled={pending || !email}>
             <PlusIcon size={16} /> 招待する
           </Button>
-          {msg && <p className="text-[13px] text-expense">{msg}</p>}
         </div>
+      )}
+
+      {/* オーナー移譲。ownerId と role の両方が同時に動くため、
+          「譲る」以外の経路でオーナーが変わることはない。 */}
+      {isOwner && members.length > 1 && (
+        <div className="space-y-2 rounded-xl border border-border-subtle p-3">
+          <div className="text-[14px] font-medium">オーナーを譲る</div>
+          <p className="text-[13px] text-text-secondary">
+            譲ったあとは、あなたは編集可のメンバーになります。
+          </p>
+          <div className="flex gap-2">
+            <Select
+              value={transferTo}
+              onChange={(e) => setTransferTo(e.target.value)}
+              aria-label="オーナーを譲る相手"
+            >
+              <option value="">譲る相手を選ぶ</option>
+              {members
+                .filter((m) => !m.isOwner)
+                .map((m) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.name}
+                  </option>
+                ))}
+            </Select>
+            <Button
+              size="sm"
+              variant="gray"
+              onClick={transfer}
+              disabled={pending || !transferTo}
+              className="shrink-0"
+            >
+              譲る
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* オーナーでないメンバーは自分で抜けられる。
+          これが無いと、抜ける唯一の手段が退会になってしまう。 */}
+      {!isOwner && (
+        <Button variant="ghost" size="sm" className="text-expense" onClick={leave} disabled={pending}>
+          この帳簿から抜ける
+        </Button>
+      )}
+
+      {isOwner &&
+        (deleting ? (
+          <div className="space-y-3 rounded-xl border border-expense/30 bg-expense/5 p-4">
+            <p className="text-[13px] text-text-secondary">
+              この帳簿の取引・サブスク・予算・目標がすべて削除されます。メンバー全員から見えなくなり、元に戻せません。
+            </p>
+            <div>
+              <p className="mb-1.5 text-[13px] text-text-secondary">
+                確認のため <b className="text-text-primary">{ledgerName}</b> と入力してください。
+              </p>
+              <Input
+                value={deleteName}
+                onChange={(e) => setDeleteName(e.target.value)}
+                aria-label={`確認のため帳簿名 ${ledgerName} を入力`}
+                placeholder={ledgerName}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={removeLedger}
+                disabled={pending || deleteName.trim() !== ledgerName}
+              >
+                {pending ? "削除中…" : "完全に削除する"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDeleting(false);
+                  setDeleteName("");
+                }}
+                disabled={pending}
+              >
+                キャンセル
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-expense"
+            onClick={() => setDeleting(true)}
+            disabled={pending}
+          >
+            この帳簿を削除
+          </Button>
+        ))}
+
+      {msg && (
+        <p role="alert" className="text-[13px] text-expense">
+          {msg}
+        </p>
       )}
     </div>
   );

@@ -17,18 +17,20 @@ import {
 } from "@/modules/account";
 import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
-import { PLANS, tierAtLeast } from "@/lib/plans";
+import { tierAtLeast } from "@/lib/plans";
 import { isStripeEnabled } from "@/lib/env";
 import { SITE, APP_VERSION, pageMetadata } from "@/lib/seo";
 import { enabledBetaFeatures } from "@/lib/beta-features";
+import { ledgerMemberLimit } from "@/modules/ledgers/queries";
 
 export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true });
 
 export default async function SettingsPage() {
   const ctx = await getAppContext();
-  const [methods, categories] = await Promise.all([
+  const [methods, categories, maxMembers] = await Promise.all([
     listPaymentMethods(ctx.ledgerId),
     listAllCategories(ctx.ledgerId),
+    ledgerMemberLimit(ctx.ledger.ownerId),
   ]);
 
   const members = ctx.ledger.members.map((m) => ({
@@ -83,10 +85,11 @@ export default async function SettingsPage() {
         <ListGroup title="ファミリー共有" padded>
           <FamilySharing
             ledgerId={ctx.ledgerId}
+            ledgerName={ctx.ledger.name}
             isPod={ctx.isPod}
             isOwner={ctx.role === "OWNER"}
             members={members}
-            maxMembers={PLANS[ctx.tier].maxMembers}
+            maxMembers={maxMembers}
             tier={ctx.tier}
           />
         </ListGroup>
