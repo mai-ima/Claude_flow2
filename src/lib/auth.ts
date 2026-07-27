@@ -34,8 +34,11 @@ export type SessionUser = {
   betaFeatures: BetaFeatureKey[] | null;
 };
 
-/** 新規ユーザーの初期データ（個人帳簿・メンバー・課金プロフィール・既定カテゴリ）を用意。 */
-async function bootstrapUser(userId: string, name: string | null) {
+/**
+ * 新規ユーザーの初期データ（個人帳簿・メンバー・課金プロフィール・既定カテゴリ）を用意。
+ * 既に個人帳簿があれば何もしない（何度呼んでも安全）。
+ */
+export async function bootstrapUser(userId: string, name: string | null) {
   const existing = await db.ledger.findFirst({
     where: { ownerId: userId, type: "PERSONAL" },
   });
@@ -197,11 +200,19 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
       include: { user: { include: { billing: true } } },
     });
   } catch (err) {
-    // マイグレーション未適用のままデプロイされると、ここが列不足で落ちて
-    // 画面には内容のない 500 だけが出る。原因が分かる形でログに残す。
+    // マイグレーション未適用のままデプロイされると、ここが列不足で落ちる。
+    //
+    // ここで投げると、セッション Cookie を持っている人は /login すら
+    // 開けなくなる（ログイン画面自体がこの関数を呼ぶため）。
+    // 画面が真っ白になるうえ、ログインし直して復帰することもできない。
+    //
+    // 「未ログイン」として扱えば、少なくともログイン画面は開く。
+    // 権限を与える方向ではないので安全側でもある。
+    // 実際の原因はログと ErrorEvent に残し、ログイン試行時には
+    // signInWithEmail が SCHEMA_DRIFT を返して利用者にも伝える。
     if (isSchemaDrift(err)) {
       logger.error("schema drift", err, { missing: driftTarget(err) });
-      throw new Error("SCHEMA_DRIFT");
+      return null;
     }
     throw err;
   }

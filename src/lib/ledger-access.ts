@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { db } from "./db";
+import { bootstrapUser } from "./auth";
 import type { MemberRole } from "./enums";
 
 const LEDGER_COOKIE = "tsumiki_ledger";
@@ -46,8 +47,20 @@ export const getActiveLedgerId = cache(async (userId: string): Promise<string> =
     where: { members: { some: { userId } } },
     orderBy: { createdAt: "asc" },
   });
-  if (!any) throw new Error("NO_LEDGER");
-  return any.id;
+  if (any) return any.id;
+
+  // 帳簿が1つも無いユーザー。
+  // 以前はここで投げており、アプリの全ページが 500 になって復帰できなかった。
+  // 個人帳簿は本来サインアップ時に作られるが、管理側での作成・データ移行・
+  // 過去の不具合など、無い状態は現実に起こりうる。その場で用意して先へ進める。
+  const user = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
+  await bootstrapUser(userId, user?.name ?? null);
+  const created = await db.ledger.findFirst({
+    where: { ownerId: userId, type: "PERSONAL" },
+    orderBy: { createdAt: "asc" },
+  });
+  if (!created) throw new Error("NO_LEDGER");
+  return created.id;
 });
 
 export async function setActiveLedger(ledgerId: string) {
