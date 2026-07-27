@@ -401,3 +401,54 @@ model AuditLog {
   @@index([targetType, targetId, createdAt])
   @@index([createdAt])
 }
+
+/// バッチ実行の履歴。失敗しても誰も気づけない状態を避ける。
+model CronRun {
+  id        String   @id @default(cuid())
+  job       String
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  status    String   // RUNNING | SUCCESS | FAILED
+  result    Json?
+  error     String?
+  trigger   String   // SCHEDULE | MANUAL
+  actorId   String?
+
+  @@index([job, startedAt])
+  @@index([status, startedAt])
+}
+
+/// メール送信の記録。届いたかを後から追えるようにする。
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  kind      String   // REMINDER | CONTACT | VERIFY | RESET | BROADCAST
+  status    String   // SENT | SKIPPED | FAILED
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([to, createdAt])
+  @@index([kind, createdAt])
+  @@index([status, createdAt])
+}
+
+/// アプリケーションエラー。Sentry 未導入のため console にしか出ておらず、
+/// Vercel のログを直接見ない限り気づけなかった。
+/// fingerprint でまとめ、同じ不具合が何回起きているかを数える。
+model ErrorEvent {
+  id          String   @id @default(cuid())
+  level       String   // ERROR | WARN
+  message     String
+  stack       String?
+  context     Json?
+  userId      String?
+  path        String?
+  fingerprint String
+  count       Int      @default(1)
+  lastSeen    DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@unique([fingerprint])
+  @@index([lastSeen])
+}

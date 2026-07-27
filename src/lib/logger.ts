@@ -1,5 +1,6 @@
 import "server-only";
 import { isSentryEnabled } from "./env";
+import { recordError } from "./ops-log";
 
 type Meta = Record<string, unknown>;
 
@@ -36,5 +37,17 @@ export const logger = {
   error(message: string, error?: unknown, meta?: Meta) {
     console.error(JSON.stringify({ level: "error", message, ...meta }), error);
     sentry()?.captureException(error ?? new Error(message), meta ? { extra: meta } : undefined);
+    // Sentry を入れていない間、エラーは console にしか残らず
+    // Vercel のログを直接見ない限り気づけない。DB にも積んで管理画面から見る。
+    // Sentry を導入したらこちらは止められる（isSentryActive で分岐）。
+    if (!isSentryActive()) {
+      const e = error instanceof Error ? error : undefined;
+      void recordError({
+        level: "ERROR",
+        message: e?.message ? `${message}: ${e.message}` : message,
+        stack: e?.stack,
+        context: meta,
+      });
+    }
   },
 };

@@ -121,3 +121,68 @@ export async function auditActions(): Promise<string[]> {
   const rows = await db.auditLog.groupBy({ by: ["action"], orderBy: { action: "asc" } });
   return rows.map((r) => r.action);
 }
+
+// ── 運用の可視化 ────────────────────────────
+
+export async function listCronRuns(limit = 30) {
+  return db.cronRun.findMany({ orderBy: { startedAt: "desc" }, take: limit });
+}
+
+/** 直近の失敗。管理画面の先頭で警告を出すために使う。 */
+export async function recentCronFailures(hours = 48) {
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+  return db.cronRun.count({ where: { status: "FAILED", startedAt: { gte: since } } });
+}
+
+export async function listEmailLogs(opts: { kind?: string; status?: string; limit?: number } = {}) {
+  return db.emailLog.findMany({
+    where: {
+      ...(opts.kind ? { kind: opts.kind } : {}),
+      ...(opts.status ? { status: opts.status } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    take: Math.min(opts.limit ?? 50, 200),
+  });
+}
+
+export async function listErrorEvents(limit = 50) {
+  return db.errorEvent.findMany({ orderBy: { lastSeen: "desc" }, take: limit });
+}
+
+/**
+ * テーブルごとの行数と直近30日の増加。
+ * 肥大化に事前に気づくための数字なので、重い集計はしない（count のみ）。
+ */
+export async function dataVolume() {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [
+    users, ledgers, transactions, subscriptions, notifications, sessions,
+    recurring, goals, budgets, auditLogs, emailLogs, errorEvents, cronRuns,
+    newUsers, newTransactions, newNotifications,
+  ] = await Promise.all([
+    db.user.count(), db.ledger.count(), db.transaction.count(), db.subscription.count(),
+    db.notification.count(), db.session.count(), db.recurringTransaction.count(),
+    db.goal.count(), db.budget.count(), db.auditLog.count(), db.emailLog.count(),
+    db.errorEvent.count(), db.cronRun.count(),
+    db.user.count({ where: { createdAt: { gte: since } } }),
+    db.transaction.count({ where: { createdAt: { gte: since } } }),
+    db.notification.count({ where: { createdAt: { gte: since } } }),
+  ]);
+  return {
+    rows: [
+      { name: "ユーザー", total: users, added: newUsers },
+      { name: "帳簿", total: ledgers, added: null },
+      { name: "取引", total: transactions, added: newTransactions },
+      { name: "サブスク", total: subscriptions, added: null },
+      { name: "定期取引", total: recurring, added: null },
+      { name: "目標", total: goals, added: null },
+      { name: "予算", total: budgets, added: null },
+      { name: "通知", total: notifications, added: newNotifications },
+      { name: "セッション", total: sessions, added: null },
+      { name: "監査ログ", total: auditLogs, added: null },
+      { name: "メール送信ログ", total: emailLogs, added: null },
+      { name: "エラー", total: errorEvents, added: null },
+      { name: "バッチ実行", total: cronRuns, added: null },
+    ],
+  };
+}

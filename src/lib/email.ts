@@ -1,20 +1,29 @@
 import "server-only";
 import { env, isEmailEnabled } from "./env";
 import { logger } from "./logger";
+import { recordEmail, type EmailKind } from "./ops-log";
 
 export interface EmailInput {
   to: string;
   subject: string;
   html: string;
+  /** 送信ログの分類。管理画面での絞り込みと再送に使う。 */
+  kind?: EmailKind;
 }
 
 /**
  * Resend REST でメール送信（env 差込み式）。
  * RESEND_API_KEY が無ければ送信せずログのみ（no-op）。
  */
-export async function sendEmail({ to, subject, html }: EmailInput): Promise<{ sent: boolean }> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  kind = "REMINDER",
+}: EmailInput): Promise<{ sent: boolean }> {
   if (!isEmailEnabled) {
     logger.info("email skipped (no RESEND_API_KEY)", { to, subject });
+    await recordEmail({ to, subject, kind, status: "SKIPPED", error: "RESEND_API_KEY 未設定" });
     return { sent: false };
   }
   try {
@@ -32,12 +41,22 @@ export async function sendEmail({ to, subject, html }: EmailInput): Promise<{ se
       }),
     });
     if (!res.ok) {
-      logger.error("email send failed", new Error(`Resend ${res.status}`), { to, subject });
+      const detail = `Resend ${res.status}`;
+      logger.error("email send failed", new Error(detail), { to, subject });
+      await recordEmail({ to, subject, kind, status: "FAILED", error: detail });
       return { sent: false };
     }
+    await recordEmail({ to, subject, kind, status: "SENT" });
     return { sent: true };
   } catch (err) {
     logger.error("email send error", err, { to, subject });
+    await recordEmail({
+      to,
+      subject,
+      kind,
+      status: "FAILED",
+      error: err instanceof Error ? err.message : String(err),
+    });
     return { sent: false };
   }
 }

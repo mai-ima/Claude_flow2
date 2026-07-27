@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { ShieldIcon, ChartIcon, UsersIcon, LogoutIcon, ClockIcon } from "@/components/icons";
+import { ShieldIcon, ChartIcon, UsersIcon, LogoutIcon, ClockIcon, BoltIcon } from "@/components/icons";
 import { effectiveAdminRole, hasAdminRole, ADMIN_ROLE_LABEL } from "@/lib/admin-role";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +37,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
             >
               <UsersIcon size={17} /> ユーザー
+            </Link>
+            <Link
+              href="/admin/ops"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+            >
+              <BoltIcon size={17} /> 運用
             </Link>
             <Link
               href="/admin/audit"

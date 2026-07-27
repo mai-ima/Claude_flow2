@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { adminAction } from "@/lib/safe-action";
 import { AdminRole } from "@/lib/admin-role";
 import { writeAudit } from "./audit";
+import { runReminders } from "@/lib/run-reminders";
 
 /**
  * 取り違えると取り返しがつかない操作には、対象のメールアドレス入力を要求する。
@@ -127,3 +128,19 @@ export const deleteUser = adminAction(
     return { ok: true };
   },
 );
+
+/**
+ * 自動処理をいま実行する。
+ * 実行できるのは全権のみ。誰がいつ回したかは監査ログに残す。
+ */
+export const runCronNow = adminAction("SUPER", z.object({}), async (_input, user) => {
+  await writeAudit({
+    actor: user,
+    action: "CRON_RUN_MANUAL",
+    targetType: "SYSTEM",
+    targetLabel: "reminders",
+  });
+  const result = await runReminders("MANUAL", user.id);
+  revalidatePath("/admin/ops");
+  return result;
+});
