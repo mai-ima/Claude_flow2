@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "./db";
 import { daysUntil, monthRange } from "./date";
 import { renewalCatchup, isReminderDue } from "@/modules/subscriptions/renewal";
+import { loadSettings } from "./settings";
 import type { BillingCycle, NotificationType } from "./enums";
 
 interface NotificationDraft {
@@ -305,8 +306,10 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
   return toCreate.length;
 }
 
-/** 既読の古い通知を保持する日数（これを超えたものは定期削除）。 */
-const NOTIFICATION_RETENTION_DAYS = 90;
+/**
+ * 既読の古い通知を保持する日数。
+ * 既定は settings.ts に置き、管理画面から変更できる。
+ */
 
 /**
  * 期限切れ/不要データの定期プルーニング（テーブルの無制限な肥大化を防ぐ基盤処理）。
@@ -317,7 +320,8 @@ const NOTIFICATION_RETENTION_DAYS = 90;
 export async function pruneExpiredData(
   now: Date = new Date(),
 ): Promise<{ sessions: number; notifications: number }> {
-  const notifCutoff = new Date(now.getTime() - NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  const { notificationRetentionDays } = await loadSettings();
+  const notifCutoff = new Date(now.getTime() - notificationRetentionDays * 24 * 60 * 60 * 1000);
   const [sessions, notifications] = await Promise.all([
     db.session.deleteMany({ where: { expires: { lt: now } } }),
     db.notification.deleteMany({

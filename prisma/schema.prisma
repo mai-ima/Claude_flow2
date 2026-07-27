@@ -456,3 +456,63 @@ model ErrorEvent {
   @@unique([fingerprint])
   @@index([lastSeen])
 }
+
+/// リリースノート。572行のハードコードを置き換え、
+/// 文言の修正にコード変更とデプロイを要らなくする。
+model ReleaseNote {
+  id         String   @id @default(cuid())
+  version    String   @unique
+  releasedAt DateTime
+  title      String
+  /// { h: 見出し, items: string[] } の配列
+  sections   Json
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([releasedAt])
+  @@index([published, releasedAt])
+}
+
+/// アプリ内に出す告知バナー（メンテナンス予告・障害情報）。
+model AnnouncementBanner {
+  id        String   @id @default(cuid())
+  message   String
+  href      String?
+  tone      String   @default("INFO") // INFO | WARNING | CRITICAL
+  startsAt  DateTime
+  endsAt    DateTime
+  /// 対象プラン。空なら全員。
+  tiers     Json?
+  createdAt DateTime @default(now())
+
+  @@index([startsAt, endsAt])
+}
+
+/// 機能フラグ。段階公開のため、割合と対象プランを持つ。
+model FeatureFlag {
+  key         String   @id
+  label       String
+  description String?
+  enabled     Boolean  @default(false)
+  rolloutPct  Int      @default(0)
+  tiers       Json?
+  updatedAt   DateTime @updatedAt
+}
+
+/// システム設定。ハードコードされていた定数を管理画面から変えられるようにする。
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+/// Stripe webhook の冪等化。同じ event.id を二度処理しない。
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+  payload     Json?
+
+  @@index([processedAt])
+}

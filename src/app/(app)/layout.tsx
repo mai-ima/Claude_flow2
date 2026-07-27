@@ -15,6 +15,11 @@ import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/cn";
 import { isBetaEnabled } from "@/lib/beta-features";
 import { ImpersonationBanner } from "@/components/app/impersonation-banner";
+import { AnnouncementBanner } from "@/components/app/announcement-banner";
+import { MaintenanceScreen } from "@/components/app/maintenance-screen";
+import { activeBanner } from "@/lib/announcements";
+import { loadSettings } from "@/lib/settings";
+import { effectiveAdminRole } from "@/lib/admin-role";
 
 export default async function AppLayout({
   children,
@@ -24,12 +29,19 @@ export default async function AppLayout({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [ledgers, activeId, notifs, unread] = await Promise.all([
+  const [ledgers, activeId, notifs, unread, banner, settings] = await Promise.all([
     listUserLedgers(user.id),
     getActiveLedgerId(user.id),
     listNotifications(user.id),
     unreadCount(user.id),
+    activeBanner(user.tier),
+    loadSettings(),
   ]);
+
+  // メンテナンス中は管理者だけが通常画面に入れる。
+  if (settings.maintenanceMode && effectiveAdminRole(user.adminRole, user.isAdmin) === "NONE") {
+    return <MaintenanceScreen message={settings.maintenanceMessage} />;
+  }
 
   const notifItems = notifs.map((n) => ({
     id: n.id,
@@ -52,6 +64,7 @@ export default async function AppLayout({
 
   return (
     <>
+      {banner && <AnnouncementBanner banner={banner} />}
       {user.impersonatedBy && (
         <ImpersonationBanner
           userLabel={user.name ?? user.email ?? "このユーザー"}

@@ -25,6 +25,8 @@ vi.mock("./db", () => ({
 }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ set: () => {}, get: () => undefined, delete: () => {} }),
+  // セッション作成時に IP と User-Agent を控えるため headers() も呼ばれる。
+  headers: async () => new Headers(),
 }));
 
 const { signInWithEmail } = await import("./auth");
