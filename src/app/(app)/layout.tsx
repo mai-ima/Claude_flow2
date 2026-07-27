@@ -7,10 +7,14 @@ import { CommandPalette } from "@/components/app/command-palette";
 import { KeyboardShortcuts } from "@/components/app/keyboard-shortcuts";
 import { getCurrentUser } from "@/lib/auth";
 import { listUserLedgers, getActiveLedgerId } from "@/lib/ledger-access";
-import { listNotifications, unreadCount } from "@/modules/notifications/queries";
+import {
+  listNotifications,
+  unreadCount,
+} from "@/modules/notifications/queries";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/cn";
 import { isBetaEnabled } from "@/lib/beta-features";
+import { ImpersonationBanner } from "@/components/app/impersonation-banner";
 
 export default async function AppLayout({
   children,
@@ -47,26 +51,43 @@ export default async function AppLayout({
   const isPod = active?.type === "POD";
 
   return (
-    <div className={cn("transition-theme flex min-h-screen", isPod && "theme-pod")}>
-      <Sidebar />
-      <AppChromeProvider>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <AppHeader
-            ledgers={options}
-            activeId={activeId}
-            tier={user.tier}
-            userName={user.name ?? "ユーザー"}
-            notifications={notifItems}
-            unread={unread}
-          />
-          <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">{children}</main>
-        </div>
-      </AppChromeProvider>
-      <BottomBar />
-      <CommandPalette />
-      <KeyboardShortcuts
-        enabled={isBetaEnabled({ optIn: user.betaOptIn, features: user.betaFeatures }, "keyboard_shortcuts")}
-      />
-    </div>
+    <>
+      {user.impersonatedBy && (
+        <ImpersonationBanner
+          userLabel={user.name ?? user.email ?? "このユーザー"}
+        />
+      )}
+      <div
+        className={cn(
+          "transition-theme flex min-h-screen",
+          isPod && "theme-pod",
+        )}
+      >
+        <Sidebar />
+        <AppChromeProvider>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <AppHeader
+              ledgers={options}
+              activeId={activeId}
+              tier={user.tier}
+              userName={user.name ?? "ユーザー"}
+              notifications={notifItems}
+              unread={unread}
+            />
+            <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">
+              {children}
+            </main>
+          </div>
+        </AppChromeProvider>
+        <BottomBar />
+        <CommandPalette />
+        <KeyboardShortcuts
+          enabled={isBetaEnabled(
+            { optIn: user.betaOptIn, features: user.betaFeatures },
+            "keyboard_shortcuts",
+          )}
+        />
+      </div>
+    </>
   );
 }

@@ -26,6 +26,10 @@ model User {
   // 管理権限の粒度。isAdmin は後方互換で残し、adminRole != NONE と同期させる。
   // NONE | READONLY | SUPPORT | SUPER
   adminRole        String    @default("NONE")
+  // 凍結。不正利用への対応が「削除」しか無い状態を避ける。
+  // 凍結中はログインできず、既存セッションも破棄する。
+  suspendedAt      DateTime?
+  suspendedReason  String?
   // 設定
   locale           String    @default("ja")
   currency         String    @default("JPY")

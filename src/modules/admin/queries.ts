@@ -186,3 +186,97 @@ export async function dataVolume() {
     ],
   };
 }
+
+// ── ユーザー運用 ────────────────────────────
+
+export interface UserSearchOptions {
+  q?: string;
+  tier?: string;
+  adminOnly?: boolean;
+  suspendedOnly?: boolean;
+  /** 前ページ最後の createdAt。これより古いものを次ページとして返す。 */
+  cursor?: string;
+  limit?: number;
+}
+
+/**
+ * ユーザー検索。
+ *
+ * 以前は先頭200件の固定取得で、201人目以降は永久に画面へ出てこなかった。
+ * offset ではなく createdAt のカーソルで送る（件数が増えても後ろのページが
+ * 重くならず、ページ送り中に登録があっても行が重複しない）。
+ */
+export async function searchUsers(opts: UserSearchOptions = {}) {
+  const limit = Math.min(opts.limit ?? 50, 100);
+  const q = opts.q?.trim();
+  const rows = await db.user.findMany({
+    where: {
+      ...(q
+        ? {
+            OR: [
+              { email: { contains: q, mode: "insensitive" as const } },
+              { name: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+      ...(opts.adminOnly ? { adminRole: { not: "NONE" } } : {}),
+      ...(opts.suspendedOnly ? { suspendedAt: { not: null } } : {}),
+      ...(opts.tier ? { billing: { tier: opts.tier } } : {}),
+      ...(opts.cursor ? { createdAt: { lt: new Date(opts.cursor) } } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    // 次ページの有無を知るために1件多く取る。
+    take: limit + 1,
+    include: { billing: true, _count: { select: { memberships: true } } },
+  });
+
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  return {
+    users: page.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      isAdmin: u.isAdmin,
+      adminRole: effectiveAdminRole(u.adminRole, u.isAdmin),
+      suspendedAt: u.suspendedAt,
+      tier: (u.billing?.tier ?? "FREE") as PlanTier,
+      ledgers: u._count.memberships,
+      createdAt: u.createdAt,
+    })),
+    nextCursor: hasMore ? page[page.length - 1].createdAt.toISOString() : null,
+  };
+}
+
+/** ユーザー詳細。所属帳簿・件数・通知・ログイン端末・自分に関する監査ログ。 */
+export async function userDetail(userId: string) {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    include: {
+      billing: true,
+      memberships: {
+        include: { ledger: { select: { id: true, name: true, type: true, ownerId: true } } },
+      },
+      sessions: {
+        orderBy: { lastUsedAt: "desc" },
+        take: 10,
+        select: { id: true, ip: true, userAgent: true, createdAt: true, lastUsedAt: true, impersonatedBy: true },
+      },
+      notifications: { orderBy: { createdAt: "desc" }, take: 10 },
+    },
+  });
+  if (!user) return null;
+
+  const ledgerIds = user.memberships.map((m) => m.ledgerId);
+  const [txns, subs, audits] = await Promise.all([
+    db.transaction.count({ where: { ledgerId: { in: ledgerIds } } }),
+    db.subscription.count({ where: { ownerUserId: userId } }),
+    db.auditLog.findMany({
+      where: { targetId: userId },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+  ]);
+
+  return { user, counts: { transactions: txns, subscriptions: subs }, audits };
+}

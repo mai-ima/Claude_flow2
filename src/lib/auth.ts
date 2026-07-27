@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { randomBytes } from "node:crypto";
 import { db } from "./db";
 import { DEFAULT_CATEGORIES } from "./default-categories";
@@ -10,6 +10,8 @@ import { hashPassword, verifyPassword } from "./password";
 
 const SESSION_COOKIE = "tsumiki_session";
 const SESSION_DAYS = 30;
+/** 成りすまし前の管理者セッションを退避しておく Cookie。 */
+const IMPERSONATION_RETURN_COOKIE = "tsumiki_return_session";
 
 export type SessionUser = {
   id: string;
@@ -101,20 +103,38 @@ export async function signInWithEmail(
     if (!verifyPassword(password, user.passwordHash)) {
       throw new Error("INVALID_PASSWORD");
     }
+    // 凍結中はセッションを発行しない。理由は画面側で案内する。
+    if (user.suspendedAt) throw new Error("ACCOUNT_SUSPENDED");
   }
   await bootstrapUser(user.id, user.name);
   await establishSession(user.id);
   return user;
 }
 
-/** セッション発行 + Cookie 設定（期限切れの掃除込み）。 */
-async function establishSession(userId: string) {
+/**
+ * セッション発行 + Cookie 設定（期限切れの掃除込み）。
+ * impersonatedBy を渡すと「管理者が別ユーザーとして閲覧中」の印がつき、
+ * そのセッションからの変更操作は adminAction 側で拒否される。
+ */
+async function establishSession(userId: string, impersonatedBy?: string) {
   await db.session.deleteMany({
     where: { userId, expires: { lt: new Date() } },
   });
   const token = randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  await db.session.create({ data: { sessionToken: token, userId, expires } });
+  const expires = new Date(
+    Date.now() + (impersonatedBy ? 60 * 60 * 1000 : SESSION_DAYS * 24 * 60 * 60 * 1000),
+  );
+  const h = await headers().catch(() => null);
+  await db.session.create({
+    data: {
+      sessionToken: token,
+      userId,
+      expires,
+      impersonatedBy,
+      ip: h?.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
+      userAgent: h?.get("user-agent")?.slice(0, 300) ?? undefined,
+    },
+  });
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -169,6 +189,10 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   }
 
   const u = session.user;
+  // 凍結中は「ログインしていない」として扱う。
+  // 画面ごとに判定を書くと必ずどこかで漏れるため、入口で止める。
+  if (u.suspendedAt) return null;
+
   return {
     id: u.id,
     email: u.email,
@@ -203,4 +227,45 @@ export async function requireAdmin(minRole: AdminRole = "READONLY"): Promise<Ses
   const role = effectiveAdminRole(user.adminRole, user.isAdmin);
   if (!hasAdminRole(role, minRole)) throw new Error("FORBIDDEN");
   return user;
+}
+
+
+/**
+ * 管理者が対象ユーザーとして閲覧を開始する（読み取り専用）。
+ * 元の管理者セッションは残さず、終了時にログインし直してもらう
+ * ——ではなく、戻れないと運用が回らないため、元のトークンを別 Cookie に退避する。
+ */
+export async function startImpersonation(targetUserId: string, adminId: string) {
+  const store = await cookies();
+  const current = store.get(SESSION_COOKIE)?.value;
+  if (current) {
+    store.set(IMPERSONATION_RETURN_COOKIE, current, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60,
+    });
+  }
+  await establishSession(targetUserId, adminId);
+}
+
+/** 閲覧を終了し、元の管理者セッションへ戻る。 */
+export async function endImpersonation() {
+  const store = await cookies();
+  const token = store.get(SESSION_COOKIE)?.value;
+  if (token) await db.session.deleteMany({ where: { sessionToken: token } });
+
+  const back = store.get(IMPERSONATION_RETURN_COOKIE)?.value;
+  if (back) {
+    store.set(SESSION_COOKIE, back, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    });
+    store.delete(IMPERSONATION_RETURN_COOKIE);
+  } else {
+    store.delete(SESSION_COOKIE);
+  }
 }

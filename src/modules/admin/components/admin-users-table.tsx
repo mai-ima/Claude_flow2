@@ -4,12 +4,20 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { ShieldIcon, TrashIcon } from "@/components/icons";
-import { setUserTier, setAdminRole, deleteUser } from "../actions";
+import {
+  setUserTier,
+  setAdminRole,
+  deleteUser,
+  suspendUser,
+  unsuspendUser,
+  startImpersonate,
+} from "../actions";
 import { ADMIN_ROLE_LABEL, type AdminRole } from "@/lib/admin-role";
 import { DangerousAdminDialog } from "./dangerous-admin-dialog";
 import { Field, Select } from "@/components/ui/field";
 import { Sheet } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 
 export interface AdminUser {
@@ -18,6 +26,7 @@ export interface AdminUser {
   name: string | null;
   isAdmin: boolean;
   adminRole: AdminRole;
+  suspended: boolean;
   tier: "FREE" | "PLUS" | "PRO";
   ledgers: number;
   createdLabel: string;
@@ -27,6 +36,7 @@ type Dialog =
   | { kind: "tier"; user: AdminUser; tier: AdminUser["tier"] }
   | { kind: "role"; user: AdminUser; role: AdminRole }
   | { kind: "delete"; user: AdminUser }
+  | { kind: "suspend"; user: AdminUser }
   | null;
 
 const REASON_PRESETS = ["サポート対応", "不具合の補償", "本人からの依頼", "テスト・検証"];
@@ -35,11 +45,14 @@ export function AdminUsersTable({
   users,
   selfId,
   canEdit,
+  canImpersonate,
 }: {
   users: AdminUser[];
   selfId: string;
   /** SUPER のみ変更操作を出す。READONLY/SUPPORT には一覧のみ見せる。 */
   canEdit: boolean;
+  /** SUPPORT 以上は読み取り専用での閲覧ができる。 */
+  canImpersonate: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -83,12 +96,42 @@ export function AdminUsersTable({
                     <ShieldIcon size={11} /> {ADMIN_ROLE_LABEL[u.adminRole]}
                   </Badge>
                 )}
+                {u.suspended && (
+                  <Badge tone="expense" size="sm">
+                    凍結中
+                  </Badge>
+                )}
                 {u.id === selfId && <Badge size="sm">自分</Badge>}
               </div>
               <div className="truncate text-[12px] text-text-tertiary">
                 {u.email} ・ 帳簿{u.ledgers} ・ {u.createdLabel}
               </div>
             </div>
+
+            <Link
+              href={`/admin/users/${u.id}`}
+              className="shrink-0 text-[13px] font-medium text-accent"
+            >
+              詳細
+            </Link>
+
+            {canImpersonate && u.id !== selfId && !u.suspended && (
+              <button
+                onClick={() => {
+                  start(async () => {
+                    const res = await startImpersonate({
+                      userId: u.id,
+                      reason: "サポート対応",
+                    });
+                    if (!res.ok) setMsg(res.error);
+                    else router.push("/dashboard");
+                  });
+                }}
+                className="shrink-0 rounded-lg border border-border-subtle px-2.5 py-1.5 text-[12px] font-medium transition hover:bg-surface-2"
+              >
+                この人の画面を見る
+              </button>
+            )}
 
             {canEdit && (
               <>
@@ -119,6 +162,24 @@ export function AdminUsersTable({
                   <option value="SUPPORT">サポート</option>
                   <option value="SUPER">全権</option>
                 </select>
+
+                <button
+                  onClick={() => {
+                    if (u.suspended) {
+                      start(async () => {
+                        const res = await unsuspendUser({ userId: u.id, reason: "凍結の解除" });
+                        if (!res.ok) setMsg(res.error);
+                        router.refresh();
+                      });
+                    } else {
+                      setDialog({ kind: "suspend", user: u });
+                    }
+                  }}
+                  disabled={u.id === selfId}
+                  className="shrink-0 rounded-lg border border-border-subtle px-2.5 py-1.5 text-[12px] font-medium transition hover:bg-surface-2 disabled:opacity-30"
+                >
+                  {u.suspended ? "凍結を解除" : "凍結する"}
+                </button>
 
                 <button
                   onClick={() => setDialog({ kind: "delete", user: u })}
@@ -207,6 +268,23 @@ export function AdminUsersTable({
                 reason,
               }),
             );
+          });
+        }}
+      />
+
+      <DangerousAdminDialog
+        open={dialog?.kind === "suspend"}
+        onClose={() => setDialog(null)}
+        title="アカウントを凍結しますか？"
+        description="このユーザーはログインできなくなり、ログイン中の端末もすべて切断されます。あとから解除できます。"
+        confirmLabel="凍結する"
+        targetEmail={dialog?.kind === "suspend" ? dialog.user.email : null}
+        danger
+        pending={pending}
+        onSubmit={({ confirmEmail, reason }) => {
+          if (dialog?.kind !== "suspend") return;
+          start(async () => {
+            done(await suspendUser({ userId: dialog.user.id, confirmEmail, reason }));
           });
         }}
       />

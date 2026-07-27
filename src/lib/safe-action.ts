@@ -59,6 +59,15 @@ export function authedAction<TSchema extends z.ZodType, TResult>(
       return fail("ログインが必要です。");
     }
 
+    // 成りすまし中は読み取り専用。管理操作だけでなく、対象ユーザーとしての
+    // 通常操作（記録の追加・削除など）も拒否する。閲覧のために入った画面から
+    // 他人のデータを書き換えられては意味がない。
+    // 閲覧の終了は authedAction を通さない別経路にしてあるため、ここで
+    // 一律に止めても抜け出せなくなることはない。
+    if (user.impersonatedBy) {
+      return fail(ERROR_MESSAGES.IMPERSONATION_READONLY);
+    }
+
     const parsed = schema.safeParse(rawInput);
     if (!parsed.success) {
       const flat = z.flattenError(parsed.error);
@@ -95,8 +104,7 @@ export function adminAction<TSchema extends z.ZodType, TResult>(
   return authedAction(schema, async (input, user) => {
     const role = effectiveAdminRole(user.adminRole, user.isAdmin);
     if (!hasAdminRole(role, minRole)) throw new Error("ADMIN_FORBIDDEN");
-    // 成りすまし中は閲覧のみ。書き込みを伴う操作は一律で止める。
-    if (user.impersonatedBy) throw new Error("IMPERSONATION_READONLY");
+    // 成りすまし中の拒否は authedAction 側で一律に行っている。
     return handler(input, user);
   });
 }

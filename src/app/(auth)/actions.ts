@@ -56,6 +56,12 @@ export async function loginAction(
     if (code === "WEAK_PASSWORD") {
       return { error: "パスワードは8文字以上で入力してください。" };
     }
+    if (code === "ACCOUNT_SUSPENDED") {
+      return {
+        error:
+          "このアカウントは現在ご利用いただけません。お心当たりがない場合はお問い合わせください。",
+      };
+    }
     console.error("[login]", err);
     return { error: "ログインに失敗しました。時間をおいて再度お試しください。" };
   }
