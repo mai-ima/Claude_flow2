@@ -170,8 +170,10 @@ model Transaction {
   id              String   @id @default(cuid())
   ledgerId        String
   ledger          Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
-  createdByUserId String
-  createdBy       User     @relation("TxnCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  // 記録者が退会しても記録自体は帳簿に残す。Cascade のままだと共有帳簿で
+  // 「他のメンバーが退会したら自分の家計簿から過去の記録が消える」ことになる。
+  createdByUserId String?
+  createdBy       User?    @relation("TxnCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   type            String // INCOME | EXPENSE
   amount          Int // 最小単位(JPY=円)
   currency        String   @default("JPY")
@@ -198,8 +200,8 @@ model RecurringTransaction {
   id              String   @id @default(cuid())
   ledgerId        String
   ledger          Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
-  createdByUserId String
-  createdBy       User     @relation("RecurringCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdByUserId String?
+  createdBy       User?    @relation("RecurringCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   type            String // INCOME | EXPENSE
   amount          Int
   currency        String   @default("JPY")
@@ -244,8 +246,8 @@ model Subscription {
   id                  String   @id @default(cuid())
   ledgerId            String
   ledger              Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
-  ownerUserId         String
-  owner               User     @relation("SubOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  ownerUserId         String?
+  owner               User?    @relation("SubOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   name                String
   amount              Int
   currency            String   @default("JPY")

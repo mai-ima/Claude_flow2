@@ -47,6 +47,7 @@ function toListItem(t: {
   paymentMethodId: string | null;
   category: { name: string; icon: string } | null;
   paymentMethod: { name: string } | null;
+  createdByUserId: string | null;
   createdBy: { name: string | null } | null;
 }): TxnListItem {
   return {
@@ -61,7 +62,9 @@ function toListItem(t: {
     categoryIcon: t.category?.icon ?? "tag",
     paymentMethodId: t.paymentMethodId,
     paymentName: t.paymentMethod?.name ?? null,
-    ownerName: t.createdBy?.name ?? null,
+    // 記録者が退会すると createdByUserId が null になる（記録自体は残す設計）。
+    // 名前未設定の在籍メンバーと区別して、退会済みであることを示す。
+    ownerName: t.createdByUserId === null ? "退会したメンバー" : (t.createdBy?.name ?? null),
   };
 }
 

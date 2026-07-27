@@ -258,13 +258,14 @@ export async function notifyBudgetOverages(now: Date = new Date()): Promise<numb
  */
 export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
   const subs = await db.subscription.findMany({
-    where: { status: "TRIAL", trialEndsAt: { not: null } },
+    // オーナーが退会した(ownerUserId が null)サブスクは通知の宛先が無いため除外する。
+    where: { status: "TRIAL", trialEndsAt: { not: null }, ownerUserId: { not: null } },
     include: { owner: { select: { id: true } } },
   });
   if (subs.length === 0) return 0;
 
   const since = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
-  const ownerIds = [...new Set(subs.map((s) => s.ownerUserId))];
+  const ownerIds = [...new Set(subs.map((s) => s.ownerUserId!))];
   const recent = await db.notification.findMany({
     where: { userId: { in: ownerIds }, type: "TRIAL_END", createdAt: { gte: since } },
     select: { userId: true, href: true },
@@ -281,14 +282,15 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
     const d = daysUntil(s.trialEndsAt!, now);
     if (d < 0 || d > s.reminderDaysBefore) continue;
     const href = `/subscriptions?ref=${s.id}`;
-    const keys = keysByUser.get(s.ownerUserId) ?? new Set<string>();
+    const ownerId = s.ownerUserId!;
+    const keys = keysByUser.get(ownerId) ?? new Set<string>();
     if (keys.has(href)) continue;
     const body =
       d === 0
         ? `${s.name} の無料体験は本日終了します。`
         : `${s.name} の無料体験はあと${d}日で終了します。`;
     toCreate.push({
-      userId: s.ownerUserId,
+      userId: ownerId,
       ledgerId: s.ledgerId,
       type: "TRIAL_END",
       title: "無料体験が終了します",
@@ -296,7 +298,7 @@ export async function notifyTrialEnds(now: Date = new Date()): Promise<number> {
       href,
     });
     keys.add(href);
-    keysByUser.set(s.ownerUserId, keys);
+    keysByUser.set(ownerId, keys);
   }
 
   if (toCreate.length > 0) await db.notification.createMany({ data: toCreate });
@@ -398,7 +400,9 @@ export async function dueReminders(now: Date = new Date()): Promise<ReminderItem
     include: { owner: { select: { id: true, email: true, name: true } } },
   });
   const items: ReminderItem[] = [];
+  // オーナーが退会したサブスクは通知の宛先が無いため列挙しない。
   for (const s of subs) {
+    if (!s.ownerUserId || !s.owner) continue;
     // 判定ロジックはテストのある isReminderDue に一本化する。
     if (!isReminderDue(s.nextRenewalAt, s.reminderDaysBefore, now)) continue;
     const d = daysUntil(s.nextRenewalAt, now);

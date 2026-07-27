@@ -35,6 +35,9 @@ const txnListSelect = {
   paymentMethodId: true,
   category: { select: { name: true, icon: true } },
   paymentMethod: { select: { name: true } },
+  // 退会したメンバーの記録は createdByUserId が null になる。
+  // 名前未設定の在籍メンバーと区別するため、ID も併せて取る。
+  createdByUserId: true,
   createdBy: { select: { name: true } },
 } satisfies Prisma.TransactionSelect;
 
