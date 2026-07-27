@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { PLANS } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
+import { effectiveAdminRole, type AdminRole } from "@/lib/admin-role";
 
 export interface AdminStats {
   users: number;
@@ -47,6 +48,7 @@ export interface AdminUserRow {
   email: string | null;
   name: string | null;
   isAdmin: boolean;
+  adminRole: AdminRole;
   tier: PlanTier;
   ledgers: number;
   createdAt: Date;
@@ -72,8 +74,50 @@ export async function listUsers(limit = 100): Promise<AdminUserRow[]> {
     email: u.email,
     name: u.name,
     isAdmin: u.isAdmin,
+    adminRole: effectiveAdminRole(u.adminRole, u.isAdmin),
     tier: (u.billing?.tier ?? "FREE") as PlanTier,
     ledgers: u._count.memberships,
     createdAt: u.createdAt,
   }));
+}
+
+export interface AuditLogRow {
+  id: string;
+  actorEmail: string;
+  action: string;
+  targetType: string;
+  targetLabel: string | null;
+  reason: string | null;
+  before: unknown;
+  after: unknown;
+  ip: string | null;
+  createdAt: Date;
+}
+
+/**
+ * 監査ログ一覧。アクター・対象・期間で絞り込む。
+ * 件数が伸びる一方のテーブルなので、必ず上限を切って返す。
+ */
+export async function listAuditLogs(opts: {
+  actorEmail?: string;
+  action?: string;
+  targetId?: string;
+  limit?: number;
+} = {}): Promise<AuditLogRow[]> {
+  const limit = Math.min(opts.limit ?? 100, 200);
+  return db.auditLog.findMany({
+    where: {
+      ...(opts.actorEmail ? { actorEmail: { contains: opts.actorEmail, mode: "insensitive" } } : {}),
+      ...(opts.action ? { action: opts.action } : {}),
+      ...(opts.targetId ? { targetId: opts.targetId } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
+
+/** 監査ログに実際に現れた操作種別（絞り込みの選択肢用）。 */
+export async function auditActions(): Promise<string[]> {
+  const rows = await db.auditLog.groupBy({ by: ["action"], orderBy: { action: "asc" } });
+  return rows.map((r) => r.action);
 }

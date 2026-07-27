@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { db } from "./db";
 import { DEFAULT_CATEGORIES } from "./default-categories";
 import { parseBetaFeatures, type BetaFeatureKey } from "./beta-features";
+import { effectiveAdminRole, hasAdminRole, type AdminRole } from "./admin-role";
 import { hashPassword, verifyPassword } from "./password";
 
 const SESSION_COOKIE = "tsumiki_session";
@@ -20,6 +21,10 @@ export type SessionUser = {
   assumedHourlyWage: number | null;
   tier: string;
   isAdmin: boolean;
+  /** 管理権限の粒度。isAdmin は後方互換で併存する。 */
+  adminRole: string;
+  /** 成りすまし中なら、閲覧している管理者のID。読み取り専用の目印。 */
+  impersonatedBy: string | null;
   betaOptIn: boolean;
   /** 個別に有効化したベータ機能。null は未指定（親スイッチに従い全て有効）。 */
   betaFeatures: BetaFeatureKey[] | null;
@@ -174,6 +179,8 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     assumedHourlyWage: u.assumedHourlyWage,
     tier: u.billing?.tier ?? "FREE",
     isAdmin: u.isAdmin,
+    adminRole: u.adminRole,
+    impersonatedBy: session.impersonatedBy,
     betaOptIn: u.betaOptIn,
     betaFeatures: parseBetaFeatures(u.betaFeatures),
   };
@@ -187,8 +194,13 @@ export async function requireUser(): Promise<SessionUser> {
 }
 
 /** 管理者必須。未ログイン/非管理者は throw。 */
-export async function requireAdmin(): Promise<SessionUser> {
+/**
+ * 管理画面用。既定は「閲覧できること」を要求する。
+ * 変更操作は adminAction(minRole) 側で別途判定する（画面が開ける = 何でもできる、にしない）。
+ */
+export async function requireAdmin(minRole: AdminRole = "READONLY"): Promise<SessionUser> {
   const user = await requireUser();
-  if (!user.isAdmin) throw new Error("FORBIDDEN");
+  const role = effectiveAdminRole(user.adminRole, user.isAdmin);
+  if (!hasAdminRole(role, minRole)) throw new Error("FORBIDDEN");
   return user;
 }

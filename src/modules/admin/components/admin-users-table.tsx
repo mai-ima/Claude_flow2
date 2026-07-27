@@ -3,9 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ShieldIcon, TrashIcon } from "@/components/icons";
-import { setUserTier, toggleAdmin, deleteUser } from "../actions";
+import { setUserTier, setAdminRole, deleteUser } from "../actions";
+import { ADMIN_ROLE_LABEL, type AdminRole } from "@/lib/admin-role";
+import { DangerousAdminDialog } from "./dangerous-admin-dialog";
+import { Field, Select } from "@/components/ui/field";
+import { Sheet } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 export interface AdminUser {
@@ -13,55 +17,58 @@ export interface AdminUser {
   email: string | null;
   name: string | null;
   isAdmin: boolean;
+  adminRole: AdminRole;
   tier: "FREE" | "PLUS" | "PRO";
   ledgers: number;
   createdLabel: string;
 }
 
+type Dialog =
+  | { kind: "tier"; user: AdminUser; tier: AdminUser["tier"] }
+  | { kind: "role"; user: AdminUser; role: AdminRole }
+  | { kind: "delete"; user: AdminUser }
+  | null;
+
+const REASON_PRESETS = ["サポート対応", "不具合の補償", "本人からの依頼", "テスト・検証"];
+
 export function AdminUsersTable({
   users,
   selfId,
+  canEdit,
 }: {
   users: AdminUser[];
   selfId: string;
+  /** SUPER のみ変更操作を出す。READONLY/SUPPORT には一覧のみ見せる。 */
+  canEdit: boolean;
 }) {
   const router = useRouter();
-  const confirm = useConfirm();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string>();
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [tierReason, setTierReason] = useState(REASON_PRESETS[0]);
 
-  function changeTier(userId: string, tier: "FREE" | "PLUS" | "PRO") {
-    start(async () => {
-      const res = await setUserTier({ userId, tier });
-      if (!res.ok) setMsg(res.error);
-      router.refresh();
-    });
-  }
-  function flipAdmin(userId: string) {
-    start(async () => {
-      const res = await toggleAdmin({ userId });
-      if (!res.ok) setMsg(res.error);
-      router.refresh();
-    });
-  }
-  async function remove(userId: string, email: string | null) {
-    const ok = await confirm({
-      title: `${email ?? "このユーザー"} を削除しますか？`,
-      body: "関連データもすべて削除されます。この操作は取り消せません。",
-      confirmText: "削除する",
-      danger: true,
-    });
-    if (!ok) return;
-    start(async () => {
-      const res = await deleteUser({ userId });
-      if (!res.ok) setMsg(res.error);
-      router.refresh();
-    });
+  function done(res: { ok: boolean; error?: string }) {
+    if (!res.ok) setMsg(res.error);
+    else {
+      setMsg(undefined);
+      setDialog(null);
+    }
+    router.refresh();
   }
 
   return (
     <div className={cn(pending && "opacity-70")}>
-      {msg && <p className="mb-3 text-[13px] text-expense">{msg}</p>}
+      {msg && (
+        <p role="alert" className="mb-3 text-[13px] text-expense">
+          {msg}
+        </p>
+      )}
+      {!canEdit && (
+        <p className="mb-3 rounded-xl bg-surface-2 px-4 py-3 text-[13px] text-text-secondary">
+          閲覧のみの権限です。プラン変更・権限付与・削除は行えません。
+        </p>
+      )}
+
       <div className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-1">
         {users.map((u) => (
           <div
@@ -71,9 +78,9 @@ export function AdminUsersTable({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="truncate text-[14px] font-medium">{u.name ?? "（名前なし）"}</span>
-                {u.isAdmin && (
+                {u.adminRole !== "NONE" && (
                   <Badge tone="pod" size="sm">
-                    <ShieldIcon size={11} /> 管理者
+                    <ShieldIcon size={11} /> {ADMIN_ROLE_LABEL[u.adminRole]}
                   </Badge>
                 )}
                 {u.id === selfId && <Badge size="sm">自分</Badge>}
@@ -83,36 +90,143 @@ export function AdminUsersTable({
               </div>
             </div>
 
-            <select
-              value={u.tier}
-              onChange={(e) => changeTier(u.id, e.target.value as AdminUser["tier"])}
-              aria-label="プラン変更"
-              className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2 text-[13px]"
-            >
-              <option value="FREE">FREE</option>
-              <option value="PLUS">PLUS</option>
-              <option value="PRO">PRO</option>
-            </select>
+            {canEdit && (
+              <>
+                <select
+                  value={u.tier}
+                  onChange={(e) =>
+                    setDialog({ kind: "tier", user: u, tier: e.target.value as AdminUser["tier"] })
+                  }
+                  aria-label={`${u.email ?? "このユーザー"} のプラン`}
+                  className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2 text-[13px]"
+                >
+                  <option value="FREE">FREE</option>
+                  <option value="PLUS">PLUS</option>
+                  <option value="PRO">PRO</option>
+                </select>
 
-            <button
-              onClick={() => flipAdmin(u.id)}
-              disabled={u.id === selfId}
-              className="rounded-lg border border-border-subtle px-2.5 py-1.5 text-[12px] font-medium transition hover:bg-surface-2 disabled:opacity-30"
-            >
-              {u.isAdmin ? "管理者解除" : "管理者にする"}
-            </button>
+                <select
+                  value={u.adminRole}
+                  disabled={u.id === selfId}
+                  onChange={(e) =>
+                    setDialog({ kind: "role", user: u, role: e.target.value as AdminRole })
+                  }
+                  aria-label={`${u.email ?? "このユーザー"} の管理権限`}
+                  className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2 text-[13px] disabled:opacity-30"
+                >
+                  <option value="NONE">権限なし</option>
+                  <option value="READONLY">閲覧のみ</option>
+                  <option value="SUPPORT">サポート</option>
+                  <option value="SUPER">全権</option>
+                </select>
 
-            <button
-              onClick={() => remove(u.id, u.email)}
-              disabled={u.id === selfId}
-              aria-label="削除"
-              className="grid h-9 w-9 place-items-center rounded-lg text-text-tertiary transition hover:bg-expense/10 hover:text-expense disabled:opacity-30"
-            >
-              <TrashIcon size={16} />
-            </button>
+                <button
+                  onClick={() => setDialog({ kind: "delete", user: u })}
+                  disabled={u.id === selfId}
+                  aria-label={`${u.email ?? "このユーザー"} を削除`}
+                  className="grid h-9 w-9 place-items-center rounded-lg text-text-tertiary transition hover:bg-expense/10 hover:text-expense disabled:opacity-30"
+                >
+                  <TrashIcon size={16} />
+                </button>
+              </>
+            )}
           </div>
         ))}
       </div>
+
+      {/* プラン変更は取り返しがつくため、理由のみ求める。 */}
+      <Sheet
+        open={dialog?.kind === "tier"}
+        onClose={() => setDialog(null)}
+        title="プランを変更しますか？"
+        footer={
+          <div className="flex gap-2.5">
+            <Button variant="gray" full size="lg" onClick={() => setDialog(null)}>
+              キャンセル
+            </Button>
+            <Button
+              full
+              size="lg"
+              disabled={pending}
+              onClick={() => {
+                if (dialog?.kind !== "tier") return;
+                start(async () => {
+                  done(
+                    await setUserTier({
+                      userId: dialog.user.id,
+                      tier: dialog.tier,
+                      reason: tierReason,
+                    }),
+                  );
+                });
+              }}
+            >
+              {pending ? "変更中…" : "変更する"}
+            </Button>
+          </div>
+        }
+      >
+        {dialog?.kind === "tier" && (
+          <div className="space-y-4">
+            <p className="text-[14px] text-text-secondary">
+              {dialog.user.email} を {dialog.user.tier} → {dialog.tier} に変更します。
+            </p>
+            <Field label="理由（監査ログに残ります）">
+              <Select value={tierReason} onChange={(e) => setTierReason(e.target.value)}>
+                {REASON_PRESETS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+        )}
+      </Sheet>
+
+      <DangerousAdminDialog
+        open={dialog?.kind === "role"}
+        onClose={() => setDialog(null)}
+        title="管理権限を変更しますか？"
+        description={
+          dialog?.kind === "role"
+            ? `${dialog.user.email} の管理権限を「${ADMIN_ROLE_LABEL[dialog.user.adminRole]}」から「${ADMIN_ROLE_LABEL[dialog.role]}」に変更します。`
+            : ""
+        }
+        confirmLabel="変更する"
+        targetEmail={dialog?.kind === "role" ? dialog.user.email : null}
+        pending={pending}
+        onSubmit={({ confirmEmail, reason }) => {
+          if (dialog?.kind !== "role") return;
+          start(async () => {
+            done(
+              await setAdminRole({
+                userId: dialog.user.id,
+                role: dialog.role,
+                confirmEmail,
+                reason,
+              }),
+            );
+          });
+        }}
+      />
+
+      <DangerousAdminDialog
+        open={dialog?.kind === "delete"}
+        onClose={() => setDialog(null)}
+        title="ユーザーを削除しますか？"
+        description="このユーザーと、所有する帳簿・取引・サブスクがすべて削除されます。取り消せません。"
+        confirmLabel="完全に削除する"
+        targetEmail={dialog?.kind === "delete" ? dialog.user.email : null}
+        danger
+        pending={pending}
+        onSubmit={({ confirmEmail, reason }) => {
+          if (dialog?.kind !== "delete") return;
+          start(async () => {
+            done(await deleteUser({ userId: dialog.user.id, confirmEmail, reason }));
+          });
+        }}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { requireUser, type SessionUser } from "./auth";
 import { logger } from "./logger";
+import { effectiveAdminRole, hasAdminRole, type AdminRole } from "./admin-role";
 
 export type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -36,6 +37,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   NAME_MISMATCH: "帳簿の名前が一致しません。",
   OWNS_SHARED_LEDGER:
     "オーナーになっている共有帳簿があります。先にオーナーを譲るか帳簿を削除してください。",
+  ADMIN_FORBIDDEN: "この管理操作を行う権限がありません。",
+  REASON_REQUIRED: "理由の入力が必要です。",
+  CONFIRM_MISMATCH: "確認の入力が一致しません。",
+  IMPERSONATION_READONLY: "他のユーザーとして閲覧中は、変更操作を行えません。",
 };
 
 /**
@@ -73,4 +78,25 @@ export function authedAction<TSchema extends z.ZodType, TResult>(
       return fail("処理に失敗しました。時間をおいて再度お試しください。");
     }
   };
+}
+
+
+/**
+ * 管理操作用のラッパー。authedAction に「必要な管理権限」の判定を足す。
+ *
+ * これまでは各 action の先頭で `if (!user.isAdmin) throw` を書き写しており、
+ * 新しい action で1行書き忘れれば誰でも実行できる形だった。判定をここに寄せる。
+ */
+export function adminAction<TSchema extends z.ZodType, TResult>(
+  minRole: AdminRole,
+  schema: TSchema,
+  handler: (input: z.infer<TSchema>, user: SessionUser) => Promise<TResult>,
+) {
+  return authedAction(schema, async (input, user) => {
+    const role = effectiveAdminRole(user.adminRole, user.isAdmin);
+    if (!hasAdminRole(role, minRole)) throw new Error("ADMIN_FORBIDDEN");
+    // 成りすまし中は閲覧のみ。書き込みを伴う操作は一律で止める。
+    if (user.impersonatedBy) throw new Error("IMPERSONATION_READONLY");
+    return handler(input, user);
+  });
 }
