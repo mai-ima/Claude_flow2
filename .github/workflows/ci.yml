@@ -33,5 +33,9 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm run test
+      # build:next はバンドルだけを作る。
+      # npm run build はデプロイ用でマイグレーションと seed を含むため、
+      # 実データベースの無い CI で走らせると接続できずに失敗する。
+      # CI で確かめたいのは「コードがビルドできること」なので、そこだけ実行する。
       - name: Build
-        run: npm run build
+        run: npm run build:next
