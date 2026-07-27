@@ -10,6 +10,13 @@ import {
   notifyTrialEnds,
   pruneExpiredData,
 } from "@/lib/orchestrator";
+import {
+  notifyWasteSubscriptions,
+  notifyPriceChanges,
+  notifyWeeklySummary,
+  notifyGoals,
+  notifyRecurringPosted,
+} from "@/lib/notify-rules";
 import { sendEmail, emailLayout, escapeHtml } from "@/lib/email";
 import { formatMoney } from "@/lib/money";
 import { logger } from "@/lib/logger";
@@ -45,11 +52,26 @@ async function handle(req: Request) {
   // 更新日を進めた後の一覧。アプリ内通知とメールで共用する。
   const reminders = await dueReminders(now);
 
-  const [notified, budgetAlerts, trialAlerts, pruned] = await Promise.all([
+  const [
+    notified,
+    budgetAlerts,
+    trialAlerts,
+    pruned,
+    wasteAlerts,
+    priceAlerts,
+    weeklySummaries,
+    goalAlerts,
+    recurringAlerts,
+  ] = await Promise.all([
     notifyDueRenewals(now, reminders),
     notifyBudgetOverages(now),
     notifyTrialEnds(now),
     pruneExpiredData(now),
+    notifyWasteSubscriptions(now),
+    notifyPriceChanges(now),
+    notifyWeeklySummary(now),
+    notifyGoals(now),
+    notifyRecurringPosted(now),
   ]);
 
   // メール送信（env 差込み式・キーが無ければ no-op）。オーナーごとに1通。
@@ -97,6 +119,11 @@ async function handle(req: Request) {
     pruned,
     budgetAlerts,
     trialAlerts,
+    wasteAlerts,
+    priceAlerts,
+    weeklySummaries,
+    goalAlerts,
+    recurringAlerts,
     emailsSent,
     reminders: reminders.length,
     emailEnabled: isEmailEnabled,
@@ -118,5 +145,5 @@ export async function GET(req: Request) {
 
 export const POST = handle;
 
-/** Vercel の関数タイムアウト。7つのバッチを順に実行するため長めに取る。 */
+/** Vercel の関数タイムアウト。段ごとに並行実行するが、件数が伸びるため長めに取る。 */
 export const maxDuration = 300;
