@@ -12,9 +12,14 @@ export {
   revokeSessionAction,
   revokeOtherSessionsAction,
   sendVerificationEmailAction,
+  beginTwoFactorAction,
+  confirmTwoFactorAction,
+  disableTwoFactorAction,
+  regenerateRecoveryCodesAction,
 } from "./actions";
 export { PasswordForm } from "./components/password-form";
 export { EmailVerification } from "./components/email-verification";
+export { TwoFactorSettings } from "./components/two-factor-settings";
 export { SessionList, type SessionItem } from "./components/session-list";
 export { ProfileForm } from "./components/profile-form";
 export { BetaFeaturesToggle } from "./components/beta-features-toggle";

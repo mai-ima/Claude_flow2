@@ -5,7 +5,19 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
 import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
-import { signOut, changePassword, revokeSession, revokeOtherSessions } from "@/lib/auth";
+import {
+  signOut,
+  changePassword,
+  revokeSession,
+  revokeOtherSessions,
+  assertPassword,
+} from "@/lib/auth";
+import {
+  beginTwoFactorSetup,
+  confirmTwoFactor,
+  disableTwoFactor,
+  regenerateRecoveryCodes,
+} from "@/lib/two-factor";
 import { sendEmailVerification } from "@/lib/account-mail";
 import { isEmailEnabled } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
@@ -219,6 +231,48 @@ export const sendVerificationEmailAction = authedAction(z.object({}), async (_in
   if (!sent) throw new Error("EMAIL_SEND_FAILED");
   return { alreadyVerified: false };
 });
+
+/** 二要素認証の設定を開始する。鍵と、認証アプリに読ませる文字列を返す。 */
+export const beginTwoFactorAction = authedAction(z.object({}), async (_input, user) => {
+  if (!user.email) throw new Error("NO_EMAIL");
+  const { secret, uri } = await beginTwoFactorSetup(user.id, user.email);
+  return { secret, uri };
+});
+
+/** 認証アプリのコードを照合して有効化する。復旧コードはこの一度だけ返す。 */
+export const confirmTwoFactorAction = authedAction(
+  z.object({ code: z.string().min(1, "コードを入力してください。") }),
+  async (input, user) => {
+    const codes = await confirmTwoFactor(user.id, input.code);
+    revalidatePath("/settings");
+    return { recoveryCodes: codes };
+  },
+);
+
+/**
+ * 二要素認証の解除。パスワードの確認を必須にする。
+ * 端末を一時的に借りられただけで外せると、二要素にした意味が無くなる。
+ */
+export const disableTwoFactorAction = authedAction(
+  z.object({ password: z.string().min(1, "パスワードを入力してください。") }),
+  async (input, user) => {
+    await assertPassword(user.id, input.password);
+    await disableTwoFactor(user.id);
+    revalidatePath("/settings");
+    return { ok: true };
+  },
+);
+
+/** 復旧コードの作り直し。こちらもパスワードの確認を必須にする。 */
+export const regenerateRecoveryCodesAction = authedAction(
+  z.object({ password: z.string().min(1, "パスワードを入力してください。") }),
+  async (input, user) => {
+    await assertPassword(user.id, input.password);
+    const codes = await regenerateRecoveryCodes(user.id);
+    revalidatePath("/settings");
+    return { recoveryCodes: codes };
+  },
+);
 
 /** 指定した端末のログインを終了する。 */
 export const revokeSessionAction = authedAction(

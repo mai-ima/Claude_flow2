@@ -10,12 +10,15 @@ import { db } from "./db";
  * 生の値はメールに載せた一度きりで、こちらには残らない。
  */
 
-export type TokenPurpose = "reset" | "verify";
+export type TokenPurpose = "reset" | "verify" | "twofa";
 
 /** 用途ごとの有効期限。短いほうが安全だが、短すぎるとメールを開く前に切れる。 */
 const TTL_MINUTES: Record<TokenPurpose, number> = {
   reset: 60,
   verify: 60 * 24,
+  // パスワードは通ったが2段目が未了、という中途の状態。
+  // 認証アプリを開いて打ち込むだけなので短くてよい。
+  twofa: 10,
 };
 
 function hash(raw: string): string {
@@ -74,6 +77,25 @@ export async function consumeToken(
   const b = Buffer.from(hashed);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
 
+  return row.identifier.slice(prefix.length);
+}
+
+/**
+ * 消さずに検証だけする。
+ *
+ * 二要素認証の途中では、コードを打ち間違えるたびに最初からやり直しに
+ * なってしまうと使い物にならない。通ったところで consumeToken する。
+ */
+export async function peekToken(
+  purpose: TokenPurpose,
+  raw: string,
+): Promise<string | null> {
+  if (!raw) return null;
+  const row = await db.verificationToken.findUnique({ where: { token: hash(raw) } });
+  if (!row) return null;
+  const prefix = `${purpose}:`;
+  if (!row.identifier.startsWith(prefix)) return null;
+  if (row.expires < new Date()) return null;
   return row.identifier.slice(prefix.length);
 }
 

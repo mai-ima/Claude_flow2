@@ -144,10 +144,26 @@ export async function signInWithEmail(
     }
     // 凍結中はセッションを発行しない。理由は画面側で案内する。
     if (user.suspendedAt) throw new Error("ACCOUNT_SUSPENDED");
+
+    // 二段階が有効なら、ここではまだログインさせない。
+    // パスワードが漏れていても2段目で止まる、というのが二要素の要点なので、
+    // セッションの発行は必ず2段目を通ってから行う。
+    if (user.twoFactorEnabledAt) {
+      await bootstrapUser(user.id, user.name);
+      return { user, pendingTwoFactor: true as const };
+    }
   }
   await bootstrapUser(user.id, user.name);
   await establishSession(user.id);
-  return user;
+  return { user, pendingTwoFactor: false as const };
+}
+
+/**
+ * 二段目を通過したあとのログイン確定。
+ * 呼び出す前に必ず二要素の照合を済ませておくこと。
+ */
+export async function completeTwoFactorLogin(userId: string) {
+  await establishSession(userId);
 }
 
 /**
@@ -233,6 +249,17 @@ export async function markEmailVerified(email: string) {
     where: { id: user.id },
     data: { emailVerified: new Date() },
   });
+}
+
+/**
+ * 「本人がいまここにいる」ことをパスワードで確かめる。
+ * 二要素の解除など、取り返しのつきにくい操作の前に使う。
+ */
+export async function assertPassword(userId: string, password: string) {
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("NO_ACCOUNT");
+  if (!user.passwordHash) throw new Error("PASSWORD_NOT_SET");
+  if (!verifyPassword(password, user.passwordHash)) throw new Error("INVALID_PASSWORD");
 }
 
 /** 今のブラウザのセッショントークン。端末一覧で「この端末」を示すのに使う。 */

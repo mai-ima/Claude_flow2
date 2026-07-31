@@ -2,7 +2,19 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { signInWithEmail, signOut, loginAsDemo, resetPassword } from "@/lib/auth";
+import {
+  signInWithEmail,
+  signOut,
+  loginAsDemo,
+  resetPassword,
+  completeTwoFactorLogin,
+} from "@/lib/auth";
+import { checkSecondFactor } from "@/lib/two-factor";
+import {
+  startTwoFactorChallenge,
+  pendingTwoFactorUserId,
+  finishTwoFactorChallenge,
+} from "@/lib/two-factor-challenge";
 import { db } from "@/lib/db";
 import { consumeToken } from "@/lib/verification-token";
 import { sendPasswordResetEmail, sendEmailVerification } from "@/lib/account-mail";
@@ -47,8 +59,15 @@ export async function loginAction(
   if (!byIp.ok || !byEmail.ok) {
     return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
   }
+  let pending = false;
   try {
-    await signInWithEmail(parsed.data.email, parsed.data.password, { mode: "login" });
+    const result = await signInWithEmail(parsed.data.email, parsed.data.password, {
+      mode: "login",
+    });
+    if (result.pendingTwoFactor) {
+      await startTwoFactorChallenge(result.user.id);
+      pending = true;
+    }
   } catch (err) {
     const code = err instanceof Error ? err.message : "";
     // 「アカウントが無い」「パスワードが違う」を区別して返すと、
@@ -78,6 +97,53 @@ export async function loginAction(
     }
     logger.error("login failed", err);
     return { error: "ログインに失敗しました。時間をおいて再度お試しください。" };
+  }
+  // redirect は例外で制御を移すため、try の外で呼ぶ。
+  if (pending) {
+    redirect(`/login/verify?next=${encodeURIComponent(safeNext(parsed.data.next))}`);
+  }
+  redirect(safeNext(parsed.data.next));
+}
+
+/**
+ * 二段目の照合。
+ *
+ * 途中の状態は httpOnly Cookie のトークンで持つ。ここに userId を直接
+ * 入れると、書き換えるだけで他人としてログインできてしまう。
+ */
+export async function verifyTwoFactorAction(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const parsed = z
+    .object({
+      code: z.string().min(1, "コードを入力してください。"),
+      next: z.string().optional(),
+    })
+    .safeParse({ code: formData.get("code"), next: formData.get("next") || undefined });
+  if (!parsed.success) {
+    return { error: z.flattenError(parsed.error).fieldErrors.code?.[0] };
+  }
+
+  const rl = await rateLimit(`twofa:${await clientIp()}`, 10, 300);
+  if (!rl.ok) {
+    return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
+  }
+
+  try {
+    const userId = await pendingTwoFactorUserId();
+    if (!userId) {
+      return { error: "確認の有効期限が切れました。もう一度ログインしてください。" };
+    }
+    const result = await checkSecondFactor(userId, parsed.data.code);
+    if (!result.ok) {
+      return { error: "コードが正しくありません。" };
+    }
+    await finishTwoFactorChallenge();
+    await completeTwoFactorLogin(userId);
+  } catch (err) {
+    logger.error("two-factor verification failed", err);
+    return { error: "確認に失敗しました。時間をおいて再度お試しください。" };
   }
   redirect(safeNext(parsed.data.next));
 }

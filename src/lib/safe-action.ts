@@ -50,6 +50,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   EMAIL_DISABLED: "ただいまメールの送信を準備中のため、この操作はご利用いただけません。",
   EMAIL_SEND_FAILED: "メールを送信できませんでした。時間をおいて再度お試しください。",
   TOO_MANY_REQUESTS: "お申し込みが続いています。しばらく時間をおいてお試しください。",
+  ALREADY_ENABLED: "二要素認証はすでに有効です。",
+  NOT_ENABLED: "二要素認証が有効になっていません。",
+  SETUP_NOT_STARTED: "設定が開始されていません。最初からやり直してください。",
+  INVALID_CODE: "コードが正しくありません。認証アプリの表示をご確認ください。",
 };
 
 /**

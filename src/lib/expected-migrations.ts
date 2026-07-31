@@ -18,4 +18,5 @@ export const EXPECTED_MIGRATIONS = [
   "20260727040000_add_ops_tables",
   "20260727050000_add_user_suspension",
   "20260727060000_add_content_and_flag_tables",
+  "20260731000000_add_two_factor",
 ] as const;

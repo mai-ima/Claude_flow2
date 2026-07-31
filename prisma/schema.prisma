@@ -45,6 +45,11 @@ model User {
   // null = 未設定（betaOptIn が真なら全て有効／既存ユーザーの挙動を維持）
   // 配列 = ここに載っているものだけ有効
   betaFeatures     Json?
+  // 二要素認証。secret は Base32、復旧コードはハッシュの配列で持つ
+  // （データベースを読めるだけでは突破できないようにする）。
+  twoFactorSecret         String?
+  twoFactorEnabledAt      DateTime?
+  twoFactorRecoveryCodes  Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

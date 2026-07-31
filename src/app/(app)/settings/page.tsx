@@ -17,8 +17,10 @@ import {
   PasswordForm,
   SessionList,
   EmailVerification,
+  TwoFactorSettings,
 } from "@/modules/account";
 import { listSessions } from "@/modules/account/queries";
+import { twoFactorStatus } from "@/lib/two-factor";
 import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
 import { tierAtLeast } from "@/lib/plans";
@@ -31,11 +33,12 @@ export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true 
 
 export default async function SettingsPage() {
   const ctx = await getAppContext();
-  const [methods, categories, maxMembers, sessionRows] = await Promise.all([
+  const [methods, categories, maxMembers, sessionRows, twoFactor] = await Promise.all([
     listPaymentMethods(ctx.ledgerId),
     listAllCategories(ctx.ledgerId),
     ledgerMemberLimit(ctx.ledger.ownerId),
     listSessions(ctx.user.id),
+    twoFactorStatus(ctx.user.id),
   ]);
 
   // Date のままクライアントへ渡さない（表示は相対時間だけで足りる）。
@@ -143,6 +146,13 @@ export default async function SettingsPage() {
 
         <ListGroup title="パスワード" padded>
           <PasswordForm />
+        </ListGroup>
+
+        <ListGroup title="二要素認証" padded>
+          <TwoFactorSettings
+            enabled={twoFactor.enabled}
+            remainingRecoveryCodes={twoFactor.remainingRecoveryCodes}
+          />
         </ListGroup>
 
         <ListGroup title="ログイン中の端末" padded>
