@@ -55,8 +55,22 @@ const securityHeaders = [
  * ビルド時のファイルトレースがプロジェクト全体を巻き込み、
  * サーバー関数に開発用の依存まで同梱されてしまう（起動が遅くなる）。
  * 実行時に不要なものを明示的に外す。
+ *
+ * ここに書いてよいのは「実行時に絶対に読まれない」ものだけ。
+ * 判断を誤ると、サーバー関数がリクエストを受ける前に
+ * Cannot find module で落ち、動的なページが全滅する。
+ * 静的なページは CDN から配信され続けるため、
+ * 「トップは出るのにログインだけ落ちる」という分かりにくい形になる。
+ *
+ * 実際にそれで本番が停止した: @swc/** を外していたが、Next 自身が起動時に
+ * @swc/helpers を require するため、関数が起動できなかった。
+ * 手元の next start は node_modules が丸ごとあるので再現しない。
+ * 迷ったら外さない。削れる容量より、止まる損失のほうがはるかに大きい。
+ *
+ * 追加・変更したら next-config.test.ts が実行時必須パッケージとの
+ * 突き合わせを行う。
  */
-const tracingExcludes = [
+export const TRACING_EXCLUDES = [
   "node_modules/.cache/**",
   "node_modules/typescript/**",
   "node_modules/prettier/**",
@@ -68,20 +82,34 @@ const tracingExcludes = [
   "node_modules/@vitest/**",
   "node_modules/playwright/**",
   "node_modules/playwright-core/**",
+  // Prisma の CLI と、エンジンの取得だけを担うパッケージ。
+  // 実行時に読むエンジンは src/generated/prisma 配下にあり、これには当たらない。
   "node_modules/prisma/**",
   "node_modules/@prisma/engines/**",
-  "node_modules/esbuild/**",
-  "node_modules/@esbuild/**",
-  "node_modules/@swc/**",
   "public/**",
   "scripts/**",
   "**/*.test.ts",
   "**/*.test.tsx",
 ];
 
+/**
+ * サーバー関数が起動するために必ず要るパッケージ。
+ * 除外リストがこれらに当たっていないことをテストで検査する。
+ */
+export const RUNTIME_REQUIRED_PACKAGES = [
+  // Next 自身が setup-node-env から辿って require する。
+  "@swc/helpers",
+  "next",
+  "react",
+  "react-dom",
+  "scheduler",
+  "styled-jsx",
+  "@prisma/client",
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  outputFileTracingExcludes: { "**/*": tracingExcludes },
+  outputFileTracingExcludes: { "**/*": TRACING_EXCLUDES },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

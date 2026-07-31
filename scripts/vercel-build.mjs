@@ -11,6 +11,8 @@
 // 原因を名指しする）ため、公開して自分で名乗らせるほうが復旧が早い。
 // 準備に失敗したことは終了時にまとめて大きく出す。
 import { execSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { config as loadEnv } from "dotenv";
 
 // Vercel では環境変数がプロセスに入っているが、ローカルでは .env にある。
@@ -105,6 +107,61 @@ if (dbUrl) {
 }
 
 run("npx next build");
+
+/**
+ * サーバー関数に「起動に必要なもの」が入っているかを、公開前に確かめる。
+ *
+ * outputFileTracingExcludes を書き間違えると、関数はリクエストを受ける前に
+ * Cannot find module で落ちる。手元の next start は node_modules が丸ごと
+ * あるため再現せず、公開して初めて分かる。ビルド成果物のほうを直接見る。
+ */
+function checkTracedRuntimeDeps() {
+  const REQUIRED = ["@swc/helpers", "next/dist"];
+  const roots = ["app", "pages"];
+  const traces = [];
+
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (e.name.endsWith(".nft.json")) traces.push(full);
+    }
+  };
+  for (const r of roots) walk(join(".next", "server", r));
+  if (traces.length === 0) return;
+
+  const missing = new Set();
+  for (const t of traces) {
+    let files;
+    try {
+      files = JSON.parse(readFileSync(t, "utf8")).files ?? [];
+    } catch {
+      continue;
+    }
+    for (const pkg of REQUIRED) {
+      if (!files.some((f) => f.includes(pkg))) missing.add(`${pkg} (${t})`);
+    }
+  }
+
+  if (missing.size > 0) {
+    warnings.push(
+      "サーバー関数の同梱物に、起動に必要なものが含まれていません:\n" +
+        [...missing].map((m) => `    - ${m}`).join("\n") +
+        "\n  next.config.ts の outputFileTracingExcludes を確認してください。\n" +
+        "  このまま公開すると、動的なページが全て 500 になります。",
+    );
+  } else {
+    console.log(`[vercel-build] サーバー関数の同梱物を確認しました（${traces.length}件）。`);
+  }
+}
+
+checkTracedRuntimeDeps();
 
 if (warnings.length > 0) {
   // ビルドは成功させるが、ログを流し読みしても気づける大きさで出す。
