@@ -41,6 +41,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   REASON_REQUIRED: "理由の入力が必要です。",
   CONFIRM_MISMATCH: "確認の入力が一致しません。",
   IMPERSONATION_READONLY: "他のユーザーとして閲覧中は、変更操作を行えません。",
+  INVALID_PASSWORD: "現在のパスワードが正しくありません。",
+  WEAK_PASSWORD: "パスワードは8文字以上で入力してください。",
+  SAME_PASSWORD: "現在と同じパスワードです。別のものを設定してください。",
+  PASSWORD_NOT_SET:
+    "このアカウントにはパスワードが設定されていません。ログイン画面の「パスワードをお忘れですか」から設定してください。",
 };
 
 /**

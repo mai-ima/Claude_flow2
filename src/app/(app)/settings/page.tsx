@@ -14,7 +14,10 @@ import {
   DeleteAllData,
   DataTools,
   BetaFeaturesToggle,
+  PasswordForm,
+  SessionList,
 } from "@/modules/account";
+import { listSessions } from "@/modules/account/queries";
 import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
 import { tierAtLeast } from "@/lib/plans";
@@ -27,11 +30,19 @@ export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true 
 
 export default async function SettingsPage() {
   const ctx = await getAppContext();
-  const [methods, categories, maxMembers] = await Promise.all([
+  const [methods, categories, maxMembers, sessionRows] = await Promise.all([
     listPaymentMethods(ctx.ledgerId),
     listAllCategories(ctx.ledgerId),
     ledgerMemberLimit(ctx.ledger.ownerId),
+    listSessions(ctx.user.id),
   ]);
+
+  // Date のままクライアントへ渡さない（表示は相対時間だけで足りる）。
+  const sessions = sessionRows.map((s) => ({
+    ...s,
+    createdAt: s.createdAt.toISOString(),
+    lastUsedAt: s.lastUsedAt.toISOString(),
+  }));
 
   const members = ctx.ledger.members.map((m) => ({
     userId: m.userId,
@@ -128,6 +139,14 @@ export default async function SettingsPage() {
             />
           </ListGroup>
         )}
+
+        <ListGroup title="パスワード" padded>
+          <PasswordForm />
+        </ListGroup>
+
+        <ListGroup title="ログイン中の端末" padded>
+          <SessionList sessions={sessions} />
+        </ListGroup>
 
         <ListGroup title="アカウント" padded bodyClassName="space-y-4">
           <div className="flex items-center justify-between">

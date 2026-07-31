@@ -5,6 +5,7 @@ import { z } from "zod";
 import { signInWithEmail, signOut, loginAsDemo } from "@/lib/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { safeNext } from "@/lib/safe-next";
+import { logger } from "@/lib/logger";
 
 const baseSchema = {
   email: z.string().email("メールアドレスの形式が正しくありません。"),
@@ -33,33 +34,37 @@ export async function loginAction(
     const f = z.flattenError(parsed.error).fieldErrors;
     return { error: f.password?.[0] ?? f.email?.[0] ?? "入力を確認してください。" };
   }
-  const rl = await rateLimit(`login:${await clientIp()}`, 12, 60);
-  if (!rl.ok) {
+  // IP だけで数えると、複数のIPから1つのアカウントを狙う総当たりを止められない。
+  // 逆にメールだけで数えると、共有回線からの正常な利用を巻き込む。両方で数える。
+  const email = parsed.data.email.trim().toLowerCase();
+  const [byIp, byEmail] = await Promise.all([
+    rateLimit(`login:${await clientIp()}`, 12, 60),
+    rateLimit(`login-email:${email}`, 8, 300),
+  ]);
+  if (!byIp.ok || !byEmail.ok) {
     return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
   }
   try {
     await signInWithEmail(parsed.data.email, parsed.data.password, { mode: "login" });
   } catch (err) {
     const code = err instanceof Error ? err.message : "";
-    if (code === "NO_ACCOUNT") {
-      return { error: "アカウントが見つかりません。新規登録をお試しください。" };
-    }
-    if (code === "INVALID_PASSWORD") {
-      return { error: "パスワードが正しくありません。" };
-    }
-    if (code === "PASSWORD_NOT_SET") {
+    // 「アカウントが無い」「パスワードが違う」を区別して返すと、
+    // メールアドレスを入れ替えて試すだけで会員かどうかを外から調べられる。
+    // 原因はサーバーのログに残し、画面には同じ文言を返す。
+    if (code === "NO_ACCOUNT" || code === "INVALID_PASSWORD" || code === "PASSWORD_NOT_SET") {
+      logger.warn("login rejected", { code });
       return {
         error:
-          "このアカウントにはパスワードが設定されていません。お問い合わせから再設定をご依頼ください。",
+          "メールアドレスまたはパスワードが正しくありません。初めての方は新規登録をお試しください。",
       };
     }
     if (code === "WEAK_PASSWORD") {
       return { error: "パスワードは8文字以上で入力してください。" };
     }
-    if (code === "SCHEMA_DRIFT") {
+    if (code === "SCHEMA_DRIFT" || code === "DATABASE_UNAVAILABLE") {
       return {
         error:
-          "サーバー側の準備が完了していません。時間をおいて再度お試しください。（管理者の方はデプロイのマイグレーションをご確認ください）",
+          "サーバー側の準備が完了していません。時間をおいて再度お試しください。（管理者の方は /api/health をご確認ください）",
       };
     }
     if (code === "ACCOUNT_SUSPENDED") {
@@ -68,7 +73,7 @@ export async function loginAction(
           "このアカウントは現在ご利用いただけません。お心当たりがない場合はお問い合わせください。",
       };
     }
-    console.error("[login]", err);
+    logger.error("login failed", err);
     return { error: "ログインに失敗しました。時間をおいて再度お試しください。" };
   }
   redirect(safeNext(parsed.data.next));
@@ -105,7 +110,13 @@ export async function signupAction(
     if (code === "WEAK_PASSWORD") {
       return { error: "パスワードは8文字以上で入力してください。" };
     }
-    console.error("[signup]", err);
+    if (code === "SCHEMA_DRIFT" || code === "DATABASE_UNAVAILABLE") {
+      return {
+        error:
+          "サーバー側の準備が完了していません。時間をおいて再度お試しください。（管理者の方は /api/health をご確認ください）",
+      };
+    }
+    logger.error("signup failed", err);
     return { error: "登録に失敗しました。時間をおいて再度お試しください。" };
   }
   redirect(safeNext(parsed.data.next));
@@ -115,7 +126,7 @@ export async function demoLoginAction() {
   try {
     await loginAsDemo();
   } catch (err) {
-    console.error("[demo-login]", err);
+    logger.error("demo login failed", err);
     redirect("/login?error=demo");
   }
   redirect("/dashboard");

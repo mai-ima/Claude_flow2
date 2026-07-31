@@ -6,12 +6,14 @@ import { db } from "./db";
 import { DEFAULT_CATEGORIES } from "./default-categories";
 import { parseBetaFeatures, type BetaFeatureKey } from "./beta-features";
 import { effectiveAdminRole, hasAdminRole, type AdminRole } from "./admin-role";
-import { isSchemaDrift, driftTarget } from "./schema-drift";
+import { isSchemaDrift, driftTarget, isDatabaseUnavailable } from "./schema-drift";
 import { logger } from "./logger";
 import { hashPassword, verifyPassword } from "./password";
 
 const SESSION_COOKIE = "tsumiki_session";
 const SESSION_DAYS = 30;
+/** 端末一覧の「最終利用」を書き戻す間隔。 */
+const SESSION_TOUCH_INTERVAL_MS = 60 * 60 * 1000;
 /** 成りすまし前の管理者セッションを退避しておく Cookie。 */
 const IMPERSONATION_RETURN_COOKIE = "tsumiki_return_session";
 
@@ -64,6 +66,12 @@ export async function bootstrapUser(userId: string, name: string | null) {
   });
 }
 
+/**
+ * 存在しないアカウントに対しても照合処理を1回走らせるための捨てハッシュ。
+ * 値そのものに意味は無く、scrypt を必ず1回通すことだけが目的。
+ */
+const DUMMY_PASSWORD_HASH = hashPassword(randomBytes(16).toString("hex"));
+
 export type AuthError =
   | "INVALID_PASSWORD"
   | "WEAK_PASSWORD"
@@ -98,6 +106,10 @@ export async function signInWithEmail(
       logger.error("schema drift", err, { missing: driftTarget(err) });
       throw new Error("SCHEMA_DRIFT");
     }
+    if (isDatabaseUnavailable(err)) {
+      logger.error("database unavailable", err);
+      throw new Error("DATABASE_UNAVAILABLE");
+    }
     throw err;
   }
 
@@ -111,11 +123,20 @@ export async function signInWithEmail(
       },
     });
   } else {
-    if (!user) throw new Error("NO_ACCOUNT");
+    if (!user) {
+      // 存在しないメールだと即座に返る、を避ける。
+      // 照合の有無が応答時間に出ると、その差だけで「このメールは登録済みか」を
+      // 総当たりで調べられてしまう。捨てハッシュを1回照合して時間を揃える。
+      verifyPassword(password, DUMMY_PASSWORD_HASH);
+      throw new Error("NO_ACCOUNT");
+    }
     // パスワード未設定のアカウント（OAuth 等で作成）に対して、任意のパスワードで
     // ログインさせてはならない（そのまま乗っ取りになる）。照合は必ず行い、
     // 未設定なら別経路（パスワード再設定）へ誘導する。
-    if (!user.passwordHash) throw new Error("PASSWORD_NOT_SET");
+    if (!user.passwordHash) {
+      verifyPassword(password, DUMMY_PASSWORD_HASH);
+      throw new Error("PASSWORD_NOT_SET");
+    }
     if (!verifyPassword(password, user.passwordHash)) {
       throw new Error("INVALID_PASSWORD");
     }
@@ -174,6 +195,61 @@ export async function loginAsDemo() {
   await establishSession(user.id);
 }
 
+/** 今のブラウザのセッショントークン。端末一覧で「この端末」を示すのに使う。 */
+export async function currentSessionToken(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(SESSION_COOKIE)?.value ?? null;
+}
+
+/**
+ * パスワードの変更。現在のパスワードの照合を必須にする。
+ *
+ * 変更が成功したら、今使っている端末以外のセッションを全て切る。
+ * パスワードを変える動機の多くは「誰かに使われているかもしれない」であり、
+ * 変更しても相手のログインが生きたままでは目的を果たさない。
+ */
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  nextPassword: string,
+) {
+  if (nextPassword.length < 8) throw new Error("WEAK_PASSWORD");
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("NO_ACCOUNT");
+  if (!user.passwordHash) throw new Error("PASSWORD_NOT_SET");
+  if (!verifyPassword(currentPassword, user.passwordHash)) {
+    throw new Error("INVALID_PASSWORD");
+  }
+  if (verifyPassword(nextPassword, user.passwordHash)) {
+    throw new Error("SAME_PASSWORD");
+  }
+
+  await db.user.update({
+    where: { id: userId },
+    data: { passwordHash: hashPassword(nextPassword) },
+  });
+
+  const keep = await currentSessionToken();
+  await db.session.deleteMany({
+    where: { userId, ...(keep ? { NOT: { sessionToken: keep } } : {}) },
+  });
+}
+
+/** 指定した端末のログインを終了する。自分のセッションしか消せない。 */
+export async function revokeSession(userId: string, sessionId: string) {
+  const { count } = await db.session.deleteMany({ where: { id: sessionId, userId } });
+  if (count === 0) throw new Error("NOT_FOUND");
+}
+
+/** 今の端末以外のログインを全て終了する。 */
+export async function revokeOtherSessions(userId: string): Promise<number> {
+  const keep = await currentSessionToken();
+  const { count } = await db.session.deleteMany({
+    where: { userId, ...(keep ? { NOT: { sessionToken: keep } } : {}) },
+  });
+  return count;
+}
+
 export async function signOut() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
@@ -214,6 +290,12 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
       logger.error("schema drift", err, { missing: driftTarget(err) });
       return null;
     }
+    // 接続できないときも同じ扱いにする。ここで投げると、設定漏れひとつで
+    // ログイン画面まで開かなくなり、原因を伝える画面すら出せなくなる。
+    if (isDatabaseUnavailable(err)) {
+      logger.error("database unavailable", err);
+      return null;
+    }
     throw err;
   }
   if (!session) return null;
@@ -221,6 +303,15 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     // 期限切れセッションは破棄
     await db.session.deleteMany({ where: { sessionToken: token } });
     return null;
+  }
+
+  // 端末一覧の「最終利用」を更新する。毎リクエスト書くと費用に見合わないので、
+  // 1時間より新しい記録はそのままにする。一覧の用途（見覚えのない端末を探す）に
+  // 1時間の粗さは十分足りる。
+  if (session.lastUsedAt.getTime() < Date.now() - SESSION_TOUCH_INTERVAL_MS) {
+    await db.session
+      .update({ where: { id: session.id }, data: { lastUsedAt: new Date() } })
+      .catch(() => {});
   }
 
   const u = session.user;

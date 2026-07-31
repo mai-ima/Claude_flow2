@@ -8,7 +8,12 @@ export {
   deleteAccountAction,
   deleteAllDataAction,
   updateBetaOptIn,
+  changePasswordAction,
+  revokeSessionAction,
+  revokeOtherSessionsAction,
 } from "./actions";
+export { PasswordForm } from "./components/password-form";
+export { SessionList, type SessionItem } from "./components/session-list";
 export { ProfileForm } from "./components/profile-form";
 export { BetaFeaturesToggle } from "./components/beta-features-toggle";
 export { PaymentMethodsManager } from "./components/payment-methods-manager";

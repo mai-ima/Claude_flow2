@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
 import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
-import { signOut } from "@/lib/auth";
+import { signOut, changePassword, revokeSession, revokeOtherSessions } from "@/lib/auth";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 import { isBetaFeatureKey, enabledBetaFeatures } from "@/lib/beta-features";
 import { Prisma } from "@/generated/prisma";
@@ -170,6 +170,45 @@ export const deleteAllDataAction = authedAction(z.object({}), async (_input, use
   ]);
   revalidatePath("/", "layout");
   return { ok: true };
+});
+
+/**
+ * パスワードの変更。
+ * 成功すると今の端末以外のログインは全て切れる（changePassword 側で実施）。
+ */
+export const changePasswordAction = authedAction(
+  z
+    .object({
+      currentPassword: z.string().min(1, "現在のパスワードを入力してください。"),
+      newPassword: z.string().min(8, "新しいパスワードは8文字以上で入力してください。"),
+      confirmPassword: z.string().min(1, "確認のため、もう一度入力してください。"),
+    })
+    .refine((v) => v.newPassword === v.confirmPassword, {
+      path: ["confirmPassword"],
+      message: "新しいパスワードが一致しません。",
+    }),
+  async (input, user) => {
+    await changePassword(user.id, input.currentPassword, input.newPassword);
+    revalidatePath("/settings");
+    return { ok: true };
+  },
+);
+
+/** 指定した端末のログインを終了する。 */
+export const revokeSessionAction = authedAction(
+  z.object({ sessionId: z.string().min(1) }),
+  async (input, user) => {
+    await revokeSession(user.id, input.sessionId);
+    revalidatePath("/settings");
+    return { ok: true };
+  },
+);
+
+/** 今の端末以外のログインを全て終了する。 */
+export const revokeOtherSessionsAction = authedAction(z.object({}), async (_input, user) => {
+  const count = await revokeOtherSessions(user.id);
+  revalidatePath("/settings");
+  return { count };
 });
 
 /** アカウント削除（関連データもカスケード削除）。遷移はクライアント側で行う。 */
