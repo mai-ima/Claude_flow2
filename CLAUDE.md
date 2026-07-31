@@ -22,7 +22,7 @@
 ## リリースノート（指示を待たず必ず実施）
 ユーザーから言われるまでもなく、変更を入れたら同じコミットで更新する。
 
-- **記載先**: `src/app/(marketing)/changelog/page.tsx` の `RELEASES` 先頭エントリ。
+- **記載先**: `scripts/release-notes.mjs` の `RELEASES` 先頭エントリ。`scripts/seed.mjs` がデプロイ時に `ReleaseNote` へ upsert し、`/changelog` はそれを読む（本文の出どころはこのファイル1つ）。
 - **同時に揃える3ファイル**: `package.json` の `version`、`src/lib/seo.ts` の `APP_VERSION`、上記 changelog。3つがずれた状態でコミットしない。
 - **番号の付け方** (`v1.2.3.4`):
   - 4桁目 = 小規模なバグ修正・不具合修正

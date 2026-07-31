@@ -2,6 +2,7 @@
 // 冪等: 無ければ作成・既存は維持。エラーでもビルドを止めない（exit 0）。
 import { scryptSync, randomBytes } from "node:crypto";
 import { createRequire } from "node:module";
+import { RELEASES } from "./release-notes.mjs";
 
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require("../src/generated/prisma/index.js");
@@ -94,7 +95,49 @@ async function seedDemoData(userId, ledgerId) {
   ] });
 }
 
+/** 「ベータ v1.2.7.0」→ "1.2.7.0" */
+function parseVersion(label) {
+  const m = label.match(/(\d+(?:\.\d+)+)/);
+  return m ? m[1] : label;
+}
+
+/** 「2026年7月」→ その月の日付。同月内は並び順が新しいものほど後ろになる。 */
+function parseReleaseDate(label, index) {
+  const m = label.match(/(\d{4})年(\d{1,2})月/);
+  if (!m) return new Date(2026, 0, 1);
+  const day = Math.min(28, Math.max(1, 28 - index));
+  return new Date(Number(m[1]), Number(m[2]) - 1, day);
+}
+
+/**
+ * リリースノートをファイルの内容に合わせる。
+ *
+ * 本文の出どころは scripts/release-notes.mjs 一箇所。ここに載っている版だけを
+ * 更新し、管理画面から足された版には触らない。published は既存の値を保つので、
+ * 管理画面で非公開にしたものが配信のたびに復活することはない。
+ */
+async function syncReleaseNotes() {
+  let updated = 0;
+  for (const [i, r] of RELEASES.entries()) {
+    const version = parseVersion(r.version);
+    const data = {
+      title: r.version,
+      releasedAt: parseReleaseDate(r.date, i),
+      sections: r.sections ?? [],
+    };
+    await db.releaseNote.upsert({
+      where: { version },
+      create: { version, ...data, published: true },
+      update: data,
+    });
+    updated++;
+  }
+  console.log(`[seed] release notes synced: ${updated}`);
+}
+
 async function main() {
+  await syncReleaseNotes();
+
   // 管理者アカウントは、環境変数で資格情報を明示したときだけ作成する。
   // 以前は admin1234 / staff1234 を毎デプロイで投入しており、
   // 公開URLと固定パスワードだけで管理画面に入れる状態だった。
