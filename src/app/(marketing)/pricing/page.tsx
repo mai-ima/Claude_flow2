@@ -31,6 +31,11 @@ const FAQ = [
   },
 ];
 
+// Stripe / メール送信が使えるかどうかで表示が変わる。完全な静的生成だと
+// ビルド時点の判定が焼き付き、あとで環境変数を設定しても反映されない。
+// 検索に載せたいページなので静的のまま置き、一定時間で作り直す。
+export const revalidate = 300;
+
 export default function PricingPage() {
   const faqLd = jsonLd({
     "@context": "https://schema.org",

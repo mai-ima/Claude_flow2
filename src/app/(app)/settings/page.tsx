@@ -16,12 +16,13 @@ import {
   BetaFeaturesToggle,
   PasswordForm,
   SessionList,
+  EmailVerification,
 } from "@/modules/account";
 import { listSessions } from "@/modules/account/queries";
 import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
 import { BillingCard } from "@/modules/billing";
 import { tierAtLeast } from "@/lib/plans";
-import { isStripeEnabled } from "@/lib/env";
+import { isStripeEnabled, isEmailEnabled } from "@/lib/env";
 import { SITE, APP_VERSION, pageMetadata } from "@/lib/seo";
 import { enabledBetaFeatures } from "@/lib/beta-features";
 import { ledgerMemberLimit } from "@/modules/ledgers/queries";
@@ -149,10 +150,11 @@ export default async function SettingsPage() {
         </ListGroup>
 
         <ListGroup title="アカウント" padded bodyClassName="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[14px] text-text-secondary">メールアドレス</span>
-            <span className="text-[14px] font-medium">{ctx.user.email}</span>
-          </div>
+          <EmailVerification
+            email={ctx.user.email}
+            verified={ctx.user.emailVerified}
+            emailEnabled={isEmailEnabled}
+          />
           {ctx.role === "OWNER" && (
             <div className="border-t border-border-subtle pt-4">
               <DeleteAllData />

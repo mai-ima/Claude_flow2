@@ -22,6 +22,8 @@ export type SessionUser = {
   email: string | null;
   name: string | null;
   image: string | null;
+  /** メールアドレスの確認が済んでいるか。設定画面で状態を出すために持つ。 */
+  emailVerified: boolean;
   themePref: string;
   currency: string;
   assumedHourlyWage: number | null;
@@ -195,6 +197,44 @@ export async function loginAsDemo() {
   await establishSession(user.id);
 }
 
+/**
+ * パスワードの再設定（現在のパスワードを知らない経路）。
+ *
+ * 呼び出し側でトークンを検証済みであることが前提。ここでは
+ * 「本人のセッションを全て切る」ことに責任を持つ。再設定に至る状況は
+ * 大抵「他人に入られたかもしれない」なので、相手のログインを残さない。
+ * 再設定した本人にもログインし直してもらう（Cookie を持っていないため）。
+ */
+export async function resetPassword(email: string, nextPassword: string) {
+  if (nextPassword.length < 8) throw new Error("WEAK_PASSWORD");
+  const normalized = email.trim().toLowerCase();
+  const user = await db.user.findUnique({ where: { email: normalized } });
+  if (!user) throw new Error("NO_ACCOUNT");
+
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash: hashPassword(nextPassword),
+      // 再設定リンクはメールを受け取れた証明でもあるので、確認済みにする。
+      emailVerified: user.emailVerified ?? new Date(),
+    },
+  });
+  await db.session.deleteMany({ where: { userId: user.id } });
+  return user;
+}
+
+/** メールアドレスを確認済みにする。既に確認済みなら何もしない。 */
+export async function markEmailVerified(email: string) {
+  const normalized = email.trim().toLowerCase();
+  const user = await db.user.findUnique({ where: { email: normalized } });
+  if (!user) throw new Error("NO_ACCOUNT");
+  if (user.emailVerified) return user;
+  return db.user.update({
+    where: { id: user.id },
+    data: { emailVerified: new Date() },
+  });
+}
+
 /** 今のブラウザのセッショントークン。端末一覧で「この端末」を示すのに使う。 */
 export async function currentSessionToken(): Promise<string | null> {
   const store = await cookies();
@@ -324,6 +364,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     email: u.email,
     name: u.name,
     image: u.image,
+    emailVerified: u.emailVerified !== null,
     themePref: u.themePref,
     currency: u.currency,
     assumedHourlyWage: u.assumedHourlyWage,

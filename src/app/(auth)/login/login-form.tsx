@@ -50,6 +50,11 @@ export function LoginForm() {
       <Button type="submit" full size="lg" disabled={pending}>
         {pending ? "サインイン中…" : "ログイン"}
       </Button>
+      <p className="text-center text-[13px]">
+        <Link href="/forgot-password" className="text-text-secondary hover:text-text-primary">
+          パスワードをお忘れですか
+        </Link>
+      </p>
       <p className="text-center text-[13px] text-text-secondary">
         アカウントをお持ちでない方は{" "}
         <Link href="/signup" className="font-medium text-accent">

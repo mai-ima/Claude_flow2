@@ -21,6 +21,7 @@ import { sendEmail, emailLayout, escapeHtml } from "./email";
 import { formatMoney } from "./money";
 import { logger } from "./logger";
 import { startCronRun, finishCronRun } from "./ops-log";
+import { purgeExpiredTokens } from "./verification-token";
 
 /**
  * 毎日のバッチ本体。
@@ -68,6 +69,11 @@ export async function runReminders(
       notifyGoals(now),
       notifyRecurringPosted(now),
     ]);
+
+    // 期限切れの使い捨てトークンを片付ける。放っておくと使えない行が
+    // 溜まり続ける（消し忘れても危険ではないが、置いておく理由も無い）。
+    const purgedTokens = await purgeExpiredTokens().catch(() => 0);
+    if (purgedTokens > 0) logger.info("expired tokens purged", { purgedTokens });
 
     // メール送信（env 差込み式・キーが無ければ no-op）。オーナーごとに1通。
     let emailsSent = 0;

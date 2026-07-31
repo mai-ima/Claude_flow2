@@ -6,6 +6,9 @@ import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
 import { getActiveLedgerId, requireLedgerMember } from "@/lib/ledger-access";
 import { signOut, changePassword, revokeSession, revokeOtherSessions } from "@/lib/auth";
+import { sendEmailVerification } from "@/lib/account-mail";
+import { isEmailEnabled } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 import { isBetaFeatureKey, enabledBetaFeatures } from "@/lib/beta-features";
 import { Prisma } from "@/generated/prisma";
@@ -193,6 +196,29 @@ export const changePasswordAction = authedAction(
     return { ok: true };
   },
 );
+
+/**
+ * 確認メールの再送。
+ * 送信が未設定の環境では、届かないメールを待たせないよう素直に断る。
+ */
+export const sendVerificationEmailAction = authedAction(z.object({}), async (_input, user) => {
+  if (!user.email) throw new Error("NO_EMAIL");
+  if (!isEmailEnabled) throw new Error("EMAIL_DISABLED");
+
+  const fresh = await db.user.findUnique({
+    where: { id: user.id },
+    select: { emailVerified: true },
+  });
+  if (fresh?.emailVerified) return { alreadyVerified: true };
+
+  // 再送の連打で送信の踏み台にされないようにする。
+  const rl = await rateLimit(`verify-send:${user.id}`, 3, 600);
+  if (!rl.ok) throw new Error("TOO_MANY_REQUESTS");
+
+  const { sent } = await sendEmailVerification(user.email);
+  if (!sent) throw new Error("EMAIL_SEND_FAILED");
+  return { alreadyVerified: false };
+});
 
 /** 指定した端末のログインを終了する。 */
 export const revokeSessionAction = authedAction(
