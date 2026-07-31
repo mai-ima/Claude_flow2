@@ -5,6 +5,11 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
+  // native だけだと、ビルドした環境と実行する環境の OS が違ったときに
+  // クエリエンジンが読み込めず、データベースを使う画面が全て 500 になる
+  // （マーケティングページは静的なので生き残り、原因が分かりにくい）。
+  // Vercel の実行環境向けを併せて生成しておく。
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

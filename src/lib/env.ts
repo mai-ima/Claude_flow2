@@ -42,16 +42,37 @@ const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().default("http://localhost:3000"),
 });
 
+/** 検証で見つかった問題。throw の代わりにここへ溜める。 */
+const parseProblems: string[] = [];
+
+/**
+ * 環境変数の検証。失敗しても投げない。
+ *
+ * このモジュールは seo.ts 経由でルートレイアウトから読み込まれる。
+ * つまりここで投げると、アプリ全体が起動前に落ちる。error.tsx の
+ * 境界より外側なので、用意した「問題が発生しました」の画面すら出ず、
+ * 利用者にはプラットフォームの素の500だけが見える。復旧の手がかりも残らない。
+ *
+ * 誤った設定のまま動かすのが良いわけではないので、既定値に落としたうえで
+ * 何が壊れているかを envProblems に残し、/api/health から読めるようにする。
+ */
 function parseEnv<T extends z.ZodType>(schema: T, raw: unknown, label: string): z.infer<T> {
   const result = schema.safeParse(raw);
-  if (!result.success) {
-    const issues = z
-      .flattenError(result.error)
-      .fieldErrors;
-    console.error(`[env] ${label} の検証に失敗しました:`, issues);
-    throw new Error(`環境変数(${label})が不正です。設定を確認してください。`);
+  if (result.success) return result.data;
+
+  const issues = z.flattenError(result.error).fieldErrors;
+  const names = Object.keys(issues).join(", ") || "(不明)";
+  console.error(`[env] ${label} の検証に失敗しました:`, issues);
+  parseProblems.push(
+    `環境変数(${label})の値が不正です: ${names}。既定値で起動しています。設定を確認してください。`,
+  );
+
+  // 既定値だけで組み直す。これも通らないなら手当ての方法が無いので投げる。
+  const fallback = schema.safeParse({});
+  if (!fallback.success) {
+    throw new Error(`環境変数(${label})が不正で、既定値でも起動できません。`);
   }
-  return result.data;
+  return fallback.data;
 }
 
 /**
@@ -113,11 +134,22 @@ export const env = parseEnv(
   "server",
 );
 
+export const clientEnv = parseEnv(
+  clientSchema,
+  {
+    NEXT_PUBLIC_ADSENSE_CLIENT: process.env.NEXT_PUBLIC_ADSENSE_CLIENT,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  },
+  "client",
+);
+
 /**
  * 本番として明らかにおかしい設定の一覧。空なら問題なし。
  * /api/health がそのまま返すので、画面を触らずに原因を読める。
+ *
+ * clientEnv の検証も終えてから作る（先に作ると client 側の不備を取りこぼす）。
  */
-export const envProblems: string[] = findProductionProblems(env);
+export const envProblems: string[] = [...parseProblems, ...findProductionProblems(env)];
 
 /** 接続文字列をどの環境変数から採ったか。値は含めない。 */
 export const databaseUrlSource: string | null = resolvedDb.source;
@@ -128,15 +160,6 @@ if (envProblems.length > 0) {
     JSON.stringify({ level: "error", message: "env misconfigured", problems: envProblems }),
   );
 }
-
-export const clientEnv = parseEnv(
-  clientSchema,
-  {
-    NEXT_PUBLIC_ADSENSE_CLIENT: process.env.NEXT_PUBLIC_ADSENSE_CLIENT,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  },
-  "client",
-);
 
 export const isStripeEnabled = Boolean(env.STRIPE_SECRET_KEY);
 export const isEmailEnabled = Boolean(env.RESEND_API_KEY);
