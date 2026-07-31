@@ -4,6 +4,8 @@ import {
   isStripeEnabled,
   isEmailEnabled,
   isRateLimitEnabled,
+  envProblems,
+  databaseUrlSource,
 } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { isSentryActive } from "@/lib/logger";
@@ -85,11 +87,15 @@ export async function GET() {
         hint: "データベースに接続できません。",
       };
 
-  const healthy = dbOk && schema.ok;
+  const healthy = dbOk && schema.ok && envProblems.length === 0;
   const body = {
     status: healthy ? "ok" : "degraded",
     version: APP_VERSION,
     db: dbOk,
+    // 接続文字列を「どの変数から採ったか」だけ出す。値は返さない。
+    databaseUrlSource,
+    // 設定そのものの不備。ここが空でなければ、まず先にこちらを直す。
+    env: envProblems,
     schema,
     integrations: {
       stripe: isStripeEnabled,

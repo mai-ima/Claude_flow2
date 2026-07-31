@@ -1,4 +1,11 @@
 import { z } from "zod";
+import { resolveDatabaseUrl, FALLBACK_DATABASE_URL_KEYS } from "./database-url";
+
+/**
+ * 接続文字列は DATABASE_URL とは限らない（Vercel の連携は別名で発行する）。
+ * 名前の違いだけでサイト全体が止まらないよう、入口で吸収する。
+ */
+const resolvedDb = resolveDatabaseUrl();
 
 /**
  * env を起動時に検証。実キーが無くてもアプリは完全動作するよう、
@@ -49,34 +56,44 @@ function parseEnv<T extends z.ZodType>(schema: T, raw: unknown, label: string): 
 
 /**
  * 本番で危険な既定値のまま起動していないか検査する。
- * DATABASE_URL はローカル用の既定値を持たせているため、
- * 設定漏れに気づかないまま本番が動いてしまうのを防ぐ。
+ *
+ * ここで throw してはいけない。このモジュールはほぼ全てのページから読み込まれる
+ * ため、モジュール評価中に投げるとログイン画面もヘルスチェックも道連れになり、
+ * 画面には内容のない 500 だけが残る。原因を伝える手段が自分で潰れてしまう。
+ *
+ * 実際にそれで起きた事故: Vercel の Postgres 連携が DATABASE_URL ではなく
+ * POSTGRES_PRISMA_URL を発行していたため既定値のまま起動し、静的な
+ * マーケティングページ以外の全てが 500 になった。診断もできなかった。
+ *
+ * そこで、見つけた問題は投げずに記録する。接続できないこと自体は Prisma が
+ * 返すので、ここは「なぜ繋がらないのか」を /api/health から読めるようにする役目に絞る。
+ *
  * （AUTH_SECRET は実装のどこからも参照されていない死んだ設定だったため削除した。
  *   セッションは randomBytes によるトークン方式で署名鍵を使わない。）
  */
-function assertProductionSecrets(e: z.infer<typeof serverSchema>) {
+function findProductionProblems(e: z.infer<typeof serverSchema>): string[] {
   // このモジュールは clientEnv 経由でクライアントにも読み込まれる。
-  // ブラウザには DATABASE_URL 等が渡らず既定値になるため、
-  // サーバー以外では検査しない（検査するとページが丸ごと落ちる）。
-  if (typeof window !== "undefined") return;
-  if (e.NODE_ENV !== "production") return;
-  // ビルド時は実行時の環境変数が入っていないのが正常なので検査しない
-  // （ここで throw すると next build が落ちる）。
-  if (process.env.NEXT_PHASE === "phase-production-build") return;
-  const bad: string[] = [];
-  // localhost のままの接続先は、本番では確実に設定漏れ。
-  if (e.DATABASE_URL.includes("localhost")) bad.push("DATABASE_URL");
-  if (bad.length > 0) {
-    throw new Error(
-      `本番環境で既定値のままの環境変数があります: ${bad.join(", ")}。値を設定してください。`,
+  // ブラウザには DATABASE_URL 等が渡らず既定値になるため、サーバー以外では検査しない。
+  if (typeof window !== "undefined") return [];
+  if (e.NODE_ENV !== "production") return [];
+  // ビルド時は実行時の環境変数が入っていないのが正常なので検査しない。
+  if (process.env.NEXT_PHASE === "phase-production-build") return [];
+
+  const problems: string[] = [];
+  if (e.DATABASE_URL.includes("localhost")) {
+    problems.push(
+      "DATABASE_URL が実行時に渡っていません（既定値のままです）。" +
+        `Vercel の環境変数で DATABASE_URL、または ${FALLBACK_DATABASE_URL_KEYS.join(" / ")} ` +
+        "のいずれかが Production に設定されているか確認してください。",
     );
   }
+  return problems;
 }
 
 export const env = parseEnv(
   serverSchema,
   {
-    DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_URL: resolvedDb.url,
     NODE_ENV: process.env.NODE_ENV,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
@@ -96,7 +113,21 @@ export const env = parseEnv(
   "server",
 );
 
-assertProductionSecrets(env);
+/**
+ * 本番として明らかにおかしい設定の一覧。空なら問題なし。
+ * /api/health がそのまま返すので、画面を触らずに原因を読める。
+ */
+export const envProblems: string[] = findProductionProblems(env);
+
+/** 接続文字列をどの環境変数から採ったか。値は含めない。 */
+export const databaseUrlSource: string | null = resolvedDb.source;
+
+if (envProblems.length > 0) {
+  // 起動時に一度だけ、はっきり残す。投げないぶん見落とさないようにする。
+  console.error(
+    JSON.stringify({ level: "error", message: "env misconfigured", problems: envProblems }),
+  );
+}
 
 export const clientEnv = parseEnv(
   clientSchema,
