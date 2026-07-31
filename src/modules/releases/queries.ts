@@ -12,7 +12,10 @@ export interface ReleaseEntry {
   title: string;
   date: string;
   published: boolean;
+  /** 詳細版。 */
   sections: ReleaseSection[];
+  /** 通常版。無い版（v1.2.6.7 より前）は null で、切り替えを出さない。 */
+  summary: ReleaseSection[] | null;
 }
 
 /** Json 列を型のある形に整える。壊れた行があっても他を巻き込まない。 */
@@ -34,6 +37,7 @@ function toEntry(r: {
   releasedAt: Date;
   published: boolean;
   sections: unknown;
+  summary: unknown;
 }): ReleaseEntry {
   return {
     id: r.id,
@@ -42,6 +46,7 @@ function toEntry(r: {
     date: `${r.releasedAt.getFullYear()}年${r.releasedAt.getMonth() + 1}月`,
     published: r.published,
     sections: toSections(r.sections),
+    summary: r.summary == null ? null : toSections(r.summary),
   };
 }
 

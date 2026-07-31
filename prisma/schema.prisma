@@ -214,6 +214,10 @@ model Transaction {
   recurringTransactionId String?
   recurringTransaction   RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
   memo            String?
+  // 自動記帳の重複防止キー。手入力の取引では null（null 同士は衝突しないため、
+  // 同じサブスクの同じ日に手で足すことは妨げない）。
+  // 「存在を調べてから作る」だけでは、cron が重なった瞬間に二重計上される。
+  autoKey         String?  @unique
   createdAt       DateTime @default(now())
 
   @@index([ledgerId, occurredAt])
@@ -352,6 +356,8 @@ model GoalContribution {
   occurredAt DateTime @default(now())
   note       String?
   auto       Boolean  @default(false)
+  // 自動積立の重複防止キー。手動の積立では null。
+  autoKey    String?  @unique
   createdAt  DateTime @default(now())
 
   @@index([goalId, occurredAt])
@@ -474,8 +480,10 @@ model ReleaseNote {
   version    String   @unique
   releasedAt DateTime
   title      String
-  /// { h: 見出し, items: string[] } の配列
+  /// { h: 見出し, items: string[] } の配列。詳細版。
   sections   Json
+  /// 同じ形式の通常版（要点のみ）。null の版は詳細版だけを出す。
+  summary    Json?
   published  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { RELEASES } from "./release-notes.mjs";
 
 const require = createRequire(import.meta.url);
-const { PrismaClient } = require("../src/generated/prisma/index.js");
+const { PrismaClient, Prisma } = require("../src/generated/prisma/index.js");
 const db = new PrismaClient();
 
 const DEFAULT_CATEGORIES = [
@@ -124,6 +124,9 @@ async function syncReleaseNotes() {
       title: r.version,
       releasedAt: parseReleaseDate(r.date, i),
       sections: r.sections ?? [],
+      // 通常版を持たない版は列を空に戻す（消したのに残り続けないように）。
+      // Json 列に素の null を渡すと「JSON の null」になってしまうため DbNull を使う。
+      summary: r.summary ?? Prisma.DbNull,
     };
     await db.releaseNote.upsert({
       where: { version },

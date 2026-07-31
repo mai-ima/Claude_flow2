@@ -19,6 +19,31 @@ interface NotificationDraft {
  */
 
 /**
+ * 自動生成の重複防止キー。
+ * 「何が」「どの日の分か」で一意になれば足りる。
+ */
+function autoKeyFor(kind: "sub" | "rec" | "goal", id: string, occurredAt: Date): string {
+  return `${kind}:${id}:${occurredAt.toISOString()}`;
+}
+
+/**
+ * 一意制約に任せて「作れたら true、既にあれば false」を返す。
+ *
+ * 存在を調べてから作る形だと、cron が重なった瞬間に双方が「無い」と判断して
+ * 二重に計上される。判定は DB の一意制約に任せ、衝突だけを握りつぶす。
+ * それ以外の失敗は握らない（書けなかったことに気づけなくなる）。
+ */
+async function createOnce(create: () => Promise<unknown>): Promise<boolean> {
+  try {
+    await create();
+    return true;
+  } catch (err) {
+    if ((err as { code?: string } | null)?.code === "P2002") return false;
+    throw err;
+  }
+}
+
+/**
  * 更新日が到来したサブスクについて、支出 Transaction を自動生成し
  * nextRenewalAt を次サイクルへ進める。生成件数を返す。
  */
@@ -36,30 +61,25 @@ export async function processRenewals(now: Date = new Date()): Promise<number> {
       now,
     );
     if (sub.autoPostTransaction) {
-      // 同じ (サブスク, 発生日) の記帳が既にあればスキップする。
-      // cron が再実行されたときに二重計上されるのを防ぐ。
-      const existing = await db.transaction.findMany({
-        where: { subscriptionId: sub.id, occurredAt: { in: occurrences } },
-        select: { occurredAt: true },
-      });
-      const done = new Set(existing.map((t) => t.occurredAt.getTime()));
       for (const occurredAt of occurrences) {
-        if (done.has(occurredAt.getTime())) continue;
-        await db.transaction.create({
-          data: {
-            ledgerId: sub.ledgerId,
-            createdByUserId: sub.ownerUserId,
-            type: "EXPENSE",
-            amount: sub.amount,
-            currency: sub.currency,
-            occurredAt,
-            categoryId: sub.categoryId,
-            paymentMethodId: sub.paymentMethodId,
-            subscriptionId: sub.id,
-            memo: `${sub.name}（自動記帳）`,
-          },
-        });
-        created++;
+        const posted = await createOnce(() =>
+          db.transaction.create({
+            data: {
+              ledgerId: sub.ledgerId,
+              createdByUserId: sub.ownerUserId,
+              type: "EXPENSE",
+              amount: sub.amount,
+              currency: sub.currency,
+              occurredAt,
+              categoryId: sub.categoryId,
+              paymentMethodId: sub.paymentMethodId,
+              subscriptionId: sub.id,
+              memo: `${sub.name}（自動記帳）`,
+              autoKey: autoKeyFor("sub", sub.id, occurredAt),
+            },
+          }),
+        );
+        if (posted) created++;
       }
     }
     if (nextRenewalAt.getTime() !== sub.nextRenewalAt.getTime()) {
@@ -88,29 +108,25 @@ export async function processRecurring(now: Date = new Date()): Promise<number> 
       r.cycle as BillingCycle,
       now,
     );
-    // 同じ (定期取引, 発生日) の記帳が既にあればスキップ（再実行時の二重計上防止）。
-    const existingRec = await db.transaction.findMany({
-      where: { recurringTransactionId: r.id, occurredAt: { in: occurrences } },
-      select: { occurredAt: true },
-    });
-    const doneRec = new Set(existingRec.map((t) => t.occurredAt.getTime()));
     for (const occurredAt of occurrences) {
-      if (doneRec.has(occurredAt.getTime())) continue;
-      await db.transaction.create({
-        data: {
-          ledgerId: r.ledgerId,
-          createdByUserId: r.createdByUserId,
-          type: r.type,
-          amount: r.amount,
-          currency: r.currency,
-          occurredAt,
-          categoryId: r.categoryId,
-          paymentMethodId: r.paymentMethodId,
-          recurringTransactionId: r.id,
-          memo: r.memo ? `${r.memo}（定期）` : "定期取引",
-        },
-      });
-      created++;
+      const posted = await createOnce(() =>
+        db.transaction.create({
+          data: {
+            ledgerId: r.ledgerId,
+            createdByUserId: r.createdByUserId,
+            type: r.type,
+            amount: r.amount,
+            currency: r.currency,
+            occurredAt,
+            categoryId: r.categoryId,
+            paymentMethodId: r.paymentMethodId,
+            recurringTransactionId: r.id,
+            memo: r.memo ? `${r.memo}（定期）` : "定期取引",
+            autoKey: autoKeyFor("rec", r.id, occurredAt),
+          },
+        }),
+      );
+      if (posted) created++;
     }
     if (occurrences.length > 0) {
       await db.recurringTransaction.update({
@@ -148,21 +164,22 @@ export async function processAutoContributions(now: Date = new Date()): Promise<
     let added = 0;
     let guard = 0;
     while (next <= now && guard < 24) {
-      // 同じ (目標, 実行日) の自動積立が既にあればスキップ（再実行時の二重計上防止）。
-      const dup = await db.goalContribution.findFirst({
-        where: { goalId: g.id, occurredAt: next, auto: true },
-        select: { id: true },
-      });
-      if (dup) {
-        next = advanceMonthly(next);
-        guard++;
-        continue;
+      const posted = await createOnce(() =>
+        db.goalContribution.create({
+          data: {
+            goalId: g.id,
+            amount,
+            occurredAt: next,
+            auto: true,
+            note: "自動積立",
+            autoKey: autoKeyFor("goal", g.id, next),
+          },
+        }),
+      );
+      if (posted) {
+        added += amount;
+        created++;
       }
-      await db.goalContribution.create({
-        data: { goalId: g.id, amount, occurredAt: next, auto: true, note: "自動積立" },
-      });
-      added += amount;
-      created++;
       next = advanceMonthly(next);
       guard++;
     }
