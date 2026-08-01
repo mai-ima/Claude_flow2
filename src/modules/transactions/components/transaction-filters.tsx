@@ -25,21 +25,24 @@ export interface SavedSearchItem {
 const filterKey = (ledgerId: string) => `tsumiki.txn-filter.${ledgerId}`;
 
 /** URL のクエリのうち、覚えておく対象。月とページは覚えない。 */
-const REMEMBERED = ["q", "type", "cat", "pm"] as const;
+const REMEMBERED = ["q", "type", "cat", "pm", "tag"] as const;
 
 export function TransactionFilters({
   categories,
   paymentMethods,
   current,
   saved = [],
+  tags = [],
   ledgerId,
   remember = true,
 }: {
   categories: Option[];
   paymentMethods: Option[];
-  current: { q: string; type: string; cat: string; pm: string };
+  current: { q: string; type: string; cat: string; pm: string; tag: string };
   /** 保存した検索。自分のぶんだけが渡ってくる。 */
   saved?: SavedSearchItem[];
+  /** 絞り込みに使えるタグ。1つも無ければ欄を出さない。 */
+  tags?: { id: string; name: string; color: string }[];
   ledgerId: string;
   /** 前回の絞り込みを復元するか。 */
   remember?: boolean;
@@ -209,6 +212,21 @@ export function TransactionFilters({
             </option>
           ))}
         </Select>
+        {tags.length > 0 && (
+          <Select
+            className="col-span-2"
+            aria-label="タグで絞り込み"
+            value={current.tag}
+            onChange={(e) => update({ tag: e.target.value })}
+          >
+            <option value="">タグ: すべて</option>
+            {tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        )}
       </div>
 
       {/* 保存した検索。よく使う条件を1タップで呼び出せるようにする。 */}

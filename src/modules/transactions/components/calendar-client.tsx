@@ -116,6 +116,7 @@ export function CalendarClient({
       categoryId: "",
       paymentMethodId: "",
       paidByUserId: "",
+      tagIds: [],
       memo: "",
     });
     setSheetOpen(true);
@@ -133,6 +134,7 @@ export function CalendarClient({
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
       paidByUserId: it.paidByUserId ?? "",
+      tagIds: it.tags.map((t) => t.id),
       memo: it.memo ?? "",
     });
     setSheetOpen(true);

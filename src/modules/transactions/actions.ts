@@ -21,6 +21,12 @@ import {
   toggleRecurringInput,
   savedSearchInput,
   deleteSavedSearchInput,
+  tagInput,
+  updateTagInput,
+  deleteTagInput,
+  setTransactionTagsInput,
+  assetSnapshotInput,
+  deleteAssetSnapshotInput,
 } from "./schema";
 
 export const createTransaction = authedAction(
@@ -248,3 +254,105 @@ export const deleteSavedSearch = authedAction(deleteSavedSearchInput, async ({ i
   revalidatePath("/transactions");
   return { ok: true };
 });
+
+// ── タグ ──
+
+export const createTag = authedAction(tagInput, async (input, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  const name = input.name.trim();
+  // 同じ名前のタグが2つあると、どちらに貼ったか分からなくなる。
+  // 一意制約もあるが、先に見て日本語のメッセージで返す。
+  const dup = await db.tag.findFirst({ where: { ledgerId, name } });
+  if (dup) throw new Error("TAG_DUPLICATE");
+  const tag = await db.tag.create({ data: { ledgerId, name, color: input.color } });
+  revalidatePath("/transactions");
+  revalidatePath("/settings");
+  return { id: tag.id };
+});
+
+export const updateTag = authedAction(updateTagInput, async (input, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  const existing = await db.tag.findUnique({ where: { id: input.id } });
+  if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+  const name = input.name.trim();
+  const dup = await db.tag.findFirst({ where: { ledgerId, name, NOT: { id: input.id } } });
+  if (dup) throw new Error("TAG_DUPLICATE");
+  await db.tag.update({ where: { id: input.id }, data: { name, color: input.color } });
+  revalidatePath("/transactions");
+  revalidatePath("/settings");
+  return { ok: true };
+});
+
+/** タグを消す。貼ってあった取引は残り、タグだけが外れる。 */
+export const deleteTag = authedAction(deleteTagInput, async ({ id }, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  const existing = await db.tag.findUnique({ where: { id } });
+  if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+  await db.tag.delete({ where: { id } });
+  revalidatePath("/transactions");
+  revalidatePath("/settings");
+  return { ok: true };
+});
+
+/** 取引に貼るタグを丸ごと置き換える。 */
+export const setTransactionTags = authedAction(
+  setTransactionTagsInput,
+  async ({ transactionId, tagIds }, user) => {
+    const ledgerId = await getActiveLedgerId(user.id);
+    const txn = await db.transaction.findUnique({ where: { id: transactionId } });
+    if (!txn || txn.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+    await requireOwnRecordOrEditor(ledgerId, user.id, txn.createdByUserId);
+
+    // 他の帳簿のタグを貼れないようにする。貼れると、一覧に出ないタグが
+    // 付いた取引ができて、外す手段が無くなる。
+    if (tagIds.length > 0) {
+      const owned = await db.tag.count({ where: { ledgerId, id: { in: tagIds } } });
+      if (owned !== new Set(tagIds).size) throw new Error("FORBIDDEN");
+    }
+
+    await db.$transaction([
+      db.transactionTag.deleteMany({ where: { transactionId } }),
+      ...(tagIds.length > 0
+        ? [db.transactionTag.createMany({ data: tagIds.map((tagId) => ({ transactionId, tagId })) })]
+        : []),
+    ]);
+    revalidatePath("/transactions");
+    return { ok: true };
+  },
+);
+
+// ── 資産スナップショット ──
+
+/**
+ * その月の資産額を記録する。月ごとに1件へ畳む。
+ * 同じ月に2件あると、どちらが正しい残高なのか決まらない。
+ */
+export const setAssetSnapshot = authedAction(assetSnapshotInput, async (input, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  // 月初へ丸める。日付が混ざると同じ月で別の行になる。
+  const month = new Date(input.month.getFullYear(), input.month.getMonth(), 1);
+  const row = await db.assetSnapshot.upsert({
+    where: { ledgerId_month: { ledgerId, month } },
+    create: { ledgerId, month, amount: input.amount, memo: input.memo || null },
+    update: { amount: input.amount, memo: input.memo || null },
+  });
+  revalidatePath("/reports");
+  return { id: row.id };
+});
+
+export const deleteAssetSnapshot = authedAction(
+  deleteAssetSnapshotInput,
+  async ({ id }, user) => {
+    const ledgerId = await getActiveLedgerId(user.id);
+    await requireLedgerMember(ledgerId, user.id, "EDITOR");
+    const row = await db.assetSnapshot.findUnique({ where: { id } });
+    if (!row || row.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+    await db.assetSnapshot.delete({ where: { id } });
+    revalidatePath("/reports");
+    return { ok: true };
+  },
+);

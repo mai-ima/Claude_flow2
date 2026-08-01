@@ -7,6 +7,7 @@ import {
   listAllCategories,
   listPaymentMethods,
   listSavedSearches,
+  listTags,
 } from "@/modules/transactions/queries";
 import {
   TransactionsClient,
@@ -24,6 +25,7 @@ import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
 import { formatDate, todayLocal } from "@/lib/date";
 import { pageMetadata } from "@/lib/seo";
+import { isAttachmentEnabled } from "@/lib/env";
 
 export const metadata: Metadata = pageMetadata({ title: "家計簿", noindex: true });
 
@@ -33,6 +35,7 @@ type SP = {
   type?: string;
   cat?: string;
   pm?: string;
+  tag?: string;
   page?: string;
   view?: string;
 };
@@ -58,6 +61,8 @@ function toListItem(
     createdBy: { name: string | null } | null;
     paidByUserId: string | null;
     paidBy: { name: string | null } | null;
+    tags: { tag: { id: string; name: string; color: string } }[];
+    attachments: { id: string; url: string; name: string; mimeType: string; size: number }[];
   },
   perm: { canEditOthers: boolean; userId: string },
 ): TxnListItem {
@@ -78,6 +83,8 @@ function toListItem(
     ownerName: t.createdByUserId === null ? "退会したメンバー" : (t.createdBy?.name ?? null),
     paidByUserId: t.paidByUserId,
     paidByName: t.paidByUserId === null ? null : (t.paidBy?.name ?? "メンバー"),
+    tags: t.tags.map((x) => x.tag),
+    attachments: t.attachments,
     canEditThis:
       perm.canEditOthers || (t.createdByUserId !== null && t.createdByUserId === perm.userId),
   };
@@ -100,7 +107,7 @@ export default async function TransactionsPage({
   // カレンダー表示では一覧の検索・ページングは使わないため実行しない
   // （同じ月のデータを3回引かないようにする）。集計はどちらの表示でも要るので
   // カレンダー時は dailyTotals の結果から合算する。
-  const [searchResult, categories, paymentMethods, calendar, saved] = await Promise.all([
+  const [searchResult, categories, paymentMethods, calendar, saved, tags] = await Promise.all([
     view === "calendar"
       ? Promise.resolve(null)
       : searchTransactions(ledgerId, {
@@ -109,6 +116,7 @@ export default async function TransactionsPage({
           type,
           categoryId: sp.cat || undefined,
           paymentMethodId: sp.pm || undefined,
+          tagId: sp.tag || undefined,
           page,
         }),
     listAllCategories(ledgerId),
@@ -117,6 +125,7 @@ export default async function TransactionsPage({
       ? Promise.all([dailyTotals(ledgerId, month), listTransactions(ledgerId, month)])
       : Promise.resolve(null),
     listSavedSearches(ledgerId, user.id),
+    listTags(ledgerId),
   ]);
 
   const summary = calendar
@@ -219,8 +228,10 @@ export default async function TransactionsPage({
               type: type ?? "",
               cat: sp.cat ?? "",
               pm: sp.pm ?? "",
+              tag: sp.tag ?? "",
             }}
             saved={saved.map((s) => ({ id: s.id, name: s.name, query: s.query }))}
+            tags={tags.map((t) => ({ id: t.id, name: t.name, color: t.color }))}
             ledgerId={ledgerId}
           />
 
@@ -231,6 +242,8 @@ export default async function TransactionsPage({
             canEdit={canEdit}
             canAdd={canAdd}
             members={memberOpts}
+            tags={tags.map((t) => ({ id: t.id, name: t.name, color: t.color }))}
+            attachmentsEnabled={isAttachmentEnabled}
             showOwner={isPod}
             currency={currency}
             betaAmountPad={beta("amount_pad")}

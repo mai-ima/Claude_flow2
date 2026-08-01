@@ -15,6 +15,8 @@ import { CategoryIcon, SparklesIcon, TargetIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { colorOf } from "@/lib/colors";
 import { savingsRate } from "@/lib/insight";
+import { LEVEL_LABEL, type HealthScore } from "@/lib/health-score";
+import { AssetTracker } from "./asset-tracker";
 import { cn } from "@/lib/cn";
 
 type Tab =
@@ -25,7 +27,9 @@ type Tab =
   | "yearIncome"
   | "savings"
   | "savingsRate"
-  | "budget";
+  | "budget"
+  | "health"
+  | "assets";
 
 const TABS: { value: Tab; label: string }[] = [
   { value: "expense", label: "支出" },
@@ -36,6 +40,8 @@ const TABS: { value: Tab; label: string }[] = [
   { value: "savings", label: "貯蓄" },
   { value: "savingsRate", label: "貯蓄率" },
   { value: "budget", label: "予算" },
+  { value: "health", label: "健康度" },
+  { value: "assets", label: "資産" },
 ];
 
 export interface CategorySlice {
@@ -83,6 +89,13 @@ export interface ReportsData {
   dailyAvg: number;
   budgets: { total: BudgetRowItem | null; categories: BudgetRowItem[] };
   goals: GoalItem[];
+  /** 家計の健康度。ルールベースで出した点数と、その内訳。 */
+  health: HealthScore;
+  /** 資産の推移（古い順）。手で書き留めた額だけが並ぶ。 */
+  assets: { id: string; monthLabel: string; monthValue: string; amount: number; diff: number | null; memo: string | null }[];
+  /** 資産を記録するときの初期値（今月の1日）。 */
+  assetMonthValue: string;
+  canEdit: boolean;
 }
 
 /** カテゴリ内訳（ドーナツ + 合計行 + 明細リスト）。支出/収入タブで共用。 */
@@ -186,6 +199,10 @@ export function ReportsClient({ data }: { data: ReportsData }) {
     dailyAvg,
     budgets,
     goals,
+    health,
+    assets,
+    assetMonthValue,
+    canEdit,
   } = data;
 
   const expenseDelta = summary.expense - prev.expense;
@@ -519,6 +536,89 @@ export function ReportsClient({ data }: { data: ReportsData }) {
             )}
           </CardBody>
         </Card>
+      )}
+
+      {tab === "health" && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>家計の健康度</CardTitle>
+              <span className="text-[12px] text-text-tertiary">{monthLabel}</span>
+            </div>
+          </CardHeader>
+          <CardBody>
+            {health.measured === 0 ? (
+              <p className="py-8 text-center text-[14px] text-text-tertiary">
+                この月の記録がまだありません。記録をつけると判定できます。
+              </p>
+            ) : (
+              <>
+                <div className="mb-4 text-center">
+                  <div
+                    className={cn(
+                      "text-[40px] font-bold leading-none tabular-nums",
+                      health.level === "good" && "text-income",
+                      health.level === "poor" && "text-expense",
+                    )}
+                  >
+                    {health.score}
+                    <span className="text-[16px] font-medium text-text-tertiary">点</span>
+                  </div>
+                  <div className="mt-1 text-[13px] text-text-secondary">
+                    {LEVEL_LABEL[health.level]}
+                    {health.measured < 4 && `（4項目のうち ${health.measured}項目 で判定）`}
+                  </div>
+                </div>
+
+                <p className="mb-3 text-[12px] leading-relaxed text-text-tertiary">
+                  下の4つを見て点数にしています。データが足りない項目は分母から外すので、
+                  記録が少ないだけで低くなることはありません。
+                </p>
+
+                <div className="space-y-2.5">
+                  {health.factors.map((f) => (
+                    <div key={f.key} className="rounded-xl bg-surface-2 px-3.5 py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[14px] font-medium">{f.label}</span>
+                        <span className="shrink-0 text-[13px] tabular-nums text-text-secondary">
+                          {f.score === null ? "—" : `${f.score} / ${f.max}`}
+                        </span>
+                      </div>
+                      {f.score !== null && (
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
+                          <div
+                            className={cn(
+                              "h-full rounded-full",
+                              f.level === "good" && "bg-income",
+                              f.level === "fair" && "bg-warning",
+                              f.level === "poor" && "bg-expense",
+                            )}
+                            style={{ width: `${(f.score / f.max) * 100}%` }}
+                          />
+                        </div>
+                      )}
+                      <p className="mt-1.5 text-[12px] leading-relaxed text-text-secondary">
+                        {f.evidence}
+                      </p>
+                      <p className="mt-1 text-[12px] leading-relaxed text-text-tertiary">
+                        {f.advice}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      {tab === "assets" && (
+        <AssetTracker
+          rows={assets}
+          currency={currency}
+          canEdit={canEdit}
+          defaultMonth={assetMonthValue}
+        />
       )}
     </div>
   );

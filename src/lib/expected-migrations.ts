@@ -26,4 +26,6 @@ export const EXPECTED_MIGRATIONS = [
   "20260801020000_add_ledger_invite",
   "20260801030000_add_settlement",
   "20260801040000_add_saved_search",
+  "20260801050000_add_tags_and_assets",
+  "20260801060000_add_attachment",
 ] as const;

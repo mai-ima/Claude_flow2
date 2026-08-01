@@ -351,3 +351,42 @@ html {
   --theme-swatch-dark-card: #1c1c1e;
   --theme-swatch-dark-line: rgba(255, 255, 255, 0.14);
 }
+
+/* ─────────────────────────────────────────────
+ * 印刷。月次レポートを紙や PDF で残せるようにする。
+ *
+ * PDF 生成のライブラリは入れていない。ブラウザの印刷から保存できるので、
+ * そこで邪魔になるもの（ナビ・ヘッダー・広告・操作ボタン）を消し、
+ * 背景を白に落として文字が読める状態にするだけでよい。
+ * ───────────────────────────────────────────── */
+@media print {
+  /* 画面用の余白・固定要素を外す。fixed のままだと全ページに重なる。 */
+  aside,
+  header[class*="sticky"],
+  nav[aria-label],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  main {
+    padding-bottom: 0 !important;
+  }
+
+  /* 表やカードがページの切れ目で割れないようにする。 */
+  section,
+  table,
+  tr {
+    break-inside: avoid;
+  }
+
+  /* 影と角丸は紙では意味がなく、インクを食うだけ。 */
+  * {
+    box-shadow: none !important;
+  }
+}

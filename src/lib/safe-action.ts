@@ -25,6 +25,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     "あなたの権限では、自分で入力した記録だけを変更できます。この記録は他の方が入力したものです。",
   SETTLEMENT_SAME_USER: "同じ方どうしの精算は記録できません。",
   SETTLEMENT_AMOUNT: "精算の金額は1円以上で入力してください。",
+  TAG_DUPLICATE: "同じ名前のタグがすでにあります。別の名前にしてください。",
   ALL_ZERO_RATIO: "全員を0にはできません。少なくとも1人は負担する設定にしてください。",
   MEMBER_LIMIT: "現在のプランの人数上限に達しています。",
   USER_NOT_FOUND: "そのメールのユーザーが見つかりません（先に登録が必要です）。",

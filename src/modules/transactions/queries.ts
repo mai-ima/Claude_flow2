@@ -43,6 +43,8 @@ const txnListSelect = {
   // 実際に払った人。共有帳簿の精算と、一覧での表示に使う。
   paidByUserId: true,
   paidBy: { select: { name: true } },
+  tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+  attachments: { select: { id: true, url: true, name: true, mimeType: true, size: true } },
 } satisfies Prisma.TransactionSelect;
 
 /** 1ヶ月分として送る取引の上限（RSC ペイロードの肥大化を防ぐ）。 */
@@ -70,6 +72,8 @@ export interface TxnFilter {
   type?: "INCOME" | "EXPENSE";
   categoryId?: string;
   paymentMethodId?: string;
+  /** タグ。貼ってあるものだけに絞る。 */
+  tagId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -84,6 +88,7 @@ export async function searchTransactions(ledgerId: string, f: TxnFilter) {
   if (f.type) where.type = f.type;
   if (f.categoryId) where.categoryId = f.categoryId;
   if (f.paymentMethodId) where.paymentMethodId = f.paymentMethodId;
+  if (f.tagId) where.tags = { some: { tagId: f.tagId } };
   if (f.keyword) {
     // メモに加え、カテゴリ名・支払い方法名でも一致（横断検索）。
     where.OR = [
@@ -334,4 +339,70 @@ export function listSavedSearches(ledgerId: string, userId: string) {
     orderBy: { createdAt: "asc" },
     take: 20,
   });
+}
+
+/** タグ一覧（付いている件数つき）。 */
+export async function listTags(ledgerId: string) {
+  const rows = await db.tag.findMany({
+    where: { ledgerId },
+    include: { _count: { select: { transactions: true } } },
+    orderBy: { name: "asc" },
+  });
+  return rows.map((t) => ({
+    id: t.id,
+    name: t.name,
+    color: t.color,
+    count: t._count.transactions,
+  }));
+}
+
+/**
+ * 資産の推移（古い順）。
+ *
+ * 口座の自動連携はしないため、ここに並ぶのは手で書き留めた額だけ。
+ * 前月との差も一緒に返す（増えたか減ったかを画面で計算し直さずに済む）。
+ */
+export async function assetHistory(ledgerId: string, limit = 24) {
+  const rows = await db.assetSnapshot.findMany({
+    where: { ledgerId },
+    orderBy: { month: "desc" },
+    take: limit,
+  });
+  const asc = [...rows].reverse();
+  return asc.map((r, i) => ({
+    id: r.id,
+    month: r.month,
+    amount: r.amount,
+    memo: r.memo,
+    /** 前月からの増減。前月の記録が無ければ null。 */
+    diff: i > 0 ? r.amount - asc[i - 1].amount : null,
+  }));
+}
+
+/**
+ * 対象月の記録の付き方（件数と、記録があった日数）。
+ * 健康度スコアの「記録の続き方」に使う。1回のクエリで両方出す。
+ *
+ * 進行中の月では「今日まで」で数える。先の日付の記録（旅行の予定など）を
+ * 数えてしまうと、まだ来ていない日のぶんで日数が水増しされ、
+ * 「1日のうち6日に記録があります」のような文が出る（実際に出た）。
+ */
+export async function recordingActivity(
+  ledgerId: string,
+  month: Date,
+  now: Date = new Date(),
+): Promise<{ count: number; recordedDays: number; elapsedDays: number }> {
+  const { start, end } = monthRange(month);
+  // 進行中の月なら今日の終わりまで。過ぎた月・先の月はその月いっぱい。
+  const until = now < end && now > start ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999) : end;
+  const rows = await db.transaction.findMany({
+    where: { ledgerId, occurredAt: { gte: start, lte: until } },
+    select: { occurredAt: true },
+  });
+  return {
+    count: rows.length,
+    recordedDays: new Set(rows.map((r) => toDateInput(r.occurredAt))).size,
+    // 分母。ここまでで何日ぶんが対象かを、数える側と揃えて返す。
+    elapsedDays: until.getDate(),
+  };
 }

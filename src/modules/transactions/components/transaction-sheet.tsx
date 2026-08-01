@@ -9,7 +9,10 @@ import { Segmented } from "@/components/ui/segmented";
 import { AmountPad } from "./amount-pad";
 import { formatMoney } from "@/lib/money";
 import { todayLocal } from "@/lib/date";
-import { createTransaction, updateTransaction } from "../actions";
+import { createTransaction, updateTransaction, setTransactionTags } from "../actions";
+import { colorOf } from "@/lib/colors";
+import { AttachmentField, type AttachmentItem } from "./attachment-field";
+import { cn } from "@/lib/cn";
 
 type TxnType = "INCOME" | "EXPENSE";
 
@@ -24,6 +27,8 @@ export interface TxnFormValue {
   paymentMethodId: string;
   /** 実際に払った人。共有帳簿の精算に使う。空なら未指定。 */
   paidByUserId: string;
+  /** 貼ってあるタグ。 */
+  tagIds: string[];
   memo: string;
 }
 
@@ -47,6 +52,9 @@ export function TransactionSheet({
   beta = false,
   today,
   members = [],
+  tags = [],
+  attachmentsEnabled = false,
+  attachments = [],
 }: {
   open: boolean;
   onClose: () => void;
@@ -57,6 +65,12 @@ export function TransactionSheet({
   beta?: boolean;
   /** 共有帳簿のメンバー。1人以下なら「払った人」欄は出さない。 */
   members?: Option[];
+  /** 貼れるタグ。1つも無ければ欄を出さない。 */
+  tags?: { id: string; name: string; color: string }[];
+  /** ファイルの預かり先が用意されているか。無ければ欄を出さない。 */
+  attachmentsEnabled?: boolean;
+  /** すでに付いている添付。 */
+  attachments?: AttachmentItem[];
   /** サーバー基準の今日(yyyy-MM-dd)。端末のタイムゾーンが日本時間でないと
    *  既定の日付がアプリの「今日」とずれるため、サーバーから渡す。 */
   today?: string;
@@ -72,6 +86,7 @@ export function TransactionSheet({
     categoryId: "",
     paymentMethodId: "",
     paidByUserId: "",
+    tagIds: [],
     memo: "",
   });
   const [v, setV] = useState<TxnFormValue>(() => initial ?? { ...blank(), occurredAt: "" });
@@ -112,6 +127,14 @@ export function TransactionSheet({
         ? await updateTransaction(payload)
         : await createTransaction(payload);
       if (res.ok) {
+        // タグは中間テーブルなので、本体を保存してから貼り直す。
+        // 失敗しても本体は保存済み。ここで止めると、保存されたのに
+        // 「失敗しました」と出て何が起きたのか分からなくなる。
+        const id = v.id ?? (res.data as { id?: string } | undefined)?.id;
+        if (id && (v.tagIds.length > 0 || v.id)) {
+          const tagRes = await setTransactionTags({ transactionId: id, tagIds: v.tagIds });
+          if (!tagRes.ok) setError(`記録は保存しましたが、タグを貼れませんでした（${tagRes.error}）`);
+        }
         router.refresh();
         if (keepOpen && !v.id) {
           // 連続入力: 金額とメモだけ初期化し、種別/カテゴリ/日付は維持
@@ -242,6 +265,45 @@ export function TransactionSheet({
           </Field>
         )}
 
+        {tags.length > 0 && (
+          <div>
+            <span className="text-[13px] font-medium text-text-secondary">タグ（任意）</span>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {tags.map((t) => {
+                const on = v.tagIds.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() =>
+                      setV((s) => ({
+                        ...s,
+                        tagIds: on
+                          ? s.tagIds.filter((x) => x !== t.id)
+                          : [...s.tagIds, t.id],
+                      }))
+                    }
+                    className={cn(
+                      "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] transition",
+                      on
+                        ? "border-accent bg-accent/10 font-medium text-text-primary"
+                        : "border-border-subtle text-text-secondary",
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ background: colorOf(t.color) }}
+                    />
+                    {t.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <Field label="日付">
           <Input
             type="date"
@@ -249,6 +311,10 @@ export function TransactionSheet({
             onChange={(e) => setV((s) => ({ ...s, occurredAt: e.target.value }))}
           />
         </Field>
+
+        {attachmentsEnabled && (
+          <AttachmentField key={v.id ?? "new"} transactionId={v.id} initial={attachments} />
+        )}
 
         <Field label="メモ（任意）">
           <Textarea

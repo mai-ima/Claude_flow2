@@ -61,3 +61,26 @@ export const savedSearchInput = z.object({
   query: z.string().max(500),
 });
 export const deleteSavedSearchInput = z.object({ id: z.string() });
+
+// ── タグ ──
+export const tagInput = z.object({
+  name: z.string().min(1, "名前を入力してください。").max(20),
+  color: z.string().max(20).default("gray"),
+});
+export const updateTagInput = tagInput.extend({ id: z.string() });
+export const deleteTagInput = z.object({ id: z.string() });
+
+/** 取引に貼るタグ。空配列は「全部はがす」。 */
+export const setTransactionTagsInput = z.object({
+  transactionId: z.string(),
+  tagIds: z.array(z.string()).max(10, "タグは10個までです。"),
+});
+
+// ── 資産スナップショット ──
+export const assetSnapshotInput = z.object({
+  /** 対象月の1日。月ごとに1件へ畳む。 */
+  month: z.coerce.date(),
+  amount: z.coerce.number().int("整数で入力してください。").min(0, "0以上で入力してください。"),
+  memo: z.string().max(200).optional().nullable(),
+});
+export const deleteAssetSnapshotInput = z.object({ id: z.string() });

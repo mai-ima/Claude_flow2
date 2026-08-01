@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CategoryIcon, WalletIcon, TrashIcon, CopyIcon, CheckIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
+import { colorOf } from "@/lib/colors";
 import { todayLocal } from "@/lib/date";
 import { cn } from "@/lib/cn";
 import { Fab } from "@/components/ui/fab";
@@ -38,6 +39,10 @@ export interface TxnListItem {
   /** 実際に払った人。共有帳簿の精算に使う。 */
   paidByUserId: string | null;
   paidByName: string | null;
+  /** 貼ってあるタグ。 */
+  tags: { id: string; name: string; color: string }[];
+  /** 付いている添付。 */
+  attachments: { id: string; url: string; name: string; mimeType: string; size: number }[];
   /** この記録を自分が直せるか。SELF_EDITOR は自分が入れたものだけ。 */
   canEditThis: boolean;
 }
@@ -55,6 +60,8 @@ export function TransactionsClient({
   canEdit,
   canAdd = canEdit,
   members = [],
+  tags = [],
+  attachmentsEnabled = false,
   showOwner = false,
   currency = "JPY",
   betaAmountPad = false,
@@ -71,6 +78,10 @@ export function TransactionsClient({
   canAdd?: boolean;
   /** 共有帳簿のメンバー。2人以上のときだけ「払った人」を扱う。 */
   members?: Option[];
+  /** 貼れるタグ。 */
+  tags?: { id: string; name: string; color: string }[];
+  /** ファイルの預かり先が用意されているか。 */
+  attachmentsEnabled?: boolean;
   showOwner?: boolean;
   currency?: string;
   /** ベータ: 電卓キーパッド */
@@ -90,6 +101,8 @@ export function TransactionsClient({
     () => canAdd && searchParams.get("new") === "1",
   );
   const [editing, setEditing] = useState<TxnFormValue | undefined>();
+  // 添付は本体とは別に持つ（フォームの値ではなく、保存済みの記録に紐づく）。
+  const [editingAttachments, setEditingAttachments] = useState<TxnListItem["attachments"]>([]);
   const [pending, start] = useTransition();
 
   // 削除は往復を待たずに行を消す。トランジション終了時に props の items へ戻るため、
@@ -174,12 +187,14 @@ export function TransactionsClient({
 
   function openAdd() {
     setEditing(undefined);
+    setEditingAttachments([]);
     setSheetOpen(true);
   }
   function openEdit(it: TxnListItem) {
     // 権限は行ごとに見る。SELF_EDITOR は他人の記録を開いても保存できないので、
     // 開けないようにして「保存を押してから断られる」を避ける。
     if (!it.canEditThis) return;
+    setEditingAttachments(it.attachments);
     setEditing({
       id: it.id,
       type: it.type,
@@ -189,6 +204,7 @@ export function TransactionsClient({
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
       paidByUserId: it.paidByUserId ?? "",
+      tagIds: it.tags.map((t) => t.id),
       memo: it.memo ?? "",
     });
     setSheetOpen(true);
@@ -197,6 +213,8 @@ export function TransactionsClient({
   function openDuplicate(it: TxnListItem) {
     // 複製は「新しく足す」操作なので、追加できる人なら誰でもよい。
     if (!canAdd) return;
+    // 複製は別の記録になる。添付は引き継がない。
+    setEditingAttachments([]);
     setEditing({
       type: it.type,
       amount: it.amount,
@@ -205,6 +223,7 @@ export function TransactionsClient({
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
       paidByUserId: it.paidByUserId ?? "",
+      tagIds: it.tags.map((t) => t.id),
       memo: it.memo ?? "",
     });
     setSheetOpen(true);
@@ -307,6 +326,25 @@ export function TransactionsClient({
                         {/* 誰が払ったかは精算に効くので、記録者とは別に出す。 */}
                         {showOwner && it.paidByName ? ` ・ ${it.paidByName}が支払い` : ""}
                       </span>
+                      {/* タグは色の点だけ添える。名前まで並べると行が窮屈になる。 */}
+                      {it.tags.length > 0 && (
+                        <span className="mt-1 flex flex-wrap items-center gap-1">
+                          {it.tags.map((t) => (
+                            <span
+                              key={t.id}
+                              title={t.name}
+                              className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-tertiary"
+                            >
+                              <span
+                                aria-hidden
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: colorOf(t.color) }}
+                              />
+                              {t.name}
+                            </span>
+                          ))}
+                        </span>
+                      )}
                     </span>
                   );
                   const amount = (
@@ -498,6 +536,9 @@ export function TransactionsClient({
         beta={betaAmountPad}
         today={today}
         members={members}
+        tags={tags}
+        attachmentsEnabled={attachmentsEnabled}
+        attachments={editingAttachments}
       />
     </div>
   );

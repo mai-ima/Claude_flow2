@@ -126,6 +126,8 @@ model Ledger {
   recurringTransactions RecurringTransaction[]
   settlements    Settlement[]
   savedSearches  SavedSearch[]
+  tags           Tag[]
+  assetSnapshots AssetSnapshot[]
 
   @@index([ownerId])
 }
@@ -251,11 +253,88 @@ model Transaction {
   autoKey         String?  @unique
   createdAt       DateTime @default(now())
 
+  tags            TransactionTag[]
+  attachments     Attachment[]
+
   @@index([ledgerId, occurredAt])
   @@index([ledgerId, categoryId])
   @@index([ledgerId, paidByUserId])
   @@index([subscriptionId])
   @@index([recurringTransactionId])
+}
+
+/**
+ * タグ。カテゴリと違い、複数付けられて分類を横断する。
+ *
+ * 「旅行2026」「引っ越し」のように、期間や出来事でまとめたいときに使う。
+ * カテゴリは1件に1つで家計の型を決めるもの、タグは何枚でも貼れる付箋。
+ */
+model Tag {
+  id        String   @id @default(cuid())
+  ledgerId  String
+  ledger    Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  name      String
+  color     String   @default("gray")
+  createdAt DateTime @default(now())
+
+  transactions TransactionTag[]
+
+  // 同じ名前のタグが2つあると、どちらに貼ったのか分からなくなる。
+  @@unique([ledgerId, name])
+}
+
+model TransactionTag {
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tagId         String
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@index([tagId])
+}
+
+/**
+ * 添付ファイル（レシートの写真など）。
+ *
+ * 実体は外部のファイル置き場に置き、ここには場所と素性だけを持つ。
+ * 中身の読み取り（OCR）はしない（非目標）。あくまで「後から見返せる」ため。
+ *
+ * 置き場が未設定の環境ではこのテーブルは空のままで、画面にも出ない。
+ */
+model Attachment {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  // 置き場での場所。削除にも使う。
+  url           String
+  pathname      String
+  name          String
+  mimeType      String
+  size          Int
+  createdAt     DateTime    @default(now())
+
+  @@index([transactionId])
+}
+
+/**
+ * 資産のスナップショット。
+ *
+ * 口座の自動連携はしない（非目標）ので、月ごとに手で残高を書き留める。
+ * 家計簿の収支とは別に、いま全体でいくらあるのかの推移を見るためのもの。
+ */
+model AssetSnapshot {
+  id        String   @id @default(cuid())
+  ledgerId  String
+  ledger    Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  // 対象月の1日（00:00）。月ごとに1件に保つ。
+  month     DateTime
+  amount    Int
+  memo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([ledgerId, month])
+  @@index([ledgerId, month])
 }
 
 /**

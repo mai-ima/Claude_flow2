@@ -22,3 +22,6 @@ export { TransactionFilters, Pagination, ViewSwitcher } from "./components/trans
 export { TransactionSheet, type TxnFormValue } from "./components/transaction-sheet";
 export { RecurringClient, type RecurringListItem } from "./components/recurring-client";
 export { ExportButton } from "./components/export-button";
+export { TagManager, type TagItem } from "./components/tag-manager";
+export { MonthlyReport } from "./components/monthly-report";
+export { AssetTracker, type AssetRow } from "./components/asset-tracker";

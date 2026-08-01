@@ -29,6 +29,8 @@ const serverSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   // 監視（任意・Sentry）
   SENTRY_DSN: z.string().optional(),
+  // ファイル置き場（Vercel Blob）。未設定なら添付の機能を出さない。
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
   // cron 保護 / デモ投入の本番許可
   CRON_SECRET: z.string().optional(),
   // デモ投入用。未設定なら CRON_SECRET にフォールバック（既存デプロイ互換）。
@@ -127,6 +129,7 @@ export const env = parseEnv(
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     SENTRY_DSN: process.env.SENTRY_DSN,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     CRON_SECRET: process.env.CRON_SECRET,
     SEED_DEMO_SECRET: process.env.SEED_DEMO_SECRET,
     ALLOW_DEMO_SEED: process.env.ALLOW_DEMO_SEED,
@@ -167,3 +170,9 @@ export const isRateLimitEnabled = Boolean(
   env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN,
 );
 export const isSentryEnabled = Boolean(env.SENTRY_DSN);
+/**
+ * 添付が使えるか。
+ * ファイルの置き場が無ければ、預かっても返せない。トークンが無い環境では
+ * 画面に欄そのものを出さない（押せるのに必ず失敗する、を避ける）。
+ */
+export const isAttachmentEnabled = Boolean(env.BLOB_READ_WRITE_TOKEN);

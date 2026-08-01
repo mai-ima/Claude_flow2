@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
-import { listPaymentMethods, listAllCategories } from "@/modules/transactions/queries";
+import {
+  listPaymentMethods,
+  listAllCategories,
+  listTags,
+} from "@/modules/transactions/queries";
+import { TagManager } from "@/modules/transactions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { ListGroup, ListRow } from "@/components/ui/list";
 import { ShieldIcon } from "@/components/icons";
@@ -30,17 +35,29 @@ import { SITE, APP_VERSION, pageMetadata } from "@/lib/seo";
 import { enabledBetaFeatures } from "@/lib/beta-features";
 import { ledgerMemberLimit } from "@/modules/ledgers/queries";
 
-export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true });
+export const metadata: Metadata = pageMetadata({
+  title: "設定",
+  noindex: true,
+});
 
 export default async function SettingsPage() {
   const ctx = await getAppContext();
-  const [methods, categories, maxMembers, sessionRows, twoFactor, invites] = await Promise.all([
+  const [
+    methods,
+    categories,
+    maxMembers,
+    sessionRows,
+    twoFactor,
+    invites,
+    tags,
+  ] = await Promise.all([
     listPaymentMethods(ctx.ledgerId),
     listAllCategories(ctx.ledgerId),
     ledgerMemberLimit(ctx.ledger.ownerId),
     listSessions(ctx.user.id),
     twoFactorStatus(ctx.user.id),
     listPendingInvites(ctx.ledgerId),
+    listTags(ctx.ledgerId),
   ]);
 
   // Date のままクライアントへ渡さない（表示は相対時間だけで足りる）。
@@ -63,7 +80,10 @@ export default async function SettingsPage() {
 
       <div className="space-y-6">
         <ListGroup title="プロフィール" padded>
-          <ProfileForm name={ctx.user.name ?? ""} wage={ctx.user.assumedHourlyWage} />
+          <ProfileForm
+            name={ctx.user.name ?? ""}
+            wage={ctx.user.assumedHourlyWage}
+          />
         </ListGroup>
 
         <ListGroup title="帳簿" padded>
@@ -78,7 +98,10 @@ export default async function SettingsPage() {
         <ListGroup title="ベータ機能" padded>
           <BetaFeaturesToggle
             enabled={ctx.betaOptIn}
-            features={enabledBetaFeatures({ optIn: ctx.betaOptIn, features: ctx.user.betaFeatures })}
+            features={enabledBetaFeatures({
+              optIn: ctx.betaOptIn,
+              features: ctx.user.betaFeatures,
+            })}
           />
         </ListGroup>
 
@@ -89,7 +112,9 @@ export default async function SettingsPage() {
               <ThemeToggle />
             </div>
             <div className="border-t border-border-subtle pt-4">
-              <div className="mb-2.5 text-[14px] text-text-secondary">スキン</div>
+              <div className="mb-2.5 text-[14px] text-text-secondary">
+                スキン
+              </div>
               <SkinPicker />
             </div>
           </div>
@@ -106,7 +131,11 @@ export default async function SettingsPage() {
             isPod={ctx.isPod}
             isOwner={ctx.role === "OWNER"}
             members={members}
-            pendingInvites={invites.map((i) => ({ id: i.id, email: i.email, role: i.role }))}
+            pendingInvites={invites.map((i) => ({
+              id: i.id,
+              email: i.email,
+              role: i.role,
+            }))}
             maxMembers={maxMembers}
             tier={ctx.tier}
           />
@@ -114,7 +143,12 @@ export default async function SettingsPage() {
 
         <ListGroup title="支払い方法" padded>
           <PaymentMethodsManager
-            methods={methods.map((m) => ({ id: m.id, name: m.name, type: m.type, color: m.color }))}
+            methods={methods.map((m) => ({
+              id: m.id,
+              name: m.name,
+              type: m.type,
+              color: m.color,
+            }))}
           />
         </ListGroup>
 
@@ -130,6 +164,10 @@ export default async function SettingsPage() {
               parentId: c.parentId,
             }))}
           />
+        </ListGroup>
+
+        <ListGroup title="タグ" padded>
+          <TagManager tags={tags} />
         </ListGroup>
 
         <ListGroup title="データ（CSV）" padded>
