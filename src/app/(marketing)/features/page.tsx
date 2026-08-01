@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/marketing/reveal";
-import { FeatureMock } from "@/components/marketing/feature-mocks";
+import { FeatureMock, type FeatureTag } from "@/components/marketing/feature-mocks";
 import {
   ClockIcon,
   CardIcon,
@@ -28,7 +28,17 @@ export const metadata: Metadata = pageMetadata({
   path: "/features",
 });
 
-const SECTIONS = [
+/**
+ * 各節と、その横に出す図。tag は図の一覧のキーでもあるので、
+ * 節を足したときに図を用意し忘れると型で止まる。
+ */
+const SECTIONS: {
+  icon: typeof CalendarIcon;
+  tag: FeatureTag;
+  title: string;
+  body: string;
+  tier?: string;
+}[] = [
   {
     icon: CalendarIcon,
     tag: "カレンダー表示",
@@ -106,7 +116,9 @@ export default function FeaturesPage() {
         {SECTIONS.map((s, i) => (
           <Reveal key={s.tag}>
           <Card className="grid items-center gap-8 p-8 sm:p-12 md:grid-cols-2 hover-lift">
-            <div className={i % 2 === 1 ? "md:order-2" : ""}>
+            {/* min-w-0 が要る。付けないと、中の図（タブの横並びなど）の
+                内容幅がそのまま桁の幅になり、狭い画面で横に飛び出す。 */}
+            <div className={`min-w-0 ${i % 2 === 1 ? "md:order-2" : ""}`}>
               <div className="flex items-center gap-2">
                 <Badge tone="accent" size="md">
                   {s.tag}
@@ -120,7 +132,7 @@ export default function FeaturesPage() {
               <h2 className="mt-4 text-[28px] font-bold tracking-tight">{s.title}</h2>
               <p className="mt-3 text-[16px] leading-relaxed text-text-secondary">{s.body}</p>
             </div>
-            <div className={i % 2 === 1 ? "md:order-1" : ""}>
+            <div className={`min-w-0 ${i % 2 === 1 ? "md:order-1" : ""}`}>
               <FeatureMock tag={s.tag} />
             </div>
           </Card>

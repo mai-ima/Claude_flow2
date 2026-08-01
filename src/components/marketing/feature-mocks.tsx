@@ -9,14 +9,16 @@ import {
   RepeatIcon,
   TargetIcon,
   HomeIcon,
+  CalendarIcon,
+  ChartIcon,
 } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 
 /** 機能紹介用の、実UIを模した軽量モック（純表示・絵文字なし）。 */
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-[28px] border border-border-subtle bg-surface-0 p-4 shadow-md">
-      <div className="rounded-[20px] bg-surface-1 p-4">{children}</div>
+    <div className="min-w-0 rounded-[28px] border border-border-subtle bg-surface-0 p-4 shadow-md">
+      <div className="min-w-0 rounded-[20px] bg-surface-1 p-4">{children}</div>
     </div>
   );
 }
@@ -190,19 +192,162 @@ function AutomationMock() {
   );
 }
 
-export function FeatureMock({ tag }: { tag: string }) {
-  switch (tag) {
-    case "コストタイム":
-      return <CostTimeMock />;
-    case "サブスク・スタック":
-      return <StackMock />;
-    case "サブスク・レビュー":
-      return <ReviewMock />;
-    case "ファミリー共有":
-      return <FamilyMock />;
-    case "自動化・繰り返し":
-      return <AutomationMock />;
-    default:
-      return <CostTimeMock />;
-  }
+
+/**
+ * カレンダー表示のモック。
+ *
+ * 実画面と同じく日曜始まりの7列。金額は収入を緑、支出を赤で小さく添える。
+ * 「どの日にいくら」がひと目で分かる、という説明の裏づけになる図にする。
+ */
+const CAL_ROWS: { day: number; income?: string; expense?: string; today?: boolean }[][] = [
+  [{ day: 27 }, { day: 28 }, { day: 29 }, { day: 30 }, { day: 31 }, { day: 1, expense: "1.2千" }, { day: 2 }],
+  [
+    { day: 3, expense: "820" },
+    { day: 4 },
+    { day: 5, expense: "3.4千" },
+    { day: 6 },
+    { day: 7, income: "32万" },
+    { day: 8, expense: "1.1千" },
+    { day: 9 },
+  ],
+  [
+    { day: 10 },
+    { day: 11, expense: "6.8千" },
+    { day: 12 },
+    { day: 13, expense: "450" },
+    { day: 14 },
+    { day: 15, expense: "1.5千" },
+    { day: 16, today: true },
+  ],
+  [{ day: 17 }, { day: 18 }, { day: 19 }, { day: 20 }, { day: 21 }, { day: 22 }, { day: 23 }],
+];
+
+function CalendarMock() {
+  return (
+    <Frame>
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="text-[12px] font-medium">2026年8月</span>
+        <Badge tone="accent" size="sm">
+          <CalendarIcon size={12} /> カレンダー
+        </Badge>
+      </div>
+      <div className="grid grid-cols-7 gap-px text-center text-[10px] text-text-tertiary">
+        {["日", "月", "火", "水", "木", "金", "土"].map((w, i) => (
+          <div key={w} className={i === 0 ? "text-expense" : i === 6 ? "text-accent" : ""}>
+            {w}
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 grid grid-cols-7 gap-px">
+        {CAL_ROWS.flat().map((d, i) => (
+          <div
+            key={i}
+            className={`min-h-[38px] rounded-md px-0.5 py-1 text-center ${
+              d.today ? "bg-accent/10 ring-1 ring-accent/40" : "bg-surface-2/60"
+            }`}
+          >
+            <div className="text-[10px] leading-none text-text-secondary">{d.day}</div>
+            {d.income && (
+              <div className="mt-0.5 text-[9px] leading-tight text-income tabular-nums">
+                {d.income}
+              </div>
+            )}
+            {d.expense && (
+              <div className="mt-0.5 text-[9px] leading-tight text-expense tabular-nums">
+                {d.expense}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-2.5 flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2 text-[11px]">
+        <span className="text-text-tertiary">8月の収支</span>
+        <span className="tabular-nums">
+          <span className="text-income">+320,000</span>
+          <span className="mx-1 text-text-tertiary">/</span>
+          <span className="text-expense">−164,900</span>
+        </span>
+      </div>
+    </Frame>
+  );
+}
+
+/**
+ * 分析タブのモック。
+ *
+ * 8つの切り口があることが伝わればよいので、タブの並びと
+ * 月ごとの棒グラフを出す。実画面と同じく選択中のタブに下線を引く。
+ */
+const REPORT_TABS = ["支出", "収入", "収支", "年間支出", "年間収入", "貯蓄", "貯蓄率", "予算"];
+const REPORT_BARS = [52, 68, 44, 80, 61, 73, 38, 90, 57, 66, 49, 71];
+
+function ReportTabsMock() {
+  return (
+    <Frame>
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="text-[12px] font-medium">分析</span>
+        <Badge tone="accent" size="sm">
+          <ChartIcon size={12} /> 8タブ
+        </Badge>
+      </div>
+      {/* タブ。狭いところでは実画面と同じく横に流れ、端で切れる。
+          min-w-0 が無いと、8個ぶんの幅がそのまま外側に伝わって画面が横に広がる。 */}
+      <div className="flex min-w-0 gap-1 overflow-hidden border-b border-border-subtle pb-1.5">
+        {REPORT_TABS.map((t, i) => (
+          <span
+            key={t}
+            className={`shrink-0 rounded-md px-2 py-1 text-[11px] ${
+              i === 3
+                ? "bg-accent/10 font-medium text-accent"
+                : "text-text-tertiary"
+            }`}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+      <div className="mt-3 flex h-[104px] items-end gap-1.5">
+        {REPORT_BARS.map((h, i) => (
+          <div
+            key={i}
+            style={{ height: `${h}%` }}
+            className={`flex-1 rounded-t-[3px] ${i === 7 ? "bg-accent-solid" : "bg-accent/25"}`}
+          />
+        ))}
+      </div>
+      <div className="mt-1.5 flex justify-between text-[9px] text-text-tertiary">
+        <span>1月</span>
+        <span>6月</span>
+        <span>12月</span>
+      </div>
+      <div className="mt-2.5 flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2 text-[11px]">
+        <span className="text-text-tertiary">年間支出</span>
+        <span className="font-semibold tabular-nums">1,842,600円</span>
+      </div>
+    </Frame>
+  );
+}
+
+/**
+ * 節ごとの図。
+ *
+ * 一覧で持ち、キーを型にする。switch に default を置いていたときは、
+ * 節を足してもコンパイルが通り、カレンダーの説明の横にコストタイムの
+ * 図が出たまま公開されていた。ここに足し忘れれば型で止まる。
+ */
+export const FEATURE_MOCKS = {
+  "カレンダー表示": CalendarMock,
+  "8つの切り口の分析": ReportTabsMock,
+  "自動化・繰り返し": AutomationMock,
+  コストタイム: CostTimeMock,
+  "サブスク・スタック": StackMock,
+  "サブスク・レビュー": ReviewMock,
+  ファミリー共有: FamilyMock,
+} as const;
+
+export type FeatureTag = keyof typeof FEATURE_MOCKS;
+
+export function FeatureMock({ tag }: { tag: FeatureTag }) {
+  const Mock = FEATURE_MOCKS[tag];
+  return <Mock />;
 }
