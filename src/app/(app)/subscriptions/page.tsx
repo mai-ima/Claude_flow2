@@ -7,6 +7,7 @@ import {
   listSubscriptions,
   subscriptionTotals,
   subscriptionsByPaymentMethod,
+  countSubscriptions,
 } from "@/modules/subscriptions/queries";
 import { listCategories, listPaymentMethods } from "@/modules/transactions/queries";
 import {
@@ -31,13 +32,16 @@ export const metadata: Metadata = pageMetadata({ title: "サブスク管理", no
 export default async function SubscriptionsPage() {
   const { ledgerId, canEdit, tier, currency, user } = await getAppContext();
 
-  const [subs, totals, byPayment, categories, paymentMethods] = await Promise.all([
-    listSubscriptions(ledgerId),
-    subscriptionTotals(ledgerId),
-    subscriptionsByPaymentMethod(ledgerId),
-    listCategories(ledgerId),
-    listPaymentMethods(ledgerId),
-  ]);
+  const [subs, totals, byPayment, categories, paymentMethods, countedForLimit] =
+    await Promise.all([
+      listSubscriptions(ledgerId),
+      subscriptionTotals(ledgerId),
+      subscriptionsByPaymentMethod(ledgerId),
+      listCategories(ledgerId),
+      listPaymentMethods(ledgerId),
+      // 上限の判定はサーバー側と同じ数え方（解約済みを除く）で行う。
+      countSubscriptions(ledgerId),
+    ]);
 
   const items: SubItem[] = subs.map((s) => {
     const cycle = s.cycle as BillingCycle;
@@ -169,6 +173,7 @@ export default async function SubscriptionsPage() {
         isPro={tier === "PRO"}
         canUseReminders={canUse(tier, "reminders")}
         subLimit={PLANS[tier].maxSubscriptions}
+        countedForLimit={countedForLimit}
         hourlyWage={user.assumedHourlyWage}
       />
 

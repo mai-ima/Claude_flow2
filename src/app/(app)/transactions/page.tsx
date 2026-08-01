@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { getAppContext, resolveMonth, monthParam } from "@/lib/app-context";
 import {
   searchTransactions,
-  listTransactions,
-  dailyTotals,
+  calendarMonth,
   listAllCategories,
   listPaymentMethods,
   listSavedSearches,
@@ -121,15 +120,14 @@ export default async function TransactionsPage({
         }),
     listAllCategories(ledgerId),
     listPaymentMethods(ledgerId),
-    view === "calendar"
-      ? Promise.all([dailyTotals(ledgerId, month), listTransactions(ledgerId, month)])
-      : Promise.resolve(null),
+    // カレンダーは1回のクエリで日別集計と明細をまとめて取る。
+    view === "calendar" ? calendarMonth(ledgerId, month) : Promise.resolve(null),
     listSavedSearches(ledgerId, user.id),
     listTags(ledgerId),
   ]);
 
   const summary = calendar
-    ? calendar[0].reduce(
+    ? calendar.days.reduce(
         (a, d) => {
           a.income += d.income;
           a.expense += d.expense;
@@ -208,8 +206,9 @@ export default async function TransactionsPage({
       {view === "calendar" && calendar ? (
         <CalendarClient
           month={monthParam(month)}
-          days={calendar[0]}
-          items={calendar[1].map((t) => toListItem(t, perm))}
+          days={calendar.days}
+          items={calendar.items.map((t) => toListItem(t, perm))}
+          omitted={calendar.omitted}
           categories={catOpts}
           paymentMethods={pmOpts}
           canEdit={canEdit}

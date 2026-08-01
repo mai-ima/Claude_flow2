@@ -90,6 +90,7 @@ export function SubscriptionsClient({
   isPro,
   canUseReminders = false,
   subLimit = null,
+  countedForLimit,
   hourlyWage = null,
 }: {
   items: SubItem[];
@@ -103,6 +104,12 @@ export function SubscriptionsClient({
   isPro: boolean;
   canUseReminders?: boolean;
   subLimit?: number | null;
+  /**
+   * 上限の判定に数えられる件数（解約済みを除く）。
+   * サーバー側の判定と同じ数え方で渡すこと。画面が別の数え方をすると、
+   * 「3件」と出ているのに「上限に達しました」と断られる。
+   */
+  countedForLimit: number;
   /** 想定時給。解約額を労働時間に換算するのに使う（未設定なら換算しない）。 */
   hourlyWage?: number | null;
 }) {
@@ -216,7 +223,7 @@ export function SubscriptionsClient({
   const dueCount = reviewTargets.filter((it) => it.needsReview).length;
   const hasPriceChanges = shownItems.some((it) => it.priceHistory.length > 0);
 
-  const remaining = subLimit !== null ? subLimit - items.length : null;
+  const remaining = subLimit !== null ? subLimit - countedForLimit : null;
   const nearLimit = remaining !== null && remaining <= 1;
 
   return (
@@ -259,7 +266,8 @@ export function SubscriptionsClient({
         </Card>
         <Card className="col-span-2 p-4 sm:col-span-1">
           <div className="text-[12px] text-text-tertiary">登録数</div>
-          <div className="mt-1 text-[22px] font-bold tabular-nums">{totals.count}件</div>
+          <div className="mt-1 text-[22px] font-bold tabular-nums">{countedForLimit}件</div>
+          <div className="mt-0.5 text-[11px] text-text-tertiary">解約済みを除く</div>
         </Card>
       </div>
 

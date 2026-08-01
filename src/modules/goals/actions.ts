@@ -90,18 +90,39 @@ export const contributeGoal = authedAction(contributeInput, async ({ id, amount 
   await requireLedgerMember(ledgerId, user.id, "EDITOR");
   const existing = await db.goal.findUnique({ where: { id } });
   if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
-  const next = Math.max(0, existing.currentAmount + amount);
-  // 0 未満への引き出しはクランプされるため、履歴には実際の増減（next - current）を記録。
-  const delta = next - existing.currentAmount;
-  await db.$transaction([
-    db.goal.update({ where: { id }, data: { currentAmount: next } }),
-    ...(delta !== 0
-      ? [db.goalContribution.create({ data: { goalId: id, amount: delta, auto: false } })]
-      : []),
-  ]);
+
+  /*
+   * 読んでから足して書く、をやめる。
+   *
+   * 共有帳簿で2人が同時に積み立てると、あとの書き込みが先の分を
+   * まるごと上書きし、片方の積立が消える。1万円ずつ入れたのに
+   * 1万円しか増えない、ということが起こる。
+   *
+   * データベース側で1文にまとめて、足し算を任せる。
+   * GREATEST(0, ...) で「引き出しすぎても0で止まる」という
+   * これまでの挙動もそのまま保つ。
+   * 自己結合しているのは、更新前の額も一緒に返すため。
+   * 履歴には実際に動いた額（after - before）を残す必要がある。
+   */
+  const rows = await db.$queryRaw<{ before: number; after: number }[]>`
+    UPDATE "Goal" g
+    SET "currentAmount" = GREATEST(0, g."currentAmount" + ${amount})
+    FROM "Goal" old
+    WHERE g.id = old.id AND g.id = ${id} AND g."ledgerId" = ${ledgerId}
+    RETURNING old."currentAmount" AS before, g."currentAmount" AS after
+  `;
+  if (rows.length === 0) throw new Error("NOT_FOUND");
+
+  const { before, after } = rows[0];
+  const delta = after - before;
+  // 実際に動いていないなら履歴も残さない（0円の行が並ぶだけになる）。
+  if (delta !== 0) {
+    await db.goalContribution.create({ data: { goalId: id, amount: delta, auto: false } });
+  }
+
   revalidatePath("/goals");
   revalidatePath("/dashboard");
-  return { currentAmount: next };
+  return { currentAmount: after };
 });
 
 export const deleteGoal = authedAction(idInput, async ({ id }, user) => {

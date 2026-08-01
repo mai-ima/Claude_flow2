@@ -212,7 +212,13 @@ export async function dailyTotals(ledgerId: string, month: Date): Promise<DayTot
     where: { ledgerId, occurredAt: { gte: start, lte: end } },
     select: { type: true, amount: true, occurredAt: true },
   });
+  return bucketByDay(rows);
+}
 
+/** 取引の配列を日別に畳む。dailyTotals とカレンダーの取得で共用する。 */
+function bucketByDay(
+  rows: { type: string; amount: number; occurredAt: Date }[],
+): DayTotal[] {
   const map = new Map<string, DayTotal>();
   for (const t of rows) {
     const key = toDateInput(t.occurredAt);
@@ -223,6 +229,34 @@ export async function dailyTotals(ledgerId: string, month: Date): Promise<DayTot
     map.set(key, bucket);
   }
   return [...map.values()];
+}
+
+/**
+ * カレンダー表示に要るものを1回のクエリでまとめて取る。
+ *
+ * 以前は dailyTotals と listTransactions を並べて呼んでおり、同じ月の
+ * 取引を2回引いていた。しかも listTransactions は 400件で打ち切るため、
+ * 取引の多い月では日別の集計まで欠けていた（カレンダーの数字が実際より
+ * 小さくなる）。
+ *
+ * 日別の集計は全件から作り、明細のほうだけ上限をかける。
+ */
+export async function calendarMonth(ledgerId: string, month: Date) {
+  const { start, end } = monthRange(month);
+  const rows = await db.transaction.findMany({
+    where: { ledgerId, occurredAt: { gte: start, lte: end } },
+    select: txnListSelect,
+    orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+  });
+
+  return {
+    // 集計は全件から。ここを打ち切ると月の合計が合わなくなる。
+    days: bucketByDay(rows),
+    // 画面に並べるぶんだけ。送る量を抑える。
+    items: rows.slice(0, MONTH_TXN_LIMIT),
+    /** 上限で切り落とした件数。0 より大きければ画面で断る。 */
+    omitted: Math.max(0, rows.length - MONTH_TXN_LIMIT),
+  };
 }
 
 /**

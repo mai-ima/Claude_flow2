@@ -53,6 +53,7 @@ export function CalendarClient({
   categories,
   paymentMethods,
   canEdit,
+  omitted = 0,
   currency = "JPY",
   betaAmountPad = false,
   betaHaptics = false,
@@ -72,6 +73,12 @@ export function CalendarClient({
   categories: Option[];
   paymentMethods: Option[];
   canEdit: boolean;
+  /**
+   * 明細の上限で切り落とした件数。
+   * 0 より大きいときは、下の一覧が全部ではないことを画面で断る。
+   * 黙って隠すと、日別の合計と明細の合計が合わずに混乱する。
+   */
+  omitted?: number;
   currency?: string;
   /** ベータ: 電卓キーパッド */
   betaAmountPad?: boolean;
@@ -273,6 +280,14 @@ export function CalendarClient({
             </button>
           )}
         </div>
+
+        {omitted > 0 && (
+          <p className="mb-2 rounded-xl bg-surface-2 px-3.5 py-2.5 text-[12px] leading-relaxed text-text-tertiary">
+            この月は記録が多いため、下の一覧には新しいものから
+            {selectedItems.length > 0 ? "一部だけ" : "一部だけ"}を出しています（{omitted}件は省略）。
+            カレンダーの日ごとの金額は、省略した分も含めた合計です。
+          </p>
+        )}
 
         {selectedItems.length === 0 ? (
           <Card className="px-4 py-8 text-center text-[14px] text-text-tertiary">
