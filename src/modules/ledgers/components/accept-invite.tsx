@@ -54,7 +54,7 @@ export function AcceptInvite({
           他人のアドレスで登録した人が招待を横取りできないようにするためです。
           設定画面から確認メールを送れます。
         </p>
-        <Link href="/settings" className="block">
+        <Link href="/settings/security" className="block">
           <Button full variant="tinted">
             設定を開く
           </Button>

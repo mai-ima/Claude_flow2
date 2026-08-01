@@ -5,10 +5,11 @@ import { importTransactionsCsv } from "@/modules/transactions/import";
 import { tierAtLeast } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
 import type { PlanTier } from "@/lib/enums";
+import { API_MESSAGE } from "@/lib/api-messages";
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
+  if (!user) return NextResponse.json({ message: API_MESSAGE.UNAUTHORIZED }, { status: 401 });
   if (!tierAtLeast(user.tier as PlanTier, "PRO")) {
     return NextResponse.json({ message: "CSV インポートは PRO プランの機能です。" }, { status: 403 });
   }
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
   const rl = await rateLimit(`import:${user.id}`, 6, 60);
   if (!rl.ok) {
     return NextResponse.json(
-      { message: "取り込みの回数が多すぎます。少し時間をおいてお試しください。" },
+      { message: API_MESSAGE.RATE_LIMITED },
       { status: 429 },
     );
   }
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
   try {
     await requireLedgerMember(ledgerId, user.id, "EDITOR");
   } catch {
-    return NextResponse.json({ message: "編集権限がありません。" }, { status: 403 });
+    return NextResponse.json({ message: API_MESSAGE.FORBIDDEN }, { status: 403 });
   }
 
   const body = await req.json().catch(() => ({}));

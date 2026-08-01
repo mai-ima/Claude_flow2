@@ -1,78 +1,35 @@
 import type { Metadata } from "next";
 import { getAppContext } from "@/lib/app-context";
-import {
-  listPaymentMethods,
-  listAllCategories,
-  listTags,
-} from "@/modules/transactions/queries";
-import { TagManager } from "@/modules/transactions";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { ListGroup, ListRow } from "@/components/ui/list";
-import { ShieldIcon } from "@/components/icons";
+import {
+  ShieldIcon,
+  GearIcon,
+  WalletIcon,
+  SlidersIcon,
+  UsersIcon,
+} from "@/components/icons";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { SkinPicker } from "@/components/theme/skin-picker";
-import {
-  ProfileForm,
-  PaymentMethodsManager,
-  CategoryManager,
-  DangerZone,
-  DeleteAllData,
-  DataTools,
-  BetaFeaturesToggle,
-  PasswordForm,
-  SessionList,
-  EmailVerification,
-  TwoFactorSettings,
-} from "@/modules/account";
-import { listSessions } from "@/modules/account/queries";
-import { twoFactorStatus } from "@/lib/two-factor";
-import { listPendingInvites } from "@/modules/ledgers/invites";
-import { FamilySharing, LedgerSettingsForm } from "@/modules/ledgers";
+import { ProfileForm } from "@/modules/account";
 import { BillingCard } from "@/modules/billing";
-import { tierAtLeast } from "@/lib/plans";
-import { isStripeEnabled, isEmailEnabled } from "@/lib/env";
+import { isStripeEnabled } from "@/lib/env";
 import { SITE, APP_VERSION, pageMetadata } from "@/lib/seo";
-import { enabledBetaFeatures } from "@/lib/beta-features";
-import { ledgerMemberLimit } from "@/modules/ledgers/queries";
 
-export const metadata: Metadata = pageMetadata({
-  title: "設定",
-  noindex: true,
-});
+export const metadata: Metadata = pageMetadata({ title: "設定", noindex: true });
 
+/**
+ * 設定のトップ。
+ *
+ * 以前は1画面に13個の節が縦に並んでいて、目的の項目までひたすら
+ * スクロールする必要があった。よく触るもの（名前・見た目・プラン）だけを
+ * ここに残し、残りは中身ごとに分けて目次から入る形にする。
+ *
+ * URL の /settings はそのまま残す。通知やメールからのリンクが多く、
+ * 変えると過去に送ったお知らせのリンクが行き止まりになる。
+ */
 export default async function SettingsPage() {
   const ctx = await getAppContext();
-  const [
-    methods,
-    categories,
-    maxMembers,
-    sessionRows,
-    twoFactor,
-    invites,
-    tags,
-  ] = await Promise.all([
-    listPaymentMethods(ctx.ledgerId),
-    listAllCategories(ctx.ledgerId),
-    ledgerMemberLimit(ctx.ledger.ownerId),
-    listSessions(ctx.user.id),
-    twoFactorStatus(ctx.user.id),
-    listPendingInvites(ctx.ledgerId),
-    listTags(ctx.ledgerId),
-  ]);
-
-  // Date のままクライアントへ渡さない（表示は相対時間だけで足りる）。
-  const sessions = sessionRows.map((s) => ({
-    ...s,
-    createdAt: s.createdAt.toISOString(),
-    lastUsedAt: s.lastUsedAt.toISOString(),
-  }));
-
-  const members = ctx.ledger.members.map((m) => ({
-    userId: m.userId,
-    name: m.user.name ?? m.user.email ?? "メンバー",
-    role: m.role,
-    isOwner: m.userId === ctx.ledger.ownerId,
-  }));
 
   return (
     <PageContainer>
@@ -80,41 +37,22 @@ export default async function SettingsPage() {
 
       <div className="space-y-6">
         <ListGroup title="プロフィール" padded>
-          <ProfileForm
-            name={ctx.user.name ?? ""}
-            wage={ctx.user.assumedHourlyWage}
-          />
-        </ListGroup>
-
-        <ListGroup title="帳簿" padded>
-          <LedgerSettingsForm
-            ledgerId={ctx.ledgerId}
-            name={ctx.ledger.name}
-            currency={ctx.currency}
-            canEdit={ctx.role === "OWNER"}
-          />
-        </ListGroup>
-
-        <ListGroup title="ベータ機能" padded>
-          <BetaFeaturesToggle
-            enabled={ctx.betaOptIn}
-            features={enabledBetaFeatures({
-              optIn: ctx.betaOptIn,
-              features: ctx.user.betaFeatures,
-            })}
-          />
+          <ProfileForm name={ctx.user.name ?? ""} wage={ctx.user.assumedHourlyWage} />
         </ListGroup>
 
         <ListGroup title="外観" padded>
+          {/*
+            テーマもスキンも見本カードが縦に積まれる。ラベルを横に置くと、
+            狭い画面ではラベルだけが左上に取り残されて宙に浮く（実機で確認）。
+            どちらもラベルを上、選択肢を下に揃える。
+          */}
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[14px] text-text-secondary">テーマ</span>
+            <div>
+              <div className="mb-2.5 text-[14px] text-text-secondary">テーマ</div>
               <ThemeToggle />
             </div>
             <div className="border-t border-border-subtle pt-4">
-              <div className="mb-2.5 text-[14px] text-text-secondary">
-                スキン
-              </div>
+              <div className="mb-2.5 text-[14px] text-text-secondary">スキン</div>
               <SkinPicker />
             </div>
           </div>
@@ -124,98 +62,48 @@ export default async function SettingsPage() {
           <BillingCard tier={ctx.tier} stripeEnabled={isStripeEnabled} />
         </ListGroup>
 
-        <ListGroup title="ファミリー共有" padded>
-          <FamilySharing
-            ledgerId={ctx.ledgerId}
-            ledgerName={ctx.ledger.name}
-            isPod={ctx.isPod}
-            isOwner={ctx.role === "OWNER"}
-            members={members}
-            pendingInvites={invites.map((i) => ({
-              id: i.id,
-              email: i.email,
-              role: i.role,
-            }))}
-            maxMembers={maxMembers}
-            tier={ctx.tier}
+        <ListGroup title="くわしい設定">
+          <ListRow
+            href="/settings/ledger"
+            icon={<WalletIcon size={18} />}
+            iconBg="bg-accent-solid"
+            label="帳簿の中身"
+            sublabel="カテゴリ・タグ・支払い方法・帳簿の名前"
           />
-        </ListGroup>
-
-        <ListGroup title="支払い方法" padded>
-          <PaymentMethodsManager
-            methods={methods.map((m) => ({
-              id: m.id,
-              name: m.name,
-              type: m.type,
-              color: m.color,
-            }))}
+          <ListRow
+            href="/settings/sharing"
+            icon={<UsersIcon size={18} />}
+            iconBg="bg-pod"
+            label="ファミリー共有"
+            sublabel="メンバーの招待と権限"
           />
-        </ListGroup>
-
-        <ListGroup title="カテゴリ管理" padded>
-          <CategoryManager
-            categories={categories.map((c) => ({
-              id: c.id,
-              name: c.name,
-              type: c.type,
-              icon: c.icon,
-              color: c.color,
-              isArchived: c.isArchived,
-              parentId: c.parentId,
-            }))}
+          <ListRow
+            href="/settings/security"
+            icon={<ShieldIcon size={18} />}
+            iconBg="bg-income"
+            label="ログインと安全性"
+            sublabel="パスワード・二要素認証・端末"
           />
-        </ListGroup>
-
-        <ListGroup title="タグ" padded>
-          <TagManager tags={tags} />
-        </ListGroup>
-
-        <ListGroup title="データ（CSV）" padded>
-          <DataTools isPro={tierAtLeast(ctx.tier, "PRO")} />
+          <ListRow
+            href="/settings/advanced"
+            icon={<SlidersIcon size={18} />}
+            iconBg="bg-surface-3"
+            label="データとその他"
+            sublabel="書き出し・ベータ機能・退会"
+          />
         </ListGroup>
 
         {ctx.user.isAdmin && (
           <ListGroup title="管理者">
             <ListRow
               href="/admin"
-              icon={<ShieldIcon size={18} />}
+              icon={<GearIcon size={18} />}
               iconBg="bg-pod"
               label="管理コンソール"
               sublabel="アプリ全体の監視・管理"
             />
           </ListGroup>
         )}
-
-        <ListGroup title="パスワード" padded>
-          <PasswordForm />
-        </ListGroup>
-
-        <ListGroup title="二要素認証" padded>
-          <TwoFactorSettings
-            enabled={twoFactor.enabled}
-            remainingRecoveryCodes={twoFactor.remainingRecoveryCodes}
-          />
-        </ListGroup>
-
-        <ListGroup title="ログイン中の端末" padded>
-          <SessionList sessions={sessions} />
-        </ListGroup>
-
-        <ListGroup title="アカウント" padded bodyClassName="space-y-4">
-          <EmailVerification
-            email={ctx.user.email}
-            verified={ctx.user.emailVerified}
-            emailEnabled={isEmailEnabled}
-          />
-          {ctx.role === "OWNER" && (
-            <div className="border-t border-border-subtle pt-4">
-              <DeleteAllData />
-            </div>
-          )}
-          <div className="border-t border-border-subtle pt-4">
-            <DangerZone />
-          </div>
-        </ListGroup>
 
         <p className="pt-2 text-center text-[12px] text-text-tertiary">
           {SITE.name} ・ ベータ v{APP_VERSION}

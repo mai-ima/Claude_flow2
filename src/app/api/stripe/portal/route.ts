@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clientEnv } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
+import { API_MESSAGE } from "@/lib/api-messages";
 
 export async function POST() {
   if (!isStripeEnabled || !stripe) {
@@ -11,13 +12,13 @@ export async function POST() {
   }
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
+    return NextResponse.json({ message: API_MESSAGE.UNAUTHORIZED }, { status: 401 });
   }
   // Stripe API を叩くため実行回数を制限する。
   const rl = await rateLimit(`portal:${user.id}`, 10, 60);
   if (!rl.ok) {
     return NextResponse.json(
-      { message: "操作が集中しています。少し時間をおいてお試しください。" },
+      { message: API_MESSAGE.RATE_LIMITED },
       { status: 429 },
     );
   }

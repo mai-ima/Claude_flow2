@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { tierAtLeast } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
 import type { PlanTier } from "@/lib/enums";
+import { API_MESSAGE } from "@/lib/api-messages";
 
 /**
  * CSV の1セルを安全に整形する。
@@ -22,7 +23,7 @@ function csvCell(value: string): string {
 /** CSV エクスポート（PRO 限定）。 */
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
+  if (!user) return NextResponse.json({ message: API_MESSAGE.UNAUTHORIZED }, { status: 401 });
   if (!tierAtLeast(user.tier as PlanTier, "PRO")) {
     return NextResponse.json({ message: "CSV エクスポートは PRO プランの機能です。" }, { status: 403 });
   }
@@ -31,7 +32,7 @@ export async function GET() {
   const rl = await rateLimit(`export:${user.id}`, 10, 60);
   if (!rl.ok) {
     return NextResponse.json(
-      { message: "書き出しの回数が多すぎます。少し時間をおいてお試しください。" },
+      { message: API_MESSAGE.RATE_LIMITED },
       { status: 429 },
     );
   }

@@ -267,7 +267,7 @@ export const createTag = authedAction(tagInput, async (input, user) => {
   if (dup) throw new Error("TAG_DUPLICATE");
   const tag = await db.tag.create({ data: { ledgerId, name, color: input.color } });
   revalidatePath("/transactions");
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
   return { id: tag.id };
 });
 
@@ -281,7 +281,7 @@ export const updateTag = authedAction(updateTagInput, async (input, user) => {
   if (dup) throw new Error("TAG_DUPLICATE");
   await db.tag.update({ where: { id: input.id }, data: { name, color: input.color } });
   revalidatePath("/transactions");
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
   return { ok: true };
 });
 
@@ -293,7 +293,7 @@ export const deleteTag = authedAction(deleteTagInput, async ({ id }, user) => {
   if (!existing || existing.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
   await db.tag.delete({ where: { id } });
   revalidatePath("/transactions");
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
   return { ok: true };
 });
 

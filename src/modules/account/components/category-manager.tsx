@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { colorOf } from "@/lib/colors";
 import { createCategory, toggleArchiveCategory, setCategoryParent } from "../actions";
 import { cn } from "@/lib/cn";
+import { IconPicker, ColorPicker } from "@/components/ui/icon-color-picker";
 
 interface Cat {
   id: string;
@@ -21,43 +22,6 @@ interface Cat {
   /** 親カテゴリ。null なら自分が親（またはサブカテゴリを持たない）。 */
   parentId: string | null;
 }
-
-/**
- * 選択肢は日本語で出す。内部の値（"food" / "blue"）をそのまま並べると、
- * 何を選んでいるのか読んで分からない。
- */
-const ICONS: { value: string; label: string }[] = [
-  { value: "tag", label: "タグ" },
-  { value: "food", label: "食事" },
-  { value: "cart", label: "買い物" },
-  { value: "home", label: "住まい" },
-  { value: "bolt", label: "水道・光熱" },
-  { value: "train", label: "交通" },
-  { value: "wifi", label: "通信" },
-  { value: "play", label: "娯楽" },
-  { value: "heart", label: "健康・医療" },
-  { value: "gift", label: "贈り物" },
-  { value: "briefcase", label: "仕事" },
-  { value: "music", label: "音楽" },
-  { value: "cloud", label: "サブスク" },
-  { value: "sparkles", label: "美容" },
-  { value: "card", label: "カード" },
-  { value: "wallet", label: "財布" },
-];
-const COLORS: { value: string; label: string }[] = [
-  { value: "blue", label: "ブルー" },
-  { value: "teal", label: "ティール" },
-  { value: "green", label: "グリーン" },
-  { value: "mint", label: "ミント" },
-  { value: "yellow", label: "イエロー" },
-  { value: "orange", label: "オレンジ" },
-  { value: "pink", label: "ピンク" },
-  { value: "red", label: "レッド" },
-  { value: "purple", label: "パープル" },
-  { value: "indigo", label: "インディゴ" },
-  { value: "cyan", label: "シアン" },
-  { value: "gray", label: "グレー" },
-];
 
 const SECTIONS = [
   { type: "EXPENSE", label: "支出のカテゴリ" },
@@ -275,38 +239,15 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
             value={form.name}
             onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
           />
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block">
-              <span className="text-[12px] text-text-tertiary">アイコン</span>
-              <Select
-                value={form.icon}
-                aria-label="アイコン"
-                className="mt-1"
-                onChange={(e) => setForm((s) => ({ ...s, icon: e.target.value }))}
-              >
-                {ICONS.map((i) => (
-                  <option key={i.value} value={i.value}>
-                    {i.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label className="block">
-              <span className="text-[12px] text-text-tertiary">色</span>
-              <Select
-                value={form.color}
-                aria-label="色"
-                className="mt-1"
-                onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}
-              >
-                {COLORS.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          </div>
+          <ColorPicker
+            value={form.color}
+            onChange={(color) => setForm((s) => ({ ...s, color }))}
+          />
+          <IconPicker
+            value={form.icon}
+            color={form.color}
+            onChange={(icon) => setForm((s) => ({ ...s, icon }))}
+          />
           {addParentOptions.length > 0 && (
             <label className="block">
               <span className="text-[12px] text-text-tertiary">集計のしかた</span>

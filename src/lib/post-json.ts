@@ -6,6 +6,8 @@
  * finally でローディングだけ解除されて「押しても何も起きない」状態だった。
  * ここで必ず {ok, data, message} に正規化する。
  */
+import { API_MESSAGE } from "./api-messages";
+
 export interface PostJsonResult<T> {
   ok: boolean;
   status: number;
@@ -14,12 +16,16 @@ export interface PostJsonResult<T> {
   message?: string;
 }
 
+// サーバーが message を返さなかったときの言い方。
+// 文言は API_MESSAGE と揃える。同じ状況で画面ごとに言い方が変わると、
+// 利用者からは別の出来事に見える。
 function fallbackMessage(status: number): string {
-  if (status === 429) return "操作が集中しています。少し時間をおいてお試しください。";
-  if (status === 401) return "ログインが必要です。";
-  if (status === 403) return "この操作を行う権限がありません。";
-  if (status === 503) return "現在ご利用いただけません。時間をおいてお試しください。";
-  return "処理に失敗しました。時間をおいて再度お試しください。";
+  if (status === 429) return API_MESSAGE.RATE_LIMITED;
+  if (status === 401) return API_MESSAGE.UNAUTHORIZED;
+  if (status === 403) return API_MESSAGE.FORBIDDEN;
+  if (status === 404) return API_MESSAGE.NOT_FOUND;
+  if (status === 503) return API_MESSAGE.UNAVAILABLE;
+  return API_MESSAGE.FAILED;
 }
 
 export async function postJson<T = unknown>(

@@ -3,11 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/field";
+import { Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PlusIcon, TrashIcon } from "@/components/icons";
 import { colorOf } from "@/lib/colors";
+import { ColorPicker } from "@/components/ui/icon-color-picker";
 import { createTag, updateTag, deleteTag } from "../actions";
 
 export interface TagItem {
@@ -16,18 +17,6 @@ export interface TagItem {
   color: string;
   count: number;
 }
-
-const COLORS: { value: string; label: string }[] = [
-  { value: "blue", label: "ブルー" },
-  { value: "teal", label: "ティール" },
-  { value: "green", label: "グリーン" },
-  { value: "yellow", label: "イエロー" },
-  { value: "orange", label: "オレンジ" },
-  { value: "pink", label: "ピンク" },
-  { value: "red", label: "レッド" },
-  { value: "purple", label: "パープル" },
-  { value: "gray", label: "グレー" },
-];
 
 /**
  * タグの管理。
@@ -110,17 +99,11 @@ export function TagManager({ tags }: { tags: TagItem[] }) {
                     aria-label="タグの名前"
                     onChange={(e) => setEdit((s) => ({ ...s, name: e.target.value }))}
                   />
-                  <Select
+                  <ColorPicker
+                    label="タグの色"
                     value={edit.color}
-                    aria-label="タグの色"
-                    onChange={(e) => setEdit((s) => ({ ...s, color: e.target.value }))}
-                  >
-                    {COLORS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={(color) => setEdit((s) => ({ ...s, color }))}
+                  />
                   <div className="flex items-center gap-2">
                     <Button size="sm" onClick={() => save(t.id)} disabled={!edit.name.trim()}>
                       保存
@@ -175,21 +158,10 @@ export function TagManager({ tags }: { tags: TagItem[] }) {
               if (e.key === "Enter" && form.name.trim()) add();
             }}
           />
-          <label className="block">
-            <span className="text-[12px] text-text-tertiary">色</span>
-            <Select
-              value={form.color}
-              aria-label="色"
-              className="mt-1"
-              onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}
-            >
-              {COLORS.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-          </label>
+          <ColorPicker
+            value={form.color}
+            onChange={(color) => setForm((s) => ({ ...s, color }))}
+          />
           <div className="flex items-center gap-2">
             <span
               aria-hidden

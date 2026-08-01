@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useOptimistic } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SubscriptionSheet, type SubFormValue } from "./subscription-sheet";
 import { SubscriptionReview, type ReviewItem } from "./subscription-review";
@@ -128,6 +128,21 @@ export function SubscriptionsClient({
   );
   const [, start] = useTransition();
 
+  /**
+   * 「使った」の見た目だけ先に進める。
+   * トランジションが終われば props の items に戻るので、失敗しても
+   * 自動で元へ復帰する（巻き戻しの処理は要らない）。
+   */
+  const [shownItems, markUsedOptimistically] = useOptimistic(
+    items,
+    (state: SubItem[], usedId: string) =>
+      state.map((it) =>
+        it.id === usedId
+          ? { ...it, wasteLevel: "none" as const, wasteMessage: null, daysSinceUsed: 0 }
+          : it,
+      ),
+  );
+
   function openAdd() {
     setEditing(undefined);
     setEditingHistory([]);
@@ -143,6 +158,9 @@ export function SubscriptionsClient({
   }
   function used(id: string) {
     start(async () => {
+      // 押した瞬間に「使った」表示へ切り替える。往復を待つと、
+      // 押せたのかどうか分からないまま1秒ほど何も起きない。
+      markUsedOptimistically(id);
       const res = await markUsed({ id });
       if (!res.ok) {
         toast.error(res.error);
@@ -169,7 +187,7 @@ export function SubscriptionsClient({
     });
   }
 
-  const listItems = items
+  const listItems = shownItems
     .filter((it) => statusFilter === "ALL" || it.status === statusFilter)
     .sort((a, b) => {
       if (sortBy === "amount") return b.monthly - a.monthly;
@@ -177,7 +195,7 @@ export function SubscriptionsClient({
       return a.daysUntil - b.daysUntil; // renewal（近い順）
     });
 
-  const reviewTargets = items.filter((it) => it.status === "ACTIVE" || it.status === "TRIAL");
+  const reviewTargets = shownItems.filter((it) => it.status === "ACTIVE" || it.status === "TRIAL");
   // 見直し時期が来ているものから先に出す。同じ順位なら金額の大きい順。
   // 全部を毎回さらうと途中で止まるため、効きの大きいものを先に見せる。
   const reviewItems: ReviewItem[] = [...reviewTargets]
@@ -196,7 +214,7 @@ export function SubscriptionsClient({
       cancelSteps: it.cancelSteps,
     }));
   const dueCount = reviewTargets.filter((it) => it.needsReview).length;
-  const hasPriceChanges = items.some((it) => it.priceHistory.length > 0);
+  const hasPriceChanges = shownItems.some((it) => it.priceHistory.length > 0);
 
   const remaining = subLimit !== null ? subLimit - items.length : null;
   const nearLimit = remaining !== null && remaining <= 1;

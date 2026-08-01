@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { clientEnv } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
 import { PlanTier } from "@/lib/enums";
+import { API_MESSAGE } from "@/lib/api-messages";
 
 export async function POST(req: Request) {
   if (!isStripeEnabled || !stripe) {
@@ -16,14 +17,14 @@ export async function POST(req: Request) {
 
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
+    return NextResponse.json({ message: API_MESSAGE.UNAUTHORIZED }, { status: 401 });
   }
 
   // Stripe への顧客作成・セッション発行を伴うため、実行回数を制限する。
   const rl = await rateLimit(`checkout:${user.id}`, 10, 60);
   if (!rl.ok) {
     return NextResponse.json(
-      { message: "操作が集中しています。少し時間をおいてお試しください。" },
+      { message: API_MESSAGE.RATE_LIMITED },
       { status: 429 },
     );
   }

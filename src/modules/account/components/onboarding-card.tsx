@@ -44,7 +44,7 @@ export function OnboardingCard({
       done: hasOwnCategory,
       title: "カテゴリを自分に合わせる",
       body: "最初は一般的なカテゴリが入っています。使わないものはアーカイブし、必要なものを足せます。",
-      href: "/settings",
+      href: "/settings/ledger",
       cta: "カテゴリを開く",
     },
     {

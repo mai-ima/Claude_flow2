@@ -30,3 +30,4 @@ export { OnboardingCard } from "./components/onboarding-card";
 export { DangerZone } from "./components/danger-zone";
 export { DeleteAllData } from "./components/delete-all-data";
 export { DataTools } from "./components/data-tools";
+export { SettingsBack } from "./components/settings-back";

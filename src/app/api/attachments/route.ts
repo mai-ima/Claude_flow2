@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { isAttachmentEnabled } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { API_MESSAGE } from "@/lib/api-messages";
 import {
   storeAttachment,
   removeAttachment,
@@ -32,10 +33,10 @@ export async function POST(req: Request) {
   }
 
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
+  if (!user) return NextResponse.json({ message: API_MESSAGE.UNAUTHORIZED }, { status: 401 });
   if (user.impersonatedBy) {
     return NextResponse.json(
-      { message: "他のユーザーとして閲覧中は、変更操作を行えません。" },
+      { message: API_MESSAGE.IMPERSONATION_READONLY },
       { status: 403 },
     );
   }
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
   const rl = await rateLimit(`attach:${user.id}`, 30, 300, { memoryFallback: true });
   if (!rl.ok) {
     return NextResponse.json(
-      { message: "続けて送りすぎです。少し時間をおいてお試しください。" },
+      { message: API_MESSAGE.RATE_LIMITED },
       { status: 429 },
     );
   }
@@ -134,10 +135,10 @@ export async function POST(req: Request) {
 /** 添付を1件消す。 */
 export async function DELETE(req: Request) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ message: "ログインが必要です。" }, { status: 401 });
+  if (!user) return NextResponse.json({ message: API_MESSAGE.UNAUTHORIZED }, { status: 401 });
   if (user.impersonatedBy) {
     return NextResponse.json(
-      { message: "他のユーザーとして閲覧中は、変更操作を行えません。" },
+      { message: API_MESSAGE.IMPERSONATION_READONLY },
       { status: 403 },
     );
   }
@@ -151,12 +152,12 @@ export async function DELETE(req: Request) {
     include: { transaction: { select: { ledgerId: true, createdByUserId: true } } },
   });
   if (!row || row.transaction.ledgerId !== ledgerId) {
-    return NextResponse.json({ message: "対象が見つかりません。" }, { status: 404 });
+    return NextResponse.json({ message: API_MESSAGE.NOT_FOUND }, { status: 404 });
   }
   try {
     await requireOwnRecordOrEditor(ledgerId, user.id, row.transaction.createdByUserId);
   } catch {
-    return NextResponse.json({ message: "削除する権限がありません。" }, { status: 403 });
+    return NextResponse.json({ message: API_MESSAGE.FORBIDDEN }, { status: 403 });
   }
 
   // 置き場から消せなくても行は消す。残すと開けないリンクが並び続ける。

@@ -42,7 +42,7 @@ export const updateProfile = authedAction(
         assumedHourlyWage: input.assumedHourlyWage ?? null,
       },
     });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     revalidatePath("/dashboard");
     return { ok: true };
   },
@@ -113,7 +113,7 @@ export const createPaymentMethod = authedAction(
     await db.paymentMethod.create({
       data: { ledgerId, name: input.name, type: input.type, color: input.color, icon: "card" },
     });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -126,7 +126,7 @@ export const deletePaymentMethod = authedAction(
     const pm = await db.paymentMethod.findUnique({ where: { id } });
     if (!pm || pm.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
     await db.paymentMethod.delete({ where: { id } });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -170,7 +170,7 @@ export const createCategory = authedAction(
         parentId,
       },
     });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     revalidatePath("/transactions");
     return { ok: true };
   },
@@ -198,7 +198,7 @@ export const setCategoryParent = authedAction(
     if (!verdict.ok) throw new Error("PARENT_INVALID");
 
     await db.category.update({ where: { id }, data: { parentId } });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     revalidatePath("/transactions");
     revalidatePath("/reports");
     return { ok: true };
@@ -213,7 +213,7 @@ export const toggleArchiveCategory = authedAction(
     const cat = await db.category.findUnique({ where: { id } });
     if (!cat || cat.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
     await db.category.update({ where: { id }, data: { isArchived: archived } });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     revalidatePath("/transactions");
     return { ok: true };
   },
@@ -259,7 +259,7 @@ export const changePasswordAction = authedAction(
     }),
   async (input, user) => {
     await changePassword(user.id, input.currentPassword, input.newPassword);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -299,7 +299,7 @@ export const confirmTwoFactorAction = authedAction(
   z.object({ code: z.string().min(1, "コードを入力してください。") }),
   async (input, user) => {
     const codes = await confirmTwoFactor(user.id, input.code);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { recoveryCodes: codes };
   },
 );
@@ -313,7 +313,7 @@ export const disableTwoFactorAction = authedAction(
   async (input, user) => {
     await assertPassword(user.id, input.password);
     await disableTwoFactor(user.id);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -324,7 +324,7 @@ export const regenerateRecoveryCodesAction = authedAction(
   async (input, user) => {
     await assertPassword(user.id, input.password);
     const codes = await regenerateRecoveryCodes(user.id);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { recoveryCodes: codes };
   },
 );
@@ -334,7 +334,7 @@ export const revokeSessionAction = authedAction(
   z.object({ sessionId: z.string().min(1) }),
   async (input, user) => {
     await revokeSession(user.id, input.sessionId);
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -342,7 +342,7 @@ export const revokeSessionAction = authedAction(
 /** 今の端末以外のログインを全て終了する。 */
 export const revokeOtherSessionsAction = authedAction(z.object({}), async (_input, user) => {
   const count = await revokeOtherSessions(user.id);
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
   return { count };
 });
 

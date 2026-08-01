@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/toast";
+import { API_MESSAGE } from "@/lib/api-messages";
 
 export function ExportButton({ enabled }: { enabled: boolean }) {
   const toast = useToast();
@@ -22,9 +23,9 @@ export function ExportButton({ enabled }: { enabled: boolean }) {
       const res = await fetch("/api/export/transactions");
       if (!res.ok) {
         let message = "書き出しに失敗しました。時間をおいてお試しください。";
-        if (res.status === 429) message = "書き出しの回数が多すぎます。少し時間をおいてお試しください。";
+        if (res.status === 429) message = API_MESSAGE.RATE_LIMITED;
         else if (res.status === 403) message = "CSV エクスポートは PRO プランの機能です。";
-        else if (res.status === 401) message = "ログインが必要です。";
+        else if (res.status === 401) message = API_MESSAGE.UNAUTHORIZED;
         toast.error(message);
         return;
       }

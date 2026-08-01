@@ -9,6 +9,16 @@ export type Theme = "light" | "dark" | "system";
 /** 見た目のスキン。ライト/ダークとは独立して選べる。 */
 export type Skin = "classic" | "apple" | "liquidglass";
 
+/**
+ * スキンの一覧。
+ *
+ * 表示名に他社の製品名は使わない。以前は「Apple」「iOS 26 のような」と
+ * 書いていたが、Tsumiki は Apple とは無関係で、公式の見た目を提供している
+ * ように読める。中身が何なのかを、そのまま言葉にする。
+ *
+ * value（classic / apple / liquidglass）は変えない。端末に保存された
+ * 選択がこの値なので、変えるとすでに選んでいる方の設定が外れる。
+ */
 export const SKINS: { value: Skin; label: string; description: string }[] = [
   {
     value: "classic",
@@ -17,13 +27,13 @@ export const SKINS: { value: Skin; label: string; description: string }[] = [
   },
   {
     value: "apple",
-    label: "Apple",
+    label: "ミニマル",
     description: "透明感に頼らず、余白と区切り線で整えた端正な表示。",
   },
   {
     value: "liquidglass",
-    label: "リキッドグラス",
-    description: "背景が透けるガラス質。iOS 26 のような奥行き。",
+    label: "ガラス",
+    description: "背景が透けるガラスのような質感。奥行きのある表示。",
   },
 ];
 

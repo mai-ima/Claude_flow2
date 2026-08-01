@@ -119,7 +119,7 @@ export const inviteMember = authedAction(
     });
     if (!sent) throw new Error("EMAIL_SEND_FAILED");
 
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -163,7 +163,7 @@ export const transferOwnership = authedAction(
           type: "SYSTEM",
           title: "帳簿のオーナーになりました",
           body: `「${ledger.name}」のオーナーがあなたに移りました。`,
-          href: "/settings",
+          href: "/settings/sharing",
         },
       }),
     ]);
@@ -212,7 +212,7 @@ export const revokeInvite = authedAction(
       where: { id: inviteId },
       data: { revokedAt: new Date() },
     });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -257,7 +257,7 @@ export const updateMemberRole = authedAction(
           type: "SYSTEM",
           title: "帳簿での権限が変わりました",
           body: `「${ledger.name}」での権限が「${MEMBER_ROLE_LABEL[role]}」になりました。${MEMBER_ROLE_HINT[role]}`,
-          href: "/settings",
+          href: "/settings/sharing",
         },
       }),
     ]);
@@ -331,7 +331,7 @@ export const deleteLedger = authedAction(
             type: "SYSTEM",
             title: "共有帳簿が削除されました",
             body: `「${ledger.name}」がオーナーによって削除されました。`,
-            href: "/settings",
+            href: "/settings/sharing",
           };
         })
         .filter((d): d is NonNullable<typeof d> => d !== null);
@@ -354,7 +354,7 @@ export const removeMember = authedAction(
     await db.ledgerMember.delete({
       where: { ledgerId_userId: { ledgerId, userId } },
     });
-    revalidatePath("/settings");
+    revalidatePath("/settings", "layout");
     return { ok: true };
   },
 );
@@ -431,6 +431,6 @@ export const updateShareRatios = authedAction(shareRatioInput, async ({ ledgerId
     ),
   );
   revalidatePath("/settlement");
-  revalidatePath("/settings");
+  revalidatePath("/settings", "layout");
   return { ok: true };
 });
