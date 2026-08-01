@@ -90,9 +90,17 @@ export type AuthError =
 export async function signInWithEmail(
   email: string,
   password: string,
-  opts: { name?: string; mode?: "login" | "signup" } = {},
+  opts: {
+    name?: string;
+    mode?: "login" | "signup";
+    /**
+     * 登録後にそのままログインさせるか。
+     * メール確認を挟む流れでは false にして、確認するまで入れないようにする。
+     */
+    autoLogin?: boolean;
+  } = {},
 ) {
-  const { name, mode = "login" } = opts;
+  const { name, mode = "login", autoLogin = true } = opts;
   const normalized = email.trim().toLowerCase();
   if (password.length < 8) {
     throw new Error("WEAK_PASSWORD");
@@ -154,7 +162,7 @@ export async function signInWithEmail(
     }
   }
   await bootstrapUser(user.id, user.name);
-  await establishSession(user.id);
+  if (autoLogin) await establishSession(user.id);
   return { user, pendingTwoFactor: false as const };
 }
 

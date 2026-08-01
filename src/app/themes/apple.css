@@ -131,3 +131,28 @@
 :root[data-skin="apple"] .active\:scale-\[0\.96\]:active {
   transform: scale(0.98);
 }
+
+/* ─────────────────────────────────────────────
+ * 設定画面のスキン見本。
+ *
+ * スキンは :root[data-skin] に紐づくため、入れ子の要素に別スキンを
+ * 適用できない。見本だけは値を持たせる必要がある。
+ * 本物のトークンの真下に、同じ値で、ライトとダークの両方を置く。
+ * 以前は見本がライト固定で、ダークだと暗い画面に白い板が3枚並んでいた。
+ * ここを直すときは上の --surface-* と揃えること。
+ * ───────────────────────────────────────────── */
+.skin-swatch--apple {
+  --sw-canvas: #f2f2f7;
+  --sw-card: #ffffff;
+  --sw-line: rgba(0,0,0,0.15);
+  --sw-shadow: none;
+  --sw-glass: none;
+}
+
+.dark .skin-swatch--apple {
+  --sw-canvas: #000000;
+  --sw-card: #1c1c1e;
+  --sw-line: rgba(255,255,255,0.18);
+  --sw-shadow: none;
+  --sw-glass: none;
+}

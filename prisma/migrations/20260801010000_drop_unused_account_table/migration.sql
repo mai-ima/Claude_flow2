@@ -1,0 +1,38 @@
+-- 未使用の Account テーブルを削除する（OAuth の判断: 実装しない）。
+--
+-- 背景:
+--   Auth.js 互換のスキーマとして最初から定義されていたが、コードからの参照は
+--   0件で、対応する GOOGLE_CLIENT_ID 等の環境変数も既に削除済み。
+--   認証はメール＋パスワード・再設定・メール確認・二要素認証で揃っており、
+--   OAuth を足すと「家計データを外部に出さない」という本アプリの立場と
+--   緊張関係になる。使われないテーブルを残すと、スキーマを読む人に
+--   「OAuth があるらしい」と誤解させ、データ量の一覧にも並び続ける。
+--
+-- 安全性:
+--   このテーブルは一度も書き込まれていない（本番・開発ともに 0 行）。
+--   外部キーで参照している他のテーブルも無い。
+--
+-- 切り戻し（この内容をそのまま実行すれば元に戻る）:
+--   CREATE TABLE "Account" (
+--     "id" TEXT NOT NULL,
+--     "userId" TEXT NOT NULL,
+--     "type" TEXT NOT NULL,
+--     "provider" TEXT NOT NULL,
+--     "providerAccountId" TEXT NOT NULL,
+--     "refresh_token" TEXT,
+--     "access_token" TEXT,
+--     "expires_at" INTEGER,
+--     "token_type" TEXT,
+--     "scope" TEXT,
+--     "id_token" TEXT,
+--     "session_state" TEXT,
+--     CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
+--   );
+--   CREATE UNIQUE INDEX "Account_provider_providerAccountId_key"
+--     ON "Account"("provider", "providerAccountId");
+--   ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey"
+--     FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+--
+--   将来 OAuth を入れる場合、Auth.js は自前のマイグレーションで
+--   このテーブルを作り直すため、ここで残しておく必要は無い。
+DROP TABLE IF EXISTS "Account";

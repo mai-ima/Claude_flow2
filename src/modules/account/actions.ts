@@ -279,7 +279,7 @@ export const sendVerificationEmailAction = authedAction(z.object({}), async (_in
   if (fresh?.emailVerified) return { alreadyVerified: true };
 
   // 再送の連打で送信の踏み台にされないようにする。
-  const rl = await rateLimit(`verify-send:${user.id}`, 3, 600);
+  const rl = await rateLimit(`verify-send:${user.id}`, 3, 600, { memoryFallback: true });
   if (!rl.ok) throw new Error("TOO_MANY_REQUESTS");
 
   const { sent } = await sendEmailVerification(user.email);

@@ -335,3 +335,19 @@ html {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ─────────────────────────────────────────────
+ * 設定画面のテーマ見本（ライト / ダーク / 自動）。
+ *
+ * どのスキンでも同じ見本を出す。ここで示したいのは
+ * 「明るいか暗いか」であって、スキンごとの細かな色ではない。
+ * スキンの違いは隣のスキン見本（--sw-*）が担当する。
+ * ───────────────────────────────────────────── */
+:root {
+  --theme-swatch-light-canvas: #f2f2f6;
+  --theme-swatch-light-card: #ffffff;
+  --theme-swatch-light-line: rgba(0, 0, 0, 0.10);
+  --theme-swatch-dark-canvas: #000000;
+  --theme-swatch-dark-card: #1c1c1e;
+  --theme-swatch-dark-line: rgba(255, 255, 255, 0.14);
+}

@@ -17,7 +17,12 @@ import {
 } from "@/lib/two-factor-challenge";
 import { db } from "@/lib/db";
 import { consumeToken } from "@/lib/verification-token";
-import { sendPasswordResetEmail, sendEmailVerification } from "@/lib/account-mail";
+import {
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  sendSignupAttemptNotice,
+} from "@/lib/account-mail";
+import { isEmailEnabled } from "@/lib/env";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { safeNext } from "@/lib/safe-next";
 import { logger } from "@/lib/logger";
@@ -53,8 +58,8 @@ export async function loginAction(
   // 逆にメールだけで数えると、共有回線からの正常な利用を巻き込む。両方で数える。
   const email = parsed.data.email.trim().toLowerCase();
   const [byIp, byEmail] = await Promise.all([
-    rateLimit(`login:${await clientIp()}`, 12, 60),
-    rateLimit(`login-email:${email}`, 8, 300),
+    rateLimit(`login:${await clientIp()}`, 12, 60, { memoryFallback: true }),
+    rateLimit(`login-email:${email}`, 8, 300, { memoryFallback: true }),
   ]);
   if (!byIp.ok || !byEmail.ok) {
     return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
@@ -125,7 +130,7 @@ export async function verifyTwoFactorAction(
     return { error: z.flattenError(parsed.error).fieldErrors.code?.[0] };
   }
 
-  const rl = await rateLimit(`twofa:${await clientIp()}`, 10, 300);
+  const rl = await rateLimit(`twofa:${await clientIp()}`, 10, 300, { memoryFallback: true });
   if (!rl.ok) {
     return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
   }
@@ -162,14 +167,21 @@ export async function signupAction(
     const f = z.flattenError(parsed.error).fieldErrors;
     return { error: f.password?.[0] ?? f.email?.[0] ?? "入力を確認してください。" };
   }
-  const rl = await rateLimit(`signup:${await clientIp()}`, 8, 60);
+  const rl = await rateLimit(`signup:${await clientIp()}`, 8, 60, { memoryFallback: true });
   if (!rl.ok) {
     return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
   }
+  // メールを送れる環境では、登録の成否を画面に出さない。
+  // 成功時だけ即ログインすると、着地点の違いで「登録済みかどうか」が分かる。
+  // 送れない環境では確認メールが届かず何も進まないので、従来通り即ログインする。
+  const confirmByEmail = isEmailEnabled;
+  let takenNotice = false;
+
   try {
     await signInWithEmail(parsed.data.email, parsed.data.password, {
       mode: "signup",
       name: parsed.data.name,
+      autoLogin: !confirmByEmail,
     });
     // 確認メールは「送れたら送る」。送信基盤が無い/落ちている環境で
     // 登録そのものを失敗させると、使い始められなくなる。
@@ -179,7 +191,19 @@ export async function signupAction(
   } catch (err) {
     const code = err instanceof Error ? err.message : "";
     if (code === "EMAIL_TAKEN") {
-      return { error: "このメールアドレスは登録済みです。ログインしてください。" };
+      // 「登録済みです」と返すと、登録フォームを叩くだけで会員かどうかを
+      // 調べられる。持ち主にだけメールで知らせ、画面には成否を出さない。
+      // 送信が使えない環境では知らせようがないので、そのときだけ従来通り伝える
+      // （黙って何も起きないほうが、利用者にとっては困る）。
+      if (confirmByEmail) {
+        void sendSignupAttemptNotice(parsed.data.email).catch((e) =>
+          logger.error("signup notice failed", e),
+        );
+        // 新規登録が成功したときと同じ画面へ。ここで分岐が見えると意味が無い。
+        takenNotice = true;
+      } else {
+        return { error: "このメールアドレスは登録済みです。ログインしてください。" };
+      }
     }
     if (code === "WEAK_PASSWORD") {
       return { error: "パスワードは8文字以上で入力してください。" };
@@ -190,9 +214,13 @@ export async function signupAction(
           "サーバー側の準備が完了していません。時間をおいて再度お試しください。（管理者の方は /api/health をご確認ください）",
       };
     }
-    logger.error("signup failed", err);
-    return { error: "登録に失敗しました。時間をおいて再度お試しください。" };
+    if (!takenNotice) {
+      logger.error("signup failed", err);
+      return { error: "登録に失敗しました。時間をおいて再度お試しください。" };
+    }
   }
+  // redirect は例外で制御を移すため try の外で呼ぶ。
+  if (confirmByEmail) redirect("/signup/sent");
   redirect(safeNext(parsed.data.next));
 }
 
@@ -217,8 +245,8 @@ export async function requestPasswordResetAction(
 
   // 送信の踏み台にされないよう、宛先とIPの両方で数える。
   const [byIp, byEmail] = await Promise.all([
-    rateLimit(`reset-req:${await clientIp()}`, 5, 600),
-    rateLimit(`reset-req-email:${email}`, 3, 600),
+    rateLimit(`reset-req:${await clientIp()}`, 5, 600, { memoryFallback: true }),
+    rateLimit(`reset-req-email:${email}`, 3, 600, { memoryFallback: true }),
   ]);
   if (!byIp.ok || !byEmail.ok) {
     // ここも成否を漏らさない。断っていることだけ伝える。
@@ -261,7 +289,7 @@ export async function resetPasswordAction(
     return { error: f.confirm?.[0] ?? f.password?.[0] ?? "入力を確認してください。" };
   }
 
-  const rl = await rateLimit(`reset-submit:${await clientIp()}`, 10, 600);
+  const rl = await rateLimit(`reset-submit:${await clientIp()}`, 10, 600, { memoryFallback: true });
   if (!rl.ok) {
     return { error: "試行回数が多すぎます。少し時間をおいてお試しください。" };
   }

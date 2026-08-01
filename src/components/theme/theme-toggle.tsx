@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Segmented } from "@/components/ui/segmented";
-import { SunIcon, MoonIcon, MonitorIcon } from "@/components/icons";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
+import { SunIcon, MoonIcon, MonitorIcon, CheckIcon } from "@/components/icons";
 import {
   type Theme,
   THEME_EVENT,
@@ -59,9 +59,64 @@ function applyWithReveal(next: Theme, origin: { x: number; y: number } | null) {
     .catch(() => root.removeAttribute("data-vt"));
 }
 
+const THEME_OPTIONS: { value: Theme; label: string; description: string }[] = [
+  { value: "light", label: "ライト", description: "つねに明るい配色" },
+  { value: "dark", label: "ダーク", description: "つねに暗い配色" },
+  { value: "system", label: "自動", description: "端末の設定に合わせる" },
+];
+
+/** 見本の片面（明 or 暗）。 */
+const SWATCH_SIDES = {
+  light: {
+    canvas: "var(--theme-swatch-light-canvas)",
+    card: "var(--theme-swatch-light-card)",
+    line: "var(--theme-swatch-light-line)",
+  },
+  dark: {
+    canvas: "var(--theme-swatch-dark-canvas)",
+    card: "var(--theme-swatch-dark-card)",
+    line: "var(--theme-swatch-dark-line)",
+  },
+} as const;
+
+function SwatchHalf({ side }: { side: keyof typeof SWATCH_SIDES }) {
+  const c = SWATCH_SIDES[side];
+  return (
+    <span className="absolute inset-0" style={{ background: c.canvas }}>
+      <span
+        className="absolute left-2 top-2 h-8 w-[62%] rounded-lg border"
+        style={{ background: c.card, borderColor: c.line }}
+      />
+    </span>
+  );
+}
+
+/** テーマの見本。自動は明暗を斜めに分けて示す。 */
+function ThemePreview({ value }: { value: Theme }) {
+  return (
+    <span className="relative block h-12 w-full overflow-hidden rounded-xl" aria-hidden>
+      {value === "dark" ? (
+        <SwatchHalf side="dark" />
+      ) : value === "light" ? (
+        <SwatchHalf side="light" />
+      ) : (
+        <>
+          <SwatchHalf side="light" />
+          <span
+            className="absolute inset-0"
+            style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
+          >
+            <SwatchHalf side="dark" />
+          </span>
+        </>
+      )}
+      <span className="absolute bottom-2 right-2 h-4 w-8 rounded-full bg-accent-solid" />
+    </span>
+  );
+}
+
 export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<Theme>("system");
-  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // localStorage（外部の永続ストア）からマウント時に初期同期する正当なケース。
@@ -111,22 +166,40 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div ref={wrapRef} className="inline-block">
-      <Segmented<Theme>
-        value={theme}
-        onChange={(next) => {
-          const r = wrapRef.current?.getBoundingClientRect();
-          change(
-            next,
-            r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null,
-          );
-        }}
-        options={[
-          { value: "light", label: "ライト" },
-          { value: "dark", label: "ダーク" },
-          { value: "system", label: "自動" },
-        ]}
-      />
+    <div role="radiogroup" aria-label="テーマ" className="grid gap-2 sm:grid-cols-3">
+      {THEME_OPTIONS.map((o) => {
+        const active = o.value === theme;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={(e) => {
+              // 起点は押された選択肢そのもの。以前はコンテナ全体の中心を
+              // 使っており、どれを押しても同じ場所から広がっていた。
+              const r = e.currentTarget.getBoundingClientRect();
+              change(o.value, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+            }}
+            className={cn(
+              "relative rounded-2xl border p-3 text-left transition-all duration-[var(--dur-1)] ease-spring active:scale-[0.98]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
+              active ? "border-accent" : "border-border-subtle hover:bg-surface-3",
+            )}
+          >
+            <ThemePreview value={o.value} />
+            <span className="mt-2 block text-[14px] font-semibold">{o.label}</span>
+            <span className="mt-0.5 block text-[12px] leading-snug text-text-tertiary">
+              {o.description}
+            </span>
+            {active && (
+              <span className="absolute right-2.5 top-2.5 grid h-5 w-5 place-items-center rounded-full bg-accent-solid text-white">
+                <CheckIcon size={13} />
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }

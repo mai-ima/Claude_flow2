@@ -153,3 +153,28 @@
 :root[data-skin="liquidglass"] .active\:scale-\[0\.96\]:active {
   transform: scale(0.955);
 }
+
+/* ─────────────────────────────────────────────
+ * 設定画面のスキン見本。
+ *
+ * スキンは :root[data-skin] に紐づくため、入れ子の要素に別スキンを
+ * 適用できない。見本だけは値を持たせる必要がある。
+ * 本物のトークンの真下に、同じ値で、ライトとダークの両方を置く。
+ * 以前は見本がライト固定で、ダークだと暗い画面に白い板が3枚並んでいた。
+ * ここを直すときは上の --surface-* と揃えること。
+ * ───────────────────────────────────────────── */
+.skin-swatch--liquidglass {
+  --sw-canvas: linear-gradient(120deg,#cfe0ff,#e7ddff 45%,#d3f2e3);
+  --sw-card: rgba(255,255,255,0.62);
+  --sw-line: rgba(255,255,255,0.70);
+  --sw-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+  --sw-glass: blur(6px);
+}
+
+.dark .skin-swatch--liquidglass {
+  --sw-canvas: linear-gradient(120deg,#101a33,#1a1430 45%,#0d2620);
+  --sw-card: rgba(255,255,255,0.10);
+  --sw-line: rgba(255,255,255,0.18);
+  --sw-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+  --sw-glass: blur(6px);
+}

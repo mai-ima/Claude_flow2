@@ -53,3 +53,30 @@ export async function sendEmailVerification(email: string) {
     ),
   });
 }
+
+/**
+ * 登録済みのアドレスで新規登録が試みられたときの通知。
+ *
+ * 登録フォームに「既に登録済みです」と表示すると、フォームを叩くだけで
+ * 会員かどうかを調べられる。画面には成否を出さず、持ち主にだけ知らせる。
+ * 心当たりがあれば次の行動（ログイン / パスワード再設定）に進めるようにする。
+ */
+export async function sendSignupAttemptNotice(email: string) {
+  const base = clientEnv.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  return sendEmail({
+    to: email,
+    subject: "【Tsumiki】このメールアドレスはすでに登録されています",
+    kind: "VERIFY",
+    html: emailLayout(
+      "すでに登録されています",
+      `<p>このメールアドレスで新規登録が試みられましたが、すでにアカウントが存在するため、新しくは作成されていません。</p>
+       <p style="margin:20px 0">
+         <a href="${escapeHtml(`${base}/login`)}" style="display:inline-block;background:#0b6cf0;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-weight:600">ログインする</a>
+       </p>
+       <p>パスワードが分からない場合は、
+         <a href="${escapeHtml(`${base}/forgot-password`)}">パスワードの再設定</a>
+         からお手続きください。</p>
+       <p style="font-size:13px;color:#8e8e93">お心当たりが無い場合は、このメールを破棄してください。アカウントに変更はありません。</p>`,
+    ),
+  });
+}

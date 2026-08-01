@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { CheckIcon } from "@/components/icons";
 import {
   type Skin,
   SKINS,
@@ -11,29 +12,31 @@ import {
   setStoredSkin,
 } from "@/lib/theme";
 
-/** スキンの見た目を示す小さなプレビュー（実際のトークンではなく静的な見本）。 */
+/**
+ * スキンの見本。
+ *
+ * 色はテーマ CSS 側の --sw-* から取る。スキンは :root[data-skin] に
+ * 紐づくので入れ子では切り替えられず、見本だけは値を持つしかない。
+ * その値をテーマ CSS に置いてあるのは、本物のトークンの真下に並べて
+ * ずれに気づけるようにするため。ここでは色を一切書かない。
+ */
 function Preview({ skin }: { skin: Skin }) {
-  if (skin === "liquidglass") {
-    return (
-      <span className="relative block h-12 w-full overflow-hidden rounded-xl bg-[linear-gradient(120deg,#cfe0ff,#e7ddff_45%,#d3f2e3)]">
-        <span className="absolute left-2 top-2 h-8 w-[62%] rounded-lg border border-white/70 bg-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-[6px]" />
-        <span className="absolute bottom-2 right-2 h-4 w-8 rounded-full bg-[#0a7cff]" />
-      </span>
-    );
-  }
-  if (skin === "apple") {
-    return (
-      <span className="relative block h-12 w-full overflow-hidden rounded-xl bg-[#f2f2f7]">
-        <span className="absolute inset-x-2 top-2 h-4 rounded-md border border-black/15 bg-white" />
-        <span className="absolute inset-x-2 top-7 h-4 rounded-md border border-black/15 bg-white" />
-        <span className="absolute bottom-[11px] right-3 h-2 w-6 rounded-full bg-[#007aff]" />
-      </span>
-    );
-  }
   return (
-    <span className="relative block h-12 w-full overflow-hidden rounded-xl bg-[#f2f2f6]">
-      <span className="absolute left-2 top-2 h-8 w-[62%] rounded-lg bg-white shadow-[0_2px_8px_rgba(0,0,0,0.10)]" />
-      <span className="absolute bottom-2 right-2 h-4 w-8 rounded-full bg-[#007aff]" />
+    <span
+      className={cn("relative block h-12 w-full overflow-hidden rounded-xl", `skin-swatch--${skin}`)}
+      style={{ background: "var(--sw-canvas)" }}
+      aria-hidden
+    >
+      <span
+        className="absolute left-2 top-2 h-8 w-[62%] rounded-lg border"
+        style={{
+          background: "var(--sw-card)",
+          borderColor: "var(--sw-line)",
+          boxShadow: "var(--sw-shadow)",
+          backdropFilter: "var(--sw-glass)",
+        }}
+      />
+      <span className="absolute bottom-2 right-2 h-4 w-8 rounded-full bg-accent-solid" />
     </span>
   );
 }
@@ -79,23 +82,24 @@ export function SkinPicker() {
               setStoredSkin(s.value);
             }}
             className={cn(
-              "rounded-2xl border p-3 text-left transition-all duration-[var(--dur-1)] ease-spring active:scale-[0.98]",
+              "relative rounded-2xl border p-3 text-left transition-all duration-[var(--dur-1)] ease-spring active:scale-[0.98]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-              active
-                ? "border-accent bg-accent/8 ring-1 ring-accent"
-                : "border-border-subtle bg-surface-2 hover:bg-surface-3",
+              // 選択の表し方は丸チェック1つに絞る。以前は枠・背景・輪郭・
+              // 「選択中」の文字を重ねており、border と ring の半径差で
+              // 輪郭が二重に見えていた。
+              active ? "border-accent" : "border-border-subtle hover:bg-surface-3",
             )}
           >
             <Preview skin={s.value} />
-            <span className="mt-2 flex items-center gap-1.5">
-              <span className="text-[14px] font-semibold">{s.label}</span>
-              {active && (
-                <span className="text-[11px] font-medium text-accent">選択中</span>
-              )}
-            </span>
+            <span className="mt-2 block text-[14px] font-semibold">{s.label}</span>
             <span className="mt-0.5 block text-[12px] leading-snug text-text-tertiary">
               {s.description}
             </span>
+            {active && (
+              <span className="absolute right-2.5 top-2.5 grid h-5 w-5 place-items-center rounded-full bg-accent-solid text-white">
+                <CheckIcon size={13} />
+              </span>
+            )}
           </button>
         );
       })}

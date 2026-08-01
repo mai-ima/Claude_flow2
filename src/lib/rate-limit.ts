@@ -2,6 +2,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { env, isRateLimitEnabled } from "./env";
 import { logger } from "./logger";
+import { memoryRateLimit } from "./rate-limit-memory";
 
 export interface RateResult {
   ok: boolean;
@@ -16,12 +17,27 @@ export interface RateResult {
  * 上限に達したまま永久にブロックされる。失敗時はキーを削除して
  * 次回やり直せるようにする。
  */
+export interface RateOptions {
+  /**
+   * Upstash が無いときにプロセス内で数えるか。
+   *
+   * 既定は false（従来通り素通り）。ログインやパスワード再設定など、
+   * 素通りにすると総当たりを何も止められない経路でだけ true にする。
+   * 全ての経路で有効にしないのは、件数の多い API でメモリを持ちたくないため。
+   */
+  memoryFallback?: boolean;
+}
+
 export async function rateLimit(
   key: string,
   limit: number,
   windowSec: number,
+  options: RateOptions = {},
 ): Promise<RateResult> {
-  if (!isRateLimitEnabled) return { ok: true, remaining: limit };
+  if (!isRateLimitEnabled) {
+    if (options.memoryFallback) return memoryRateLimit(key, limit, windowSec);
+    return { ok: true, remaining: limit };
+  }
 
   const base = env.UPSTASH_REDIS_REST_URL!;
   const token = env.UPSTASH_REDIS_REST_TOKEN!;
@@ -47,7 +63,9 @@ export async function rateLimit(
     return { ok: count <= limit, remaining: Math.max(0, limit - count) };
   } catch (err) {
     // レート制限基盤の障害時はサービス継続を優先（fail-open）。
+    // ただし認証系だけは、素通りにすると障害中が総当たりの好機になる。
     logger.error("rate-limit error", err, { key });
+    if (options.memoryFallback) return memoryRateLimit(key, limit, windowSec);
     return { ok: true, remaining: limit };
   }
 }
