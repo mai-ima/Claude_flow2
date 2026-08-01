@@ -89,7 +89,7 @@ export default async function SettingsPage() {
             icon={<SlidersIcon size={18} />}
             iconBg="bg-surface-3"
             label="データとその他"
-            sublabel="書き出し・ベータ機能・退会"
+            sublabel="ご意見の送信・書き出し・ベータ機能・退会"
           />
         </ListGroup>
 

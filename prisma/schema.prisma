@@ -74,6 +74,8 @@ model User {
   billing         BillingProfile?
   notifications   Notification[]
   sentInvites     LedgerInvite[]  @relation("InviteSentBy")
+  feedbacks       Feedback[]      @relation("FeedbackFrom")
+  handledFeedbacks Feedback[]     @relation("FeedbackHandledBy")
 }
 
 model Session {
@@ -314,6 +316,43 @@ model Attachment {
   createdAt     DateTime    @default(now())
 
   @@index([transactionId])
+}
+
+/**
+ * 利用者からの要望・不具合の報告。
+ *
+ * 送った本人が誰かは残す（追加で聞きたいことが出るため）。ただし退会しても
+ * 内容は消さない（SetNull）。1件の報告が他の人の困りごとでもあることは多く、
+ * 送り主が抜けたからといって無かったことにはならない。
+ *
+ * 送信時の画面と端末も一緒に持つ。「どこで」「何で」が分からない報告は、
+ * 直すのに何往復も要る。
+ */
+model Feedback {
+  id          String   @id @default(cuid())
+  // BUG | REQUEST | OTHER
+  kind        String   @default("OTHER")
+  body        String
+  // 返信を希望する場合の宛先。未入力なら返信しない。
+  contactEmail String?
+  // 送信元の画面（/transactions など）と端末。原因の切り分けに使う。
+  fromPath    String?
+  userAgent   String?
+  appVersion  String?
+  userId      String?
+  user        User?    @relation("FeedbackFrom", fields: [userId], references: [id], onDelete: SetNull)
+  // NEW | READING | DONE | WONTFIX
+  status      String   @default("NEW")
+  // 対応の記録。利用者には見せない。
+  adminNote   String?
+  handledByUserId String?
+  handledBy   User?    @relation("FeedbackHandledBy", fields: [handledByUserId], references: [id], onDelete: SetNull)
+  handledAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId])
 }
 
 /**

@@ -28,4 +28,5 @@ export const EXPECTED_MIGRATIONS = [
   "20260801040000_add_saved_search",
   "20260801050000_add_tags_and_assets",
   "20260801060000_add_attachment",
+  "20260801070000_add_feedback",
 ] as const;

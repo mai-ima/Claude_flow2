@@ -1,7 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { ShieldIcon, ChartIcon, UsersIcon, LogoutIcon, ClockIcon, BoltIcon, SparklesIcon, BellIcon, SlidersIcon, CardIcon } from "@/components/icons";
+import {
+  ShieldIcon,
+  ChartIcon,
+  UsersIcon,
+  LogoutIcon,
+  ClockIcon,
+  BoltIcon,
+  SparklesIcon,
+  BellIcon,
+  SlidersIcon,
+  CardIcon,
+  FlagIcon,
+} from "@/components/icons";
 import { effectiveAdminRole, hasAdminRole, ADMIN_ROLE_LABEL } from "@/lib/admin-role";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -61,6 +73,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
             >
               <BellIcon size={17} /> 配信
+            </Link>
+            <Link
+              href="/admin/feedback"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+            >
+              <FlagIcon size={17} /> ご意見
             </Link>
             <Link
               href="/admin/settings"

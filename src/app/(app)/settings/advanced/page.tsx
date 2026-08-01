@@ -9,6 +9,7 @@ import {
   DeleteAllData,
   DangerZone,
 } from "@/modules/account";
+import { FeedbackEntry } from "@/modules/feedback";
 import { tierAtLeast } from "@/lib/plans";
 import { enabledBetaFeatures } from "@/lib/beta-features";
 import { pageMetadata } from "@/lib/seo";
@@ -24,6 +25,10 @@ export default async function AdvancedSettingsPage() {
       <SettingsBack />
 
       <div className="space-y-6">
+        <ListGroup title="ご意見・不具合のご報告" padded>
+          <FeedbackEntry defaultEmail={ctx.user.email} />
+        </ListGroup>
+
         <ListGroup title="データ（CSV）" padded>
           <DataTools isPro={tierAtLeast(ctx.tier, "PRO")} />
         </ListGroup>
