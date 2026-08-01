@@ -40,6 +40,9 @@ const txnListSelect = {
   // 名前未設定の在籍メンバーと区別するため、ID も併せて取る。
   createdByUserId: true,
   createdBy: { select: { name: true } },
+  // 実際に払った人。共有帳簿の精算と、一覧での表示に使う。
+  paidByUserId: true,
+  paidBy: { select: { name: true } },
 } satisfies Prisma.TransactionSelect;
 
 /** 1ヶ月分として送る取引の上限（RSC ペイロードの肥大化を防ぐ）。 */

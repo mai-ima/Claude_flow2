@@ -17,7 +17,12 @@ import {
   updateMemberRole,
   revokeInvite,
 } from "../actions";
+import { MEMBER_ROLE_LABEL, MEMBER_ROLE_HINT, type MemberRole } from "@/lib/enums";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+
+/** 招待・変更で選べる権限。オーナーは移譲でしか動かさない。 */
+const ASSIGNABLE = ["EDITOR", "SELF_EDITOR", "VIEWER"] as const;
+type AssignableRole = (typeof ASSIGNABLE)[number];
 import { useToast } from "@/components/ui/toast";
 
 interface Member {
@@ -62,7 +67,7 @@ export function FamilySharing({
   const [msg, setMsg] = useState<string>();
   const [podName, setPodName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"EDITOR" | "VIEWER">("EDITOR");
+  const [role, setRole] = useState<AssignableRole>("EDITOR");
 
   function makePod() {
     setMsg(undefined);
@@ -83,7 +88,7 @@ export function FamilySharing({
       } else setMsg(res.error);
     });
   }
-  function changeRole(userId: string, next: "EDITOR" | "VIEWER") {
+  function changeRole(userId: string, next: AssignableRole) {
     setMsg(undefined);
     start(async () => {
       const res = await updateMemberRole({ ledgerId, userId, role: next });
@@ -228,23 +233,26 @@ export function FamilySharing({
             <span className="flex-1">
               <span className="block text-[14px] font-medium">{m.name}</span>
               <span className="block text-[12px] text-text-tertiary">
-                {m.isOwner ? "オーナー" : m.role === "EDITOR" ? "編集可" : "閲覧のみ"}
+                {m.isOwner
+                  ? MEMBER_ROLE_LABEL.OWNER
+                  : (MEMBER_ROLE_LABEL[m.role as MemberRole] ?? m.role)}
               </span>
             </span>
             {isOwner && !m.isOwner && (
               <>
                 {/* 招待時にしか決められなかった権限を、あとからでも変えられるようにする。 */}
                 <select
-                  value={m.role === "VIEWER" ? "VIEWER" : "EDITOR"}
-                  onChange={(e) =>
-                    changeRole(m.userId, e.target.value as "EDITOR" | "VIEWER")
-                  }
+                  value={ASSIGNABLE.includes(m.role as AssignableRole) ? m.role : "EDITOR"}
+                  onChange={(e) => changeRole(m.userId, e.target.value as AssignableRole)}
                   disabled={pending}
                   aria-label={`${m.name} の権限`}
-                  className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2 text-[13px]"
+                  className="h-11 max-w-[11rem] rounded-lg border border-border-subtle bg-surface-1 px-2 text-[13px]"
                 >
-                  <option value="EDITOR">編集可</option>
-                  <option value="VIEWER">閲覧のみ</option>
+                  {ASSIGNABLE.map((r) => (
+                    <option key={r} value={r}>
+                      {MEMBER_ROLE_LABEL[r]}
+                    </option>
+                  ))}
                 </select>
                 <button
                   onClick={() => kick(m.userId)}
@@ -298,15 +306,21 @@ export function FamilySharing({
               onChange={(e) => setEmail(e.target.value)}
             />
             <Select
-              className="w-28 shrink-0"
+              className="w-40 shrink-0"
               aria-label="招待する相手の権限"
               value={role}
-              onChange={(e) => setRole(e.target.value as "EDITOR" | "VIEWER")}
+              onChange={(e) => setRole(e.target.value as AssignableRole)}
             >
-              <option value="EDITOR">編集可</option>
-              <option value="VIEWER">閲覧のみ</option>
+              {ASSIGNABLE.map((r) => (
+                <option key={r} value={r}>
+                  {MEMBER_ROLE_LABEL[r]}
+                </option>
+              ))}
             </Select>
           </div>
+          <p className="text-[12px] leading-relaxed text-text-tertiary">
+            {MEMBER_ROLE_HINT[role]}
+          </p>
           <Button size="sm" onClick={invite} disabled={pending || !email}>
             <PlusIcon size={16} /> 招待する
           </Button>

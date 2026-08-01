@@ -24,8 +24,23 @@ export type PlanTier = z.infer<typeof PlanTier>;
 export const LedgerType = z.enum(["PERSONAL", "POD"]);
 export type LedgerType = z.infer<typeof LedgerType>;
 
-export const MemberRole = z.enum(["OWNER", "EDITOR", "VIEWER"]);
+export const MemberRole = z.enum(["OWNER", "EDITOR", "SELF_EDITOR", "VIEWER"]);
 export type MemberRole = z.infer<typeof MemberRole>;
+
+export const MEMBER_ROLE_LABEL: Record<MemberRole, string> = {
+  OWNER: "オーナー",
+  EDITOR: "編集可",
+  SELF_EDITOR: "自分の記録のみ編集可",
+  VIEWER: "閲覧のみ",
+};
+
+/** 権限を選ぶときに添える説明。何ができて何ができないかを先に伝える。 */
+export const MEMBER_ROLE_HINT: Record<MemberRole, string> = {
+  OWNER: "すべての操作と、メンバーの管理ができます。",
+  EDITOR: "誰の記録でも追加・編集・削除できます。",
+  SELF_EDITOR: "記録の追加はできますが、直したり消したりできるのは自分が入れたものだけです。",
+  VIEWER: "見ることだけができます。追加や編集はできません。",
+};
 
 export const PaymentMethodType = z.enum(["CARD", "BANK", "CASH", "EMONEY"]);
 export type PaymentMethodType = z.infer<typeof PaymentMethodType>;

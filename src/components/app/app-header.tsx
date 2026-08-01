@@ -34,6 +34,7 @@ export function AppHeader({
   userName,
   notifications,
   unread,
+  isPod = false,
 }: {
   ledgers: LedgerOption[];
   activeId: string;
@@ -41,6 +42,8 @@ export function AppHeader({
   userName: string;
   notifications: NotifItem[];
   unread: number;
+  /** 共有帳簿かどうか。ドロワーの項目の出し分けに使う。 */
+  isPod?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ledgerRef = useRef<HTMLDivElement>(null);
@@ -92,6 +95,7 @@ export function AppHeader({
         onClose={() => setDrawerOpen(false)}
         userName={userName}
         tier={tier}
+        isPod={isPod}
       />
       {/* 帳簿切替は可変幅。狭い端末では帳簿名を詰めて横スクロールを防ぐ。 */}
       <div className="relative min-w-0 flex-1" ref={ledgerRef}>

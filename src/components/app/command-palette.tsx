@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { NAV_ITEMS } from "./nav-items";
+import { navItemsFor } from "./nav-items";
 import { SearchIcon, StarIcon, WalletIcon, RepeatIcon, type IconProps } from "@/components/icons";
 import { cn } from "@/lib/cn";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
@@ -14,7 +14,7 @@ interface Command {
   href: string;
 }
 
-export function CommandPalette() {
+export function CommandPalette({ isPod = false }: { isPod?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -22,12 +22,12 @@ export function CommandPalette() {
 
   const commands = useMemo<Command[]>(
     () => [
-      ...NAV_ITEMS.map((n) => ({ label: n.label, icon: n.icon, href: n.href, hint: "移動" })),
+      ...navItemsFor(isPod).map((n) => ({ label: n.label, icon: n.icon, href: n.href, hint: "移動" })),
       { label: "プラン・お支払い", icon: StarIcon, href: "/billing", hint: "移動" },
       { label: "記録を追加", icon: WalletIcon, href: "/transactions?new=1", hint: "操作" },
       { label: "サブスクを追加", icon: RepeatIcon, href: "/subscriptions?new=1", hint: "操作" },
     ],
-    [],
+    [isPod],
   );
 
   const filtered = useMemo(() => {

@@ -6,6 +6,8 @@ export const transactionInput = z.object({
   occurredAt: z.coerce.date(),
   categoryId: z.string().optional().nullable(),
   paymentMethodId: z.string().optional().nullable(),
+  /** 実際に払った人。共有帳簿の精算に使う。未指定なら立て替え無しの扱い。 */
+  paidByUserId: z.string().optional().nullable(),
   memo: z.string().max(200).optional().nullable(),
 });
 export type TransactionInput = z.infer<typeof transactionInput>;
@@ -26,10 +28,15 @@ export const bulkUpdateInput = z
     ids: z.array(z.string()).min(1, "対象を選択してください。"),
     categoryId: z.string().optional().nullable(),
     paymentMethodId: z.string().optional().nullable(),
+    paidByUserId: z.string().optional().nullable(),
   })
-  .refine((v) => v.categoryId !== undefined || v.paymentMethodId !== undefined, {
-    message: "変更する項目を指定してください。",
-  });
+  .refine(
+    (v) =>
+      v.categoryId !== undefined ||
+      v.paymentMethodId !== undefined ||
+      v.paidByUserId !== undefined,
+    { message: "変更する項目を指定してください。" },
+  );
 
 // ── 繰り返し（定期）取引 ──
 export const recurringInput = z.object({

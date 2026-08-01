@@ -115,12 +115,15 @@ export function CalendarClient({
       occurredAt: selected,
       categoryId: "",
       paymentMethodId: "",
+      paidByUserId: "",
       memo: "",
     });
     setSheetOpen(true);
   }
 
   function openEdit(it: TxnListItem) {
+    // 他人の記録は開かない（SELF_EDITOR は保存できないため）。
+    if (!it.canEditThis) return;
     setEditing({
       id: it.id,
       type: it.type,
@@ -129,6 +132,7 @@ export function CalendarClient({
       categoryId: it.categoryId ?? "",
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
+      paidByUserId: it.paidByUserId ?? "",
       memo: it.memo ?? "",
     });
     setSheetOpen(true);

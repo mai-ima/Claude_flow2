@@ -4,11 +4,23 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { authedAction } from "@/lib/safe-action";
-import { requireLedgerMember, setActiveLedger, clearActiveLedger } from "@/lib/ledger-access";
+import {
+  requireLedgerMember,
+  setActiveLedger,
+  clearActiveLedger,
+  getActiveLedgerId,
+} from "@/lib/ledger-access";
 import { PLANS, canUse } from "@/lib/plans";
-import { Currency, type PlanTier } from "@/lib/enums";
+import {
+  Currency,
+  MemberRole,
+  MEMBER_ROLE_LABEL,
+  MEMBER_ROLE_HINT,
+  type PlanTier,
+} from "@/lib/enums";
 import { isEmailEnabled } from "@/lib/env";
 import { createInvite, pendingInvitesFor, acceptInvite } from "./invites";
+import { settlementInput, deleteSettlementInput, shareRatioInput, memberRoleInput } from "./schema";
 
 async function userTier(userId: string): Promise<PlanTier> {
   const b = await db.billingProfile.findUnique({ where: { userId } });
@@ -68,7 +80,7 @@ export const inviteMember = authedAction(
   z.object({
     ledgerId: z.string(),
     email: z.string().email("メールアドレスの形式が正しくありません。"),
-    role: z.enum(["EDITOR", "VIEWER"]).default("EDITOR"),
+    role: MemberRole.exclude(["OWNER"]).default("EDITOR"),
   }),
   async ({ ledgerId, email, role }, user) => {
     await requireLedgerMember(ledgerId, user.id, "OWNER");
@@ -213,11 +225,7 @@ export const revokeInvite = authedAction(
  * ここでは扱わない。
  */
 export const updateMemberRole = authedAction(
-  z.object({
-    ledgerId: z.string(),
-    userId: z.string(),
-    role: z.enum(["EDITOR", "VIEWER"]),
-  }),
+  memberRoleInput,
   async ({ ledgerId, userId, role }, user) => {
     await requireLedgerMember(ledgerId, user.id, "OWNER");
     const ledger = await db.ledger.findUnique({ where: { id: ledgerId } });
@@ -248,10 +256,7 @@ export const updateMemberRole = authedAction(
           ledgerId,
           type: "SYSTEM",
           title: "帳簿での権限が変わりました",
-          body:
-            role === "EDITOR"
-              ? `「${ledger.name}」で記録の追加・編集ができるようになりました。`
-              : `「${ledger.name}」は閲覧のみになりました。記録の追加・編集はできません。`,
+          body: `「${ledger.name}」での権限が「${MEMBER_ROLE_LABEL[role]}」になりました。${MEMBER_ROLE_HINT[role]}`,
           href: "/settings",
         },
       }),
@@ -353,3 +358,79 @@ export const removeMember = authedAction(
     return { ok: true };
   },
 );
+
+// ───────── 精算 ─────────
+
+/**
+ * 精算の記録。「誰が誰にいくら渡したか」を1行足すだけ。
+ *
+ * 家計簿の取引には触れない。精算のたびに取引の金額を書き換えると、
+ * その月にいくら使ったのかが分からなくなる。
+ */
+export const recordSettlement = authedAction(settlementInput, async (input, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  if (input.fromUserId === input.toUserId) throw new Error("SETTLEMENT_SAME_USER");
+
+  // 両者ともこの帳簿のメンバーであること。片方が外の人だと、
+  // 差引の相手が帳簿の外に出て計算が閉じない。
+  const members = await db.ledgerMember.findMany({
+    where: { ledgerId, userId: { in: [input.fromUserId, input.toUserId] } },
+    select: { userId: true },
+  });
+  if (members.length !== 2) throw new Error("NOT_A_MEMBER");
+
+  const row = await db.settlement.create({
+    data: {
+      ledgerId,
+      fromUserId: input.fromUserId,
+      toUserId: input.toUserId,
+      amount: input.amount,
+      settledAt: input.settledAt,
+      memo: input.memo || null,
+      createdByUserId: user.id,
+    },
+  });
+  revalidatePath("/settlement");
+  return { id: row.id };
+});
+
+/** 精算の記録を取り消す。金額を打ち間違えたときに戻せるようにする。 */
+export const deleteSettlement = authedAction(deleteSettlementInput, async ({ id }, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id, "EDITOR");
+  const row = await db.settlement.findUnique({ where: { id } });
+  if (!row || row.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+  await db.settlement.delete({ where: { id } });
+  revalidatePath("/settlement");
+  return { ok: true };
+});
+
+/**
+ * 負担の割合を変える。
+ *
+ * 重みで持つので合計を100に揃える必要は無い。全員を0にすると誰も
+ * 負担しないことになり按分できなくなるため、そこだけ止める。
+ */
+export const updateShareRatios = authedAction(shareRatioInput, async ({ ledgerId, ratios }, user) => {
+  await requireLedgerMember(ledgerId, user.id, "OWNER");
+  const members = await db.ledgerMember.findMany({
+    where: { ledgerId },
+    select: { userId: true },
+  });
+  const known = new Set(members.map((m) => m.userId));
+  if (ratios.some((r) => !known.has(r.userId))) throw new Error("NOT_A_MEMBER");
+  if (ratios.every((r) => r.shareRatio === 0)) throw new Error("ALL_ZERO_RATIO");
+
+  await db.$transaction(
+    ratios.map((r) =>
+      db.ledgerMember.update({
+        where: { ledgerId_userId: { ledgerId, userId: r.userId } },
+        data: { shareRatio: r.shareRatio },
+      }),
+    ),
+  );
+  revalidatePath("/settlement");
+  revalidatePath("/settings");
+  return { ok: true };
+});

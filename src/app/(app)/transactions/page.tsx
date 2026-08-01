@@ -36,20 +36,30 @@ type SP = {
   view?: string;
 };
 
-/** Transaction 行 → クライアント表示用の項目へ変換。 */
-function toListItem(t: {
-  id: string;
-  type: string;
-  amount: number;
-  occurredAt: Date;
-  memo: string | null;
-  categoryId: string | null;
-  paymentMethodId: string | null;
-  category: { name: string; icon: string } | null;
-  paymentMethod: { name: string } | null;
-  createdByUserId: string | null;
-  createdBy: { name: string | null } | null;
-}): TxnListItem {
+/**
+ * Transaction 行 → クライアント表示用の項目へ変換。
+ *
+ * 編集できるかどうかは行ごとに決まる（SELF_EDITOR は自分の記録だけ）。
+ * 判定はサーバーで済ませ、クライアントには結果だけ渡す。
+ */
+function toListItem(
+  t: {
+    id: string;
+    type: string;
+    amount: number;
+    occurredAt: Date;
+    memo: string | null;
+    categoryId: string | null;
+    paymentMethodId: string | null;
+    category: { name: string; icon: string } | null;
+    paymentMethod: { name: string } | null;
+    createdByUserId: string | null;
+    createdBy: { name: string | null } | null;
+    paidByUserId: string | null;
+    paidBy: { name: string | null } | null;
+  },
+  perm: { canEditOthers: boolean; userId: string },
+): TxnListItem {
   return {
     id: t.id,
     type: t.type as "INCOME" | "EXPENSE",
@@ -65,6 +75,10 @@ function toListItem(t: {
     // 記録者が退会すると createdByUserId が null になる（記録自体は残す設計）。
     // 名前未設定の在籍メンバーと区別して、退会済みであることを示す。
     ownerName: t.createdByUserId === null ? "退会したメンバー" : (t.createdBy?.name ?? null),
+    paidByUserId: t.paidByUserId,
+    paidByName: t.paidByUserId === null ? null : (t.paidBy?.name ?? "メンバー"),
+    canEditThis:
+      perm.canEditOthers || (t.createdByUserId !== null && t.createdByUserId === perm.userId),
   };
 }
 
@@ -73,7 +87,9 @@ export default async function TransactionsPage({
 }: {
   searchParams: Promise<SP>;
 }) {
-  const { ledgerId, canEdit, isPod, currency, beta } = await getAppContext();
+  const { ledgerId, user, canEdit, canAdd, canEditOthers, isPod, ledger, currency, beta } =
+    await getAppContext();
+  const perm = { canEditOthers, userId: user.id };
   const sp = await searchParams;
   const month = resolveMonth(sp.m);
   const view = sp.view === "calendar" ? "calendar" : "list";
@@ -112,7 +128,15 @@ export default async function TransactionsPage({
         { income: 0, expense: 0, balance: 0 },
       )
     : searchResult!.summary;
-  const items: TxnListItem[] = searchResult ? searchResult.items.map(toListItem) : [];
+  const items: TxnListItem[] = searchResult
+    ? searchResult.items.map((t) => toListItem(t, perm))
+    : [];
+
+  // 「払った人」を選べるのは共有帳簿のときだけ。1人の帳簿では欄そのものを出さない。
+  const memberOpts = ledger.members.map((m) => ({
+    id: m.userId,
+    name: m.user.name ?? m.user.email ?? "メンバー",
+  }));
 
   // 入力欄にはアーカイブ済みを出さない。絞り込みは過去データを追えるよう全件を出す。
   const catOpts = categories
@@ -174,7 +198,7 @@ export default async function TransactionsPage({
         <CalendarClient
           month={monthParam(month)}
           days={calendar[0]}
-          items={calendar[1].map(toListItem)}
+          items={calendar[1].map((t) => toListItem(t, perm))}
           categories={catOpts}
           paymentMethods={pmOpts}
           canEdit={canEdit}
@@ -201,6 +225,8 @@ export default async function TransactionsPage({
             categories={catOpts}
             paymentMethods={pmOpts}
             canEdit={canEdit}
+            canAdd={canAdd}
+            members={memberOpts}
             showOwner={isPod}
             currency={currency}
             betaAmountPad={beta("amount_pad")}

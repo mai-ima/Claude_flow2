@@ -28,6 +28,7 @@ describe("TransactionSheet のカテゴリ選択", () => {
           categoryId: "c1",
           categoryName: "食費",
           paymentMethodId: "",
+          paidByUserId: "",
           memo: "",
         }}
       />,
@@ -51,6 +52,7 @@ describe("TransactionSheet のカテゴリ選択", () => {
           categoryId: "archived-1",
           categoryName: "旧・交際費",
           paymentMethodId: "",
+          paidByUserId: "",
           memo: "",
         }}
       />,
@@ -74,6 +76,7 @@ describe("TransactionSheet のカテゴリ選択", () => {
           occurredAt: "2026-07-01",
           categoryId: "archived-2",
           paymentMethodId: "",
+          paidByUserId: "",
           memo: "",
         }}
       />,

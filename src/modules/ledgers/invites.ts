@@ -61,7 +61,7 @@ export async function createInvite(input: {
   ledgerId: string;
   ledgerName: string;
   email: string;
-  role: "EDITOR" | "VIEWER";
+  role: "EDITOR" | "SELF_EDITOR" | "VIEWER";
   invitedByUserId: string;
   invitedByName: string;
 }): Promise<{ id: string; sent: boolean; url: string }> {

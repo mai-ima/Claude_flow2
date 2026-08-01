@@ -76,7 +76,7 @@ export default async function AppLayout({
           isPod && "theme-pod",
         )}
       >
-        <Sidebar />
+        <Sidebar isPod={isPod} />
         <AppChromeProvider>
           <div className="flex min-w-0 flex-1 flex-col">
             <AppHeader
@@ -86,6 +86,7 @@ export default async function AppLayout({
               userName={user.name ?? "ユーザー"}
               notifications={notifItems}
               unread={unread}
+              isPod={isPod}
             />
             <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">
               {children}
@@ -93,7 +94,7 @@ export default async function AppLayout({
           </div>
         </AppChromeProvider>
         <BottomBar />
-        <CommandPalette />
+        <CommandPalette isPod={isPod} />
         <KeyboardShortcuts
           enabled={isBetaEnabled(
             { optIn: user.betaOptIn, features: user.betaFeatures },

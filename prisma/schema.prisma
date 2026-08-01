@@ -61,6 +61,10 @@ model User {
   memberships     LedgerMember[]
   ownedLedgers    Ledger[]        @relation("LedgerOwner")
   createdTxns     Transaction[]   @relation("TxnCreatedBy")
+  paidTxns        Transaction[]   @relation("TxnPaidBy")
+  settlementsPaid     Settlement[] @relation("SettlementFrom")
+  settlementsReceived Settlement[] @relation("SettlementTo")
+  settlementsCreated  Settlement[] @relation("SettlementCreatedBy")
   recurringTxns   RecurringTransaction[] @relation("RecurringCreatedBy")
   ownedSubs       Subscription[]  @relation("SubOwner")
   billing         BillingProfile?
@@ -116,6 +120,7 @@ model Ledger {
   paymentMethods PaymentMethod[]
   goals          Goal[]
   recurringTransactions RecurringTransaction[]
+  settlements    Settlement[]
 
   @@index([ownerId])
 }
@@ -149,7 +154,14 @@ model LedgerMember {
   ledger    Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      String   @default("OWNER") // OWNER | EDITOR | VIEWER
+  // OWNER | EDITOR | SELF_EDITOR | VIEWER
+  // SELF_EDITOR は自分が記録したものだけを直せる。子どもや同居人に
+  // 家計簿を触ってもらいたいが、他人の記録は変えさせたくない場合に使う。
+  role      String   @default("OWNER")
+  // 精算での負担の重み。全員の合計に対する比で按分する。
+  // 割合(%)ではなく重みで持つ。合計を100に保つ決まりがあると、
+  // 誰かが人数を変えたときに必ず破れる。
+  shareRatio Int     @default(1)
   createdAt DateTime @default(now())
 
   @@unique([ledgerId, userId])
@@ -211,6 +223,10 @@ model Transaction {
   // 「他のメンバーが退会したら自分の家計簿から過去の記録が消える」ことになる。
   createdByUserId String?
   createdBy       User?    @relation("TxnCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  // 実際に払った人。記録した人とは限らない（代わりに入力することがある）。
+  // 精算はこの列を見る。未指定なら按分の対象外＝誰の立て替えでもない扱い。
+  paidByUserId    String?
+  paidBy          User?    @relation("TxnPaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
   type            String // INCOME | EXPENSE
   amount          Int // 最小単位(JPY=円)
   currency        String   @default("JPY")
@@ -232,8 +248,34 @@ model Transaction {
 
   @@index([ledgerId, occurredAt])
   @@index([ledgerId, categoryId])
+  @@index([ledgerId, paidByUserId])
   @@index([subscriptionId])
   @@index([recurringTransactionId])
+}
+
+/**
+ * 精算の記録。「誰が誰にいくら渡したか」を1行で持つ。
+ *
+ * 取引そのものは書き換えない。精算のたびに家計簿の金額をいじると、
+ * 何月にいくら使ったのかが分からなくなる。差引の計算でだけ使う。
+ * 退会しても記録は帳簿に残す（SetNull）。消えると過去の差引が変わる。
+ */
+model Settlement {
+  id              String   @id @default(cuid())
+  ledgerId        String
+  ledger          Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  fromUserId      String?
+  from            User?    @relation("SettlementFrom", fields: [fromUserId], references: [id], onDelete: SetNull)
+  toUserId        String?
+  to              User?    @relation("SettlementTo", fields: [toUserId], references: [id], onDelete: SetNull)
+  amount          Int
+  settledAt       DateTime @default(now())
+  memo            String?
+  createdByUserId String?
+  createdBy       User?    @relation("SettlementCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+
+  @@index([ledgerId, settledAt])
 }
 
 // 繰り返し（定期）取引テンプレート。cron で nextRunAt 到来分を Transaction に自動生成。

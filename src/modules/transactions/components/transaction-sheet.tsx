@@ -22,6 +22,8 @@ export interface TxnFormValue {
   /** 選択中カテゴリの表示名。アーカイブ済みで一覧に無い場合の補完に使う。 */
   categoryName?: string;
   paymentMethodId: string;
+  /** 実際に払った人。共有帳簿の精算に使う。空なら未指定。 */
+  paidByUserId: string;
   memo: string;
 }
 
@@ -44,6 +46,7 @@ export function TransactionSheet({
   currency = "JPY",
   beta = false,
   today,
+  members = [],
 }: {
   open: boolean;
   onClose: () => void;
@@ -52,6 +55,8 @@ export function TransactionSheet({
   initial?: TxnFormValue;
   currency?: string;
   beta?: boolean;
+  /** 共有帳簿のメンバー。1人以下なら「払った人」欄は出さない。 */
+  members?: Option[];
   /** サーバー基準の今日(yyyy-MM-dd)。端末のタイムゾーンが日本時間でないと
    *  既定の日付がアプリの「今日」とずれるため、サーバーから渡す。 */
   today?: string;
@@ -66,6 +71,7 @@ export function TransactionSheet({
     occurredAt: today ?? todayStr(),
     categoryId: "",
     paymentMethodId: "",
+    paidByUserId: "",
     memo: "",
   });
   const [v, setV] = useState<TxnFormValue>(() => initial ?? { ...blank(), occurredAt: "" });
@@ -99,6 +105,7 @@ export function TransactionSheet({
         occurredAt: new Date(v.occurredAt),
         categoryId: v.categoryId || null,
         paymentMethodId: v.paymentMethodId || null,
+        paidByUserId: v.paidByUserId || null,
         memo: v.memo || null,
       };
       const res = v.id
@@ -210,6 +217,25 @@ export function TransactionSheet({
               {paymentMethods.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+
+        {members.length > 1 && (
+          <Field
+            label="払った人"
+            hint="精算で使います。選ばないと、立て替えとしては数えません。"
+          >
+            <Select
+              value={v.paidByUserId}
+              onChange={(e) => setV((s) => ({ ...s, paidByUserId: e.target.value }))}
+            >
+              <option value="">指定なし</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
                 </option>
               ))}
             </Select>

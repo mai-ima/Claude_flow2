@@ -7,7 +7,17 @@ import type { MemberRole } from "./enums";
 
 const LEDGER_COOKIE = "tsumiki_ledger";
 
-const ROLE_RANK: Record<MemberRole, number> = { VIEWER: 0, EDITOR: 1, OWNER: 2 };
+/**
+ * 権限の強さ。数が大きいほど広い。
+ * SELF_EDITOR は「追加はできるが、直せるのは自分の記録だけ」なので、
+ * VIEWER と EDITOR の間に置く。
+ */
+const ROLE_RANK: Record<MemberRole, number> = {
+  VIEWER: 0,
+  SELF_EDITOR: 1,
+  EDITOR: 2,
+  OWNER: 3,
+};
 
 /**
  * メンバー表示に必要な User フィールドのみ。`include: { user: true }` は
@@ -90,6 +100,27 @@ export async function requireLedgerMember(
   return member;
 }
 
+/**
+ * 既存の記録を直す／消す権限を検証する。
+ *
+ * EDITOR 以上は誰の記録でも触れる。SELF_EDITOR は自分が入れたものだけ。
+ * 記録者が退会して createdByUserId が null になっている行は、
+ * SELF_EDITOR からは触れない扱いにする。「誰のものでもない」を
+ * 「自分のもの」に倒すと、権限を絞った意味が無くなる。
+ *
+ * 追加そのものは requireLedgerMember(..., "SELF_EDITOR") で足りる。
+ */
+export async function requireOwnRecordOrEditor(
+  ledgerId: string,
+  userId: string,
+  createdByUserId: string | null,
+) {
+  const member = await requireLedgerMember(ledgerId, userId, "SELF_EDITOR");
+  if (ROLE_RANK[member.role as MemberRole] >= ROLE_RANK.EDITOR) return member;
+  if (createdByUserId && createdByUserId === userId) return member;
+  throw new Error("NOT_YOUR_RECORD");
+}
+
 export const getActiveLedger = cache(async (userId: string) => {
   const id = await getActiveLedgerId(userId);
   const ledger = await db.ledger.findUnique({
@@ -111,17 +142,30 @@ export const getActiveLedger = cache(async (userId: string) => {
  */
 export async function assertLedgerOwnedRefs(
   ledgerId: string,
-  refs: { categoryId?: string | null; paymentMethodId?: string | null },
+  refs: {
+    categoryId?: string | null;
+    paymentMethodId?: string | null;
+    /** 立て替えた人。その帳簿のメンバーでなければならない。 */
+    paidByUserId?: string | null;
+  },
 ): Promise<void> {
-  const { categoryId, paymentMethodId } = refs;
-  const [cat, pm] = await Promise.all([
+  const { categoryId, paymentMethodId, paidByUserId } = refs;
+  const [cat, pm, member] = await Promise.all([
     categoryId
       ? db.category.findUnique({ where: { id: categoryId }, select: { ledgerId: true } })
       : Promise.resolve(null),
     paymentMethodId
       ? db.paymentMethod.findUnique({ where: { id: paymentMethodId }, select: { ledgerId: true } })
       : Promise.resolve(null),
+    // 非メンバーを「払った人」にできると、精算の相手が帳簿の外に出てしまう。
+    paidByUserId
+      ? db.ledgerMember.findUnique({
+          where: { ledgerId_userId: { ledgerId, userId: paidByUserId } },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
   ]);
   if (categoryId && cat?.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
   if (paymentMethodId && pm?.ledgerId !== ledgerId) throw new Error("FORBIDDEN");
+  if (paidByUserId && !member) throw new Error("NOT_A_MEMBER");
 }

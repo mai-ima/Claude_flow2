@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { NAV_ITEMS } from "./nav-items";
+import { navItemsFor } from "./nav-items";
 import { logoutAction } from "@/app/(auth)/actions";
 import { Badge } from "@/components/ui/badge";
 import { LogoMark, StarIcon, LogoutIcon, XIcon } from "@/components/icons";
@@ -15,11 +15,14 @@ export function MobileDrawer({
   onClose,
   userName,
   tier,
+  isPod = false,
 }: {
   open: boolean;
   onClose: () => void;
   userName: string;
   tier: string;
+  /** 共有帳簿なら「精算」を出す。 */
+  isPod?: boolean;
 }) {
   const pathname = usePathname();
   // クライアントでのみ true（ポータル先 document.body はサーバーに存在しないため）。
@@ -90,7 +93,7 @@ export function MobileDrawer({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-          {NAV_ITEMS.map((item) => {
+          {navItemsFor(isPod).map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link

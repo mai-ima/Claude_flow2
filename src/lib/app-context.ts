@@ -20,6 +20,15 @@ export const getAppContext = cache(async () => {
     ledgerId: ledger.id,
     role: role as MemberRole,
     canEdit: role === "OWNER" || role === "EDITOR",
+    /**
+     * 記録を追加できるか。
+     * SELF_EDITOR は追加はできる（直せるのが自分の記録だけ）。
+     * 追加ボタンの出し分けはこちらを見る。canEdit を使うと、
+     * 追加できるはずの人にボタンが出ない。
+     */
+    canAdd: role === "OWNER" || role === "EDITOR" || role === "SELF_EDITOR",
+    /** 他人の記録も直せるか。SELF_EDITOR は false。 */
+    canEditOthers: role === "OWNER" || role === "EDITOR",
     isPod: ledger.type === "POD",
     tier: user.tier as PlanTier,
     currency: ledger.currency,

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_ITEMS } from "./nav-items";
+import { navItemsFor } from "./nav-items";
 import { LogoMark } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
-export function Sidebar() {
+export function Sidebar({ isPod = false }: { isPod?: boolean }) {
   const pathname = usePathname();
+  const items = navItemsFor(isPod);
   return (
     <aside className="hidden w-60 shrink-0 self-start border-r border-border-subtle bg-surface-1 md:sticky md:top-0 md:flex md:h-screen md:flex-col">
       <Link href="/dashboard" className="flex h-14 shrink-0 items-center gap-2 px-5 font-semibold">
@@ -20,7 +21,7 @@ export function Sidebar() {
         </span>
       </Link>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-3">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(item.href + "/");
           return (

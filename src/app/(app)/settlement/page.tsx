@@ -1,0 +1,67 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getAppContext, resolveMonth, monthParam } from "@/lib/app-context";
+import { PageHeader, PageContainer } from "@/components/app/page-header";
+import { settlementView } from "@/modules/ledgers/queries";
+import { SettlementClient } from "@/modules/ledgers";
+import { formatDate, formatMonth, todayLocal } from "@/lib/date";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({ title: "精算", noindex: true });
+
+export default async function SettlementPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ m?: string }>;
+}) {
+  const { ledgerId, currency, canEdit, role } = await getAppContext();
+  const { m } = await searchParams;
+  const month = resolveMonth(m);
+  const view = await settlementView(ledgerId, month);
+
+  const prev = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+  const next = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+
+  return (
+    <PageContainer>
+      <PageHeader title="精算" subtitle="誰がいくら払って、いくら渡せばよいか。" />
+
+      <div className="mb-4 flex items-center justify-between">
+        <Link
+          href={`/settlement?m=${monthParam(prev)}`}
+          className="rounded-full px-3 py-2 text-[13px] font-medium text-accent"
+        >
+          ← 前の月
+        </Link>
+        <span className="text-[14px] font-semibold">{formatMonth(month)}</span>
+        <Link
+          href={`/settlement?m=${monthParam(next)}`}
+          className="rounded-full px-3 py-2 text-[13px] font-medium text-accent"
+        >
+          次の月 →
+        </Link>
+      </div>
+
+      <SettlementClient
+        monthLabel={formatMonth(month)}
+        total={view.total}
+        unassigned={view.unassigned}
+        members={view.members}
+        transfers={view.transfers}
+        records={view.records.map((r) => ({
+          id: r.id,
+          fromName: r.fromName,
+          toName: r.toName,
+          amount: r.amount,
+          dateLabel: formatDate(r.settledAt, "yyyy年M月d日"),
+          memo: r.memo,
+        }))}
+        currency={currency}
+        canEdit={canEdit}
+        isOwner={role === "OWNER"}
+        ledgerId={ledgerId}
+        today={todayLocal()}
+      />
+    </PageContainer>
+  );
+}

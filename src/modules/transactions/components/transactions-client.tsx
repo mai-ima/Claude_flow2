@@ -35,6 +35,11 @@ export interface TxnListItem {
   paymentMethodId: string | null;
   paymentName: string | null;
   ownerName: string | null;
+  /** 実際に払った人。共有帳簿の精算に使う。 */
+  paidByUserId: string | null;
+  paidByName: string | null;
+  /** この記録を自分が直せるか。SELF_EDITOR は自分が入れたものだけ。 */
+  canEditThis: boolean;
 }
 
 interface Option {
@@ -48,6 +53,8 @@ export function TransactionsClient({
   categories,
   paymentMethods,
   canEdit,
+  canAdd = canEdit,
+  members = [],
   showOwner = false,
   currency = "JPY",
   betaAmountPad = false,
@@ -58,7 +65,12 @@ export function TransactionsClient({
   items: TxnListItem[];
   categories: Option[];
   paymentMethods: Option[];
+  /** 他人の記録も直せるか。一括操作の可否にも使う。 */
   canEdit: boolean;
+  /** 記録を追加できるか。SELF_EDITOR は追加できるので canEdit より広い。 */
+  canAdd?: boolean;
+  /** 共有帳簿のメンバー。2人以上のときだけ「払った人」を扱う。 */
+  members?: Option[];
   showOwner?: boolean;
   currency?: string;
   /** ベータ: 電卓キーパッド */
@@ -75,7 +87,7 @@ export function TransactionsClient({
   const toast = useToast();
   const confirm = useConfirm();
   const [sheetOpen, setSheetOpen] = useState(
-    () => canEdit && searchParams.get("new") === "1",
+    () => canAdd && searchParams.get("new") === "1",
   );
   const [editing, setEditing] = useState<TxnFormValue | undefined>();
   const [pending, start] = useTransition();
@@ -165,7 +177,9 @@ export function TransactionsClient({
     setSheetOpen(true);
   }
   function openEdit(it: TxnListItem) {
-    if (!canEdit) return;
+    // 権限は行ごとに見る。SELF_EDITOR は他人の記録を開いても保存できないので、
+    // 開けないようにして「保存を押してから断られる」を避ける。
+    if (!it.canEditThis) return;
     setEditing({
       id: it.id,
       type: it.type,
@@ -174,13 +188,15 @@ export function TransactionsClient({
       categoryId: it.categoryId ?? "",
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
+      paidByUserId: it.paidByUserId ?? "",
       memo: it.memo ?? "",
     });
     setSheetOpen(true);
   }
   // ベータ: 同じ内容を今日の新規記録として複製（id を持たせず追加モードで開く）
   function openDuplicate(it: TxnListItem) {
-    if (!canEdit) return;
+    // 複製は「新しく足す」操作なので、追加できる人なら誰でもよい。
+    if (!canAdd) return;
     setEditing({
       type: it.type,
       amount: it.amount,
@@ -188,6 +204,7 @@ export function TransactionsClient({
       categoryId: it.categoryId ?? "",
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
+      paidByUserId: it.paidByUserId ?? "",
       memo: it.memo ?? "",
     });
     setSheetOpen(true);
@@ -287,6 +304,8 @@ export function TransactionsClient({
                       <span className="block truncate text-[12px] text-text-tertiary">
                         {it.paymentName ?? "—"}
                         {showOwner && it.ownerName ? ` ・ ${it.ownerName}` : ""}
+                        {/* 誰が払ったかは精算に効くので、記録者とは別に出す。 */}
+                        {showOwner && it.paidByName ? ` ・ ${it.paidByName}が支払い` : ""}
                       </span>
                     </span>
                   );
@@ -333,7 +352,8 @@ export function TransactionsClient({
 
                   // 編集可能なら左スワイプ操作（v1.2.4 で全員に正式化）。
                   // ベータ時のみ「複製」アクションとハプティックを追加。
-                  if (canEdit) {
+                  // 判定は行ごと。他人の記録に編集・削除を出しても押せないだけになる。
+                  if (it.canEditThis) {
                     const actions: SwipeAction[] = [
                       ...(betaDuplicate
                         ? [
@@ -397,7 +417,7 @@ export function TransactionsClient({
         </div>
       )}
 
-      {canEdit && !selectMode && (
+      {canAdd && !selectMode && (
         <Fab onClick={openAdd} label="記録を追加" />
       )}
 
@@ -477,6 +497,7 @@ export function TransactionsClient({
         currency={currency}
         beta={betaAmountPad}
         today={today}
+        members={members}
       />
     </div>
   );
