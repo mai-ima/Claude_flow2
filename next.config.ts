@@ -109,6 +109,11 @@ export const RUNTIME_REQUIRED_PACKAGES = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // 画像の最適化を使わない。next/image はどこからも使っておらず、
+  // 画像は public 配下の SVG と PNG を直接配信している。
+  // 有効なままだと /_next/image が sharp(libvips) を呼ぶ経路として残る。
+  // 使わない機能の分だけ攻撃対象を持つ理由が無いので閉じる。
+  images: { unoptimized: true },
   outputFileTracingExcludes: { "**/*": TRACING_EXCLUDES },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

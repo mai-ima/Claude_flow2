@@ -12,11 +12,19 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 日付の扱いは何度も不具合を出している箇所なので、
+        # 日本時間と、日付がずれる側の時間帯の両方で通す。
+        # UTC は本番(Vercel)の既定、Honolulu は日付が前にずれる例。
+        tz: ["Asia/Tokyo", "UTC", "Pacific/Honolulu"]
     env:
       # ビルド/型チェック/テストは DB 接続不要（env.ts が既定値を持つ）
       DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+      DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      TZ: "Asia/Tokyo"
+      TZ: ${{ matrix.tz }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,3 +47,20 @@ jobs:
       # CI で確かめたいのは「コードがビルドできること」なので、そこだけ実行する。
       - name: Build
         run: npm run build:next
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      # 依存の脆弱性を見る。確認済みの例外（security-exceptions.json）と
+      # 突き合わせ、それ以外の high 以上で失敗する。
+      # 素の npm audit だと直しようのない指摘ひとつで永久に赤くなり、
+      # やがて誰も見なくなるため。
+      - name: Audit (production dependencies)
+        run: npm run audit:check

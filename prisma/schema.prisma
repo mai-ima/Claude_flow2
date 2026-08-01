@@ -15,6 +15,10 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // マイグレーションは接続プール(PgBouncer 等)越しには実行できない。
+  // Vercel/Neon の連携はプール用と直結用の2種類を発行するため、直結側を使う。
+  // 未設定なら scripts/vercel-build.mjs が DATABASE_URL を写して埋める。
+  directUrl = env("DIRECT_URL")
 }
 
 // ─────────────────────────────────────────────

@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "npm audit の指摘のうち、内容を確認したうえで当面受け入れるもの。",
+    "scripts/audit-check.mjs がこの一覧と突き合わせ、載っていない指摘だけで失敗する。",
+    "reason には「なぜ届かないか」を書く。単に面倒だから、は理由にならない。",
+    "reviewBy を過ぎたものは、内容を見直すまで失敗させる（放置を防ぐ）。"
+  ],
+  "exceptions": [
+    {
+      "module": "sharp",
+      "advisory": "GHSA-f88m-g3jw-g9cj",
+      "reason": "next が画像最適化のために依存しているが、next/image はどこからも使っておらず、next.config.ts で images.unoptimized を有効にして /_next/image を閉じているため、libvips に画像が渡る経路が無い。解消には next のダウングレードが必要で、そちらのほうが影響が大きい。",
+      "reviewBy": "2026-11-01"
+    }
+  ]
+}

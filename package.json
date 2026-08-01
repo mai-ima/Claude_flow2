@@ -21,7 +21,9 @@
     "postinstall": "prisma generate",
     "build:next": "next build",
     "db:migrate": "prisma migrate deploy",
-    "db:status": "prisma migrate status"
+    "db:status": "prisma migrate status",
+    "audit:check": "node scripts/audit-check.mjs",
+    "e2e": "python3 e2e/security_settings.py && python3 e2e/reset_flow.py && python3 e2e/two_factor.py && python3 e2e/maint_changelog.py"
   },
   "overrides": {
     "postcss": "^8.5.15"

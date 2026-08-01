@@ -53,6 +53,12 @@ const FALLBACK_KEYS = [
   "SUPABASE_DB_URL",
 ];
 
+/**
+ * マイグレーション用の直結アドレス。プール越しでは実行できないため分ける。
+ * 連携が発行する非プール用の名前を優先し、無ければ通常の接続文字列で代用する。
+ */
+const DIRECT_KEYS = ["DIRECT_URL", "POSTGRES_URL_NON_POOLING", "DATABASE_URL_UNPOOLED"];
+
 /** 接続文字列と、その出どころの変数名。 */
 function resolveDbUrl() {
   if (process.env.DATABASE_URL) {
@@ -69,6 +75,18 @@ const { url: dbUrl, source } = resolveDbUrl();
 if (dbUrl) {
   // 以降の prisma コマンドは DATABASE_URL しか見ないため、別名から採った場合はここで揃える。
   process.env.DATABASE_URL = dbUrl;
+
+  // schema.prisma の directUrl は DIRECT_URL を見る。未設定なら埋める。
+  // 直結用が無い環境では通常の接続文字列で代用する（プールでないなら同じもの）。
+  if (!process.env.DIRECT_URL) {
+    // 出どころは代入する前に決める。後から探すと、いま自分で入れた
+    // DIRECT_URL に一致してしまい、常に「DIRECT_URL」と表示される。
+    const fromKey = DIRECT_KEYS.find((k) => process.env[k]);
+    process.env.DIRECT_URL = fromKey ? process.env[fromKey] : dbUrl;
+    console.log(
+      `[vercel-build] マイグレーション用の接続: ${fromKey ?? `${source}（直結用が無いため代用）`} を使用します。`,
+    );
+  }
   // どの変数から採ったかを出す。取り違えの調査に効く（値は出さない）。
   console.log(`[vercel-build] データベース接続文字列: ${source} を使用します。`);
 
