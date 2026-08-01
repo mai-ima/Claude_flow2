@@ -28,6 +28,17 @@ export function Sheet({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
+  // onClose は呼び出し側でインライン関数として渡されることが多く、
+  // 再描画のたびに別物になる。これを下の useEffect の依存に入れると、
+  // 入力のたびに「閉じる処理 → 開く処理」が走り直し、
+  // 先頭の操作要素へフォーカスが飛ぶ。実際、予算の金額欄で1文字打つたびに
+  // 上のセレクトへ移ってしまい入力できなかった。
+  // 依存からは外し、最新の関数だけ ref で持つ。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
     // 開く直前のフォーカス位置を覚えておき、閉じたときに戻す。
@@ -46,7 +57,7 @@ export function Sheet({
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       // Tab を内側に閉じ込める（背面へフォーカスが漏れないように）。
@@ -81,7 +92,8 @@ export function Sheet({
       window.clearTimeout(t);
       if (opener && document.contains(opener)) opener.focus();
     };
-  }, [open, onClose]);
+    // 依存は open だけ。onClose を入れると入力のたびに再実行される。
+  }, [open]);
 
   // ソフトキーボード表示などで可視領域が縮んでも、コンテナを実際の可視高さに
   // 合わせて下端をキーボードの上に保つ（シートが画面外にはみ出すのを防ぐ）。

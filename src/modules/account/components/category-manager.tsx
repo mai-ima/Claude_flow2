@@ -22,26 +22,101 @@ interface Cat {
   parentId: string | null;
 }
 
-const ICONS = ["tag", "food", "cart", "home", "bolt", "train", "wifi", "play", "heart", "gift", "briefcase", "music", "cloud", "sparkles", "card", "wallet"];
-const COLORS = ["blue", "teal", "green", "mint", "yellow", "orange", "pink", "red", "purple", "indigo", "cyan", "gray"];
+/**
+ * 選択肢は日本語で出す。内部の値（"food" / "blue"）をそのまま並べると、
+ * 何を選んでいるのか読んで分からない。
+ */
+const ICONS: { value: string; label: string }[] = [
+  { value: "tag", label: "タグ" },
+  { value: "food", label: "食事" },
+  { value: "cart", label: "買い物" },
+  { value: "home", label: "住まい" },
+  { value: "bolt", label: "水道・光熱" },
+  { value: "train", label: "交通" },
+  { value: "wifi", label: "通信" },
+  { value: "play", label: "娯楽" },
+  { value: "heart", label: "健康・医療" },
+  { value: "gift", label: "贈り物" },
+  { value: "briefcase", label: "仕事" },
+  { value: "music", label: "音楽" },
+  { value: "cloud", label: "サブスク" },
+  { value: "sparkles", label: "美容" },
+  { value: "card", label: "カード" },
+  { value: "wallet", label: "財布" },
+];
+const COLORS: { value: string; label: string }[] = [
+  { value: "blue", label: "ブルー" },
+  { value: "teal", label: "ティール" },
+  { value: "green", label: "グリーン" },
+  { value: "mint", label: "ミント" },
+  { value: "yellow", label: "イエロー" },
+  { value: "orange", label: "オレンジ" },
+  { value: "pink", label: "ピンク" },
+  { value: "red", label: "レッド" },
+  { value: "purple", label: "パープル" },
+  { value: "indigo", label: "インディゴ" },
+  { value: "cyan", label: "シアン" },
+  { value: "gray", label: "グレー" },
+];
+
+const SECTIONS = [
+  { type: "EXPENSE", label: "支出のカテゴリ" },
+  { type: "INCOME", label: "収入のカテゴリ" },
+] as const;
+
+/**
+ * 親のすぐ下に子を並べ替える。
+ * 作成順のままだと親と子が離れた位置に出て、どれがどれに含まれているのか
+ * 画面から読み取れない。
+ */
+function ordered(list: Cat[]): Cat[] {
+  const placed = new Set<string>();
+  const out: Cat[] = [];
+  for (const parent of list) {
+    if (parent.parentId !== null || placed.has(parent.id)) continue;
+    out.push(parent);
+    placed.add(parent.id);
+    for (const child of list) {
+      if (child.parentId === parent.id && !placed.has(child.id)) {
+        out.push(child);
+        placed.add(child.id);
+      }
+    }
+  }
+  // 親がアーカイブ中で一覧に出ていない子は上の走査から漏れる。末尾に回して落とさない。
+  for (const c of list) if (!placed.has(c.id)) out.push(c);
+  return out;
+}
 
 export function CategoryManager({ categories }: { categories: Cat[] }) {
   const router = useRouter();
   const toast = useToast();
   const [, start] = useTransition();
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ name: "", type: "EXPENSE" as "INCOME" | "EXPENSE", icon: "tag", color: "blue" });
+  const [form, setForm] = useState({
+    name: "",
+    type: "EXPENSE" as "INCOME" | "EXPENSE",
+    icon: "tag",
+    color: "blue",
+    parentId: "",
+  });
   const [showArchived, setShowArchived] = useState(false);
 
   function add() {
     if (!form.name) return;
     start(async () => {
-      const res = await createCategory(form);
+      const res = await createCategory({
+        name: form.name,
+        type: form.type,
+        icon: form.icon,
+        color: form.color,
+        parentId: form.parentId || undefined,
+      });
       if (!res.ok) {
         toast.error(res.fieldErrors?.name?.[0] ?? res.error);
         return;
       }
-      setForm({ name: "", type: form.type, icon: "tag", color: "blue" });
+      setForm({ name: "", type: form.type, icon: "tag", color: "blue", parentId: "" });
       setAdding(false);
       router.refresh();
     });
@@ -58,15 +133,26 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
   }
 
   const visible = categories.filter((c) => showArchived || !c.isArchived);
+  const nameOf = (id: string | null) => categories.find((c) => c.id === id)?.name ?? null;
 
-  /** サブカテゴリにできる相手（同じ収支区分で、自分自身と既存のサブカテゴリを除く）。 */
+  /** そのカテゴリを入れられる相手（同じ収支区分で、自分自身と既存のサブカテゴリを除く）。 */
   function parentOptions(c: Cat) {
-    const hasChildren = categories.some((x) => x.parentId === c.id);
-    if (hasChildren) return [];
     return categories.filter(
-      (x) => x.id !== c.id && x.type === c.type && x.parentId === null && !x.isArchived,
+      (x) =>
+        x.id !== c.id &&
+        x.type === c.type &&
+        x.parentId === null &&
+        // アーカイブ済みは新たに選べない。ただし、いま入っている先だけは
+        // 選択肢に残す。消すと select の値に合う選択肢が無くなり、
+        // 実際は含まれているのに「単独で集計」と表示されてしまう。
+        (!x.isArchived || x.id === c.parentId),
     );
   }
+
+  /** 新規追加のときに選べる入れ先。 */
+  const addParentOptions = categories.filter(
+    (c) => c.type === form.type && c.parentId === null && !c.isArchived,
+  );
 
   function changeParent(id: string, parentId: string | null) {
     start(async () => {
@@ -77,52 +163,95 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-1.5">
-        {visible.map((c) => (
-          <div key={c.id} className="flex items-center gap-3 rounded-xl bg-surface-2 px-3 py-2.5">
-            <span
-              className="grid h-8 w-8 place-items-center rounded-lg text-white"
-              style={{ background: colorOf(c.color) }}
-            >
-              <CategoryIcon name={c.icon} size={16} />
-            </span>
-            <span className={cn("flex-1 text-[14px]", c.isArchived && "text-text-tertiary line-through")}>
-              {c.parentId && <span className="mr-1 text-text-tertiary">└</span>}
-              {c.name}
-              <span className="ml-2 text-[11px] text-text-tertiary">
-                {c.type === "INCOME" ? "収入" : "支出"}
-              </span>
-            </span>
-            {!c.isArchived && parentOptions(c).length > 0 && (
-              <Select
-                value={c.parentId ?? ""}
-                onChange={(e) => changeParent(c.id, e.target.value || null)}
-                aria-label={`${c.name} のまとめ先`}
-                className="h-9 w-32 text-[13px]"
-              >
-                <option value="">まとめない</option>
-                {parentOptions(c).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}の下
-                  </option>
-                ))}
-              </Select>
-            )}
-            <button
-              onClick={() => archive(c.id, !c.isArchived)}
-              className="text-[12px] font-medium text-accent"
-            >
-              {c.isArchived ? "戻す" : "アーカイブ"}
-            </button>
+    <div className="space-y-4">
+      <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-[12px] leading-relaxed text-text-secondary">
+        カテゴリは、別のカテゴリの中に入れて「サブカテゴリ」にできます。
+        たとえば「外食」を「食費」の中に入れると、分析と予算では食費にまとめて数えられ、
+        そのうち外食がいくらだったかも内訳で見られます。入れ子にできるのは1段までです。
+      </p>
+
+      {SECTIONS.map((section) => {
+        const rows = ordered(visible.filter((c) => c.type === section.type));
+        if (rows.length === 0) return null;
+        return (
+          <div key={section.type} className="space-y-1.5">
+            <h4 className="px-1 text-[12px] font-semibold text-text-tertiary">{section.label}</h4>
+            {rows.map((c) => {
+              const children = categories.filter((x) => x.parentId === c.id);
+              const options = children.length > 0 ? [] : parentOptions(c);
+              const parentName = nameOf(c.parentId);
+              return (
+                <div
+                  key={c.id}
+                  className={cn(
+                    "rounded-xl bg-surface-2 px-3 py-2.5",
+                    // 子は一段下げて、親の下にぶら下がっていることを形で示す。
+                    c.parentId && "ml-4 border-l-2 border-border-subtle",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white"
+                      style={{ background: colorOf(c.color) }}
+                    >
+                      <CategoryIcon name={c.icon} size={16} />
+                    </span>
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 break-words text-[14px]",
+                        c.isArchived && "text-text-tertiary line-through",
+                      )}
+                    >
+                      {c.name}
+                    </span>
+                    <button
+                      onClick={() => archive(c.id, !c.isArchived)}
+                      className="-my-2 shrink-0 px-2 py-2 text-[12px] font-medium text-accent"
+                    >
+                      {c.isArchived ? "戻す" : "アーカイブ"}
+                    </button>
+                  </div>
+
+                  {c.isArchived ? (
+                    parentName && (
+                      <p className="mt-1.5 text-[12px] text-text-tertiary">
+                        「{parentName}」に含まれています
+                      </p>
+                    )
+                  ) : children.length > 0 ? (
+                    <p className="mt-1.5 text-[12px] text-text-tertiary">
+                      サブカテゴリ{children.length}件（{children.map((x) => x.name).join("、")}）の分も
+                      このカテゴリに合算されます
+                    </p>
+                  ) : options.length > 0 ? (
+                    <label className="mt-2 block">
+                      <span className="text-[12px] text-text-tertiary">集計のしかた</span>
+                      <Select
+                        value={c.parentId ?? ""}
+                        onChange={(e) => changeParent(c.id, e.target.value || null)}
+                        aria-label={`${c.name} の集計のしかた`}
+                        className="mt-1"
+                      >
+                        <option value="">このカテゴリ単独で集計する</option>
+                        {options.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            「{p.name}」に含めて集計する
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        );
+      })}
 
       <div className="flex items-center justify-between">
         <button
           onClick={() => setShowArchived((v) => !v)}
-          className="flex items-center gap-1.5 text-[13px] text-text-secondary"
+          className="flex items-center gap-1.5 py-2 text-[13px] text-text-secondary"
         >
           <ArchiveIcon size={15} />
           {showArchived ? "アーカイブを隠す" : "アーカイブを表示"}
@@ -134,7 +263,7 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
           <Segmented<"INCOME" | "EXPENSE">
             className="w-full"
             value={form.type}
-            onChange={(type) => setForm((s) => ({ ...s, type }))}
+            onChange={(type) => setForm((s) => ({ ...s, type, parentId: "" }))}
             options={[
               { value: "EXPENSE", label: "支出" },
               { value: "INCOME", label: "収入" },
@@ -142,28 +271,63 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
           />
           <Input
             placeholder="カテゴリ名（例: 教育費）"
+            aria-label="カテゴリ名"
             value={form.name}
             onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
           />
           <div className="grid grid-cols-2 gap-2">
-            <Select value={form.icon} onChange={(e) => setForm((s) => ({ ...s, icon: e.target.value }))}>
-              {ICONS.map((i) => (
-                <option key={i} value={i}>
-                  {i}
-                </option>
-              ))}
-            </Select>
-            <Select value={form.color} onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}>
-              {COLORS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
+            <label className="block">
+              <span className="text-[12px] text-text-tertiary">アイコン</span>
+              <Select
+                value={form.icon}
+                aria-label="アイコン"
+                className="mt-1"
+                onChange={(e) => setForm((s) => ({ ...s, icon: e.target.value }))}
+              >
+                {ICONS.map((i) => (
+                  <option key={i.value} value={i.value}>
+                    {i.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="block">
+              <span className="text-[12px] text-text-tertiary">色</span>
+              <Select
+                value={form.color}
+                aria-label="色"
+                className="mt-1"
+                onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}
+              >
+                {COLORS.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            </label>
           </div>
+          {addParentOptions.length > 0 && (
+            <label className="block">
+              <span className="text-[12px] text-text-tertiary">集計のしかた</span>
+              <Select
+                value={form.parentId}
+                aria-label="集計のしかた"
+                className="mt-1"
+                onChange={(e) => setForm((s) => ({ ...s, parentId: e.target.value }))}
+              >
+                <option value="">このカテゴリ単独で集計する</option>
+                {addParentOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    「{p.name}」に含めて集計する
+                  </option>
+                ))}
+              </Select>
+            </label>
+          )}
           <div className="flex items-center gap-2">
             <span
-              className="grid h-9 w-9 place-items-center rounded-lg text-white"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-white"
               style={{ background: colorOf(form.color) }}
             >
               <CategoryIcon name={form.icon} size={18} />

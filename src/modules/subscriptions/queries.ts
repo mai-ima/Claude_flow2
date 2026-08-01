@@ -72,3 +72,25 @@ export async function subscriptionsByPaymentMethod(ledgerId: string) {
   const unassigned = subs.filter((s) => !s.paymentMethodId);
   return { groups, unassigned };
 }
+
+/**
+ * 帳簿全体の価格変更履歴。
+ * 一覧ページ用。サブスク名と請求周期も一緒に返す（年額換算に要る）。
+ */
+export async function allPriceChanges(ledgerId: string, limit = 200) {
+  const rows = await db.subscriptionPriceChange.findMany({
+    where: { subscription: { ledgerId } },
+    include: { subscription: { select: { id: true, name: true, cycle: true, status: true } } },
+    orderBy: { changedAt: "desc" },
+    take: limit,
+  });
+  return rows.map((r) => ({
+    subscriptionId: r.subscription.id,
+    name: r.subscription.name,
+    cycle: r.subscription.cycle,
+    status: r.subscription.status,
+    oldAmount: r.oldAmount,
+    newAmount: r.newAmount,
+    changedAt: r.changedAt,
+  }));
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { NAV_ITEMS } from "./nav-items";
 import { logoutAction } from "@/app/(auth)/actions";
@@ -29,16 +29,24 @@ export function MobileDrawer({
     () => false,
   );
 
+  // onClose は呼び出し側でインライン関数のことが多く、再描画のたびに別物になる。
+  // 依存に入れると、開いている間の再描画ごとにスクロール固定を外して付け直す。
+  // 最新の関数だけ ref で持ち、依存は open だけにする。
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseRef.current();
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open]);
 
   // ヘッダー(sticky z-30)の重なり順に閉じ込められないよう body 直下へポータル。
   // これで下タブバー(z-30)や FAB(z-30)より前面に出る。
