@@ -130,7 +130,7 @@ export function AttachmentField({
                 onClick={() => remove(a.id)}
                 disabled={busy}
                 aria-label={`${a.name} を削除`}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                className="tap-target grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
               >
                 <TrashIcon size={16} />
               </button>

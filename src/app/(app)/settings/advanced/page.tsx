@@ -19,7 +19,7 @@ export default async function AdvancedSettingsPage() {
   const ctx = await getAppContext();
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="データとその他" />
       <SettingsBack />
 

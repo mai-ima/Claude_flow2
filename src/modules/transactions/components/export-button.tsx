@@ -11,7 +11,7 @@ export function ExportButton({ enabled }: { enabled: boolean }) {
 
   if (!enabled) {
     return (
-      <Link href="/billing" className="mt-2 inline-block text-[14px] font-medium text-accent">
+      <Link href="/billing" className="tap-target mt-2 inline-flex min-h-11 items-center text-[14px] font-medium text-accent">
         PROで利用可能
       </Link>
     );
@@ -49,7 +49,7 @@ export function ExportButton({ enabled }: { enabled: boolean }) {
     <button
       onClick={download}
       disabled={busy}
-      className="mt-2 inline-block text-[14px] font-medium text-accent disabled:opacity-50"
+      className="tap-target mt-2 inline-flex min-h-11 items-center text-[14px] font-medium text-accent disabled:opacity-50"
     >
       {busy ? "書き出し中…" : "ダウンロード"}
     </button>

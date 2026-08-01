@@ -170,7 +170,7 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
                     </span>
                     <button
                       onClick={() => archive(c.id, !c.isArchived)}
-                      className="-my-2 shrink-0 px-2 py-2 text-[12px] font-medium text-accent"
+                      className="tap-target -my-2 shrink-0 px-2 py-2 text-[12px] font-medium text-accent"
                     >
                       {c.isArchived ? "戻す" : "アーカイブ"}
                     </button>
@@ -215,7 +215,7 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
       <div className="flex items-center justify-between">
         <button
           onClick={() => setShowArchived((v) => !v)}
-          className="flex items-center gap-1.5 py-2 text-[13px] text-text-secondary"
+          className="tap-target flex min-h-11 items-center gap-1.5 text-[13px] text-text-secondary"
         >
           <ArchiveIcon size={15} />
           {showArchived ? "アーカイブを隠す" : "アーカイブを表示"}

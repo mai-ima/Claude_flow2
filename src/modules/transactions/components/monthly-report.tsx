@@ -72,19 +72,19 @@ export function MonthlyReport({
         <div className="flex items-center gap-1">
           <Link
             href={prevHref}
-            className="rounded-full px-3 py-2 text-[13px] font-medium text-accent"
+            className="tap-target inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-accent"
           >
             ← 前の月
           </Link>
           <Link
             href={nextHref}
-            className="rounded-full px-3 py-2 text-[13px] font-medium text-accent"
+            className="tap-target inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-accent"
           >
             次の月 →
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[13px] text-text-secondary">{backLink}</span>
+          <span className="[&_a]:tap-target inline-flex items-center text-[13px] text-text-secondary [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center">{backLink}</span>
           <Button size="sm" onClick={() => window.print()}>
             印刷 / PDF で保存
           </Button>

@@ -52,7 +52,7 @@ export function MobileNav() {
           <button
             onClick={() => setOpen(false)}
             aria-label="閉じる"
-            className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-text-secondary"
+            className="tap-target grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-text-secondary"
           >
             <XIcon size={18} />
           </button>

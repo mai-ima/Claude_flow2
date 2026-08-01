@@ -85,7 +85,8 @@ export interface ReportsData {
   year12: TrendPoint[];
   summary: { income: number; expense: number; balance: number };
   prev: { income: number; expense: number; balance: number };
-  forecast: number;
+  /** 今月の着地予測。月初は日数が足りず出せないので null。 */
+  forecast: number | null;
   dailyAvg: number;
   budgets: { total: BudgetRowItem | null; categories: BudgetRowItem[] };
   goals: GoalItem[];
@@ -269,9 +270,13 @@ export function ReportsClient({ data }: { data: ReportsData }) {
                 <div className="rounded-xl bg-surface-2 px-4 py-3">
                   <div className="text-[12px] text-text-tertiary">今月の着地予測</div>
                   <div className="mt-0.5 text-[18px] font-bold tabular-nums">
-                    {formatMoney(forecast, currency)}
+                    {forecast === null ? "—" : formatMoney(forecast, currency)}
                   </div>
-                  <div className="mt-0.5 text-[12px] text-text-tertiary">今のペースが続いた場合</div>
+                  <div className="mt-0.5 text-[12px] text-text-tertiary">
+                    {forecast === null
+                      ? "月初は日数が少なく、予測できません"
+                      : "今のペースが続いた場合"}
+                  </div>
                 </div>
                 <div className="rounded-xl bg-surface-2 px-4 py-3">
                   <div className="text-[12px] text-text-tertiary">1日あたりの支出</div>

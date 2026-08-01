@@ -186,7 +186,7 @@ export function AssetTracker({
                         <button
                           onClick={() => remove(r)}
                           aria-label={`${r.monthLabel} の記録を消す`}
-                          className="grid h-9 w-9 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                          className="tap-target grid h-9 w-9 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                         >
                           <TrashIcon size={16} />
                         </button>

@@ -390,3 +390,29 @@ html {
     box-shadow: none !important;
   }
 }
+
+/* ─────────────────────────────────────────────
+ * 押せる範囲を広げる。
+ *
+ * 見た目の大きさは変えず、当たり判定だけを 44px 四方に広げる
+ * （Apple のヒューマンインターフェイスガイドラインの最小寸法）。
+ * 文字リンクやアイコンだけのボタンは、見た目どおりの当たり判定だと
+ * 20px 前後しかなく、指では狙って押せない。
+ *
+ * 疑似要素で広げるので、周りの余白やレイアウトは動かない。
+ * 親に position が要る（relative を一緒に当てている）。
+ * ───────────────────────────────────────────── */
+.tap-target {
+  position: relative;
+}
+.tap-target::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}

@@ -110,7 +110,7 @@ export function AdminUsersTable({
 
             <Link
               href={`/admin/users/${u.id}`}
-              className="shrink-0 text-[13px] font-medium text-accent"
+              className="tap-target shrink-0 text-[13px] font-medium text-accent"
             >
               詳細
             </Link>

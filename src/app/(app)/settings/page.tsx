@@ -32,7 +32,7 @@ export default async function SettingsPage() {
   const ctx = await getAppContext();
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="設定" />
 
       <div className="space-y-6">

@@ -42,7 +42,7 @@ export default async function BillingPage() {
       <div className="mt-8 text-center">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1 text-[14px] font-medium text-accent"
+          className="inline-flex min-h-11 items-center gap-1 text-[14px] font-medium text-accent"
         >
           ダッシュボードへ進む
           <ChevronRightIcon size={16} />

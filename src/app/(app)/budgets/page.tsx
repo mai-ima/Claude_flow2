@@ -18,7 +18,7 @@ export default async function BudgetsPage() {
 
   if (!canUse(tier, "budgets")) {
     return (
-      <PageContainer>
+      <PageContainer width="list">
         <PageHeader title="予算" />
         <Card className="flex flex-col items-center gap-4 p-10 text-center">
           <div className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent">
@@ -45,7 +45,7 @@ export default async function BudgetsPage() {
   const expenseCats = allCategories.filter((c) => c.type === "EXPENSE");
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="予算" subtitle="使いすぎを、早めに防ぐ。" />
       <BudgetsClient
         total={totalItem}

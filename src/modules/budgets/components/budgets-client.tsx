@@ -104,7 +104,7 @@ function BudgetCard({
           <button
             onClick={onDelete}
             aria-label="削除"
-            className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+            className="tap-target grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
           >
             <TrashIcon size={16} />
           </button>
@@ -252,7 +252,7 @@ export function BudgetsClient({
               <div className="mb-4 flex items-center justify-between">
                 <button
                   onClick={() => openEdit(total)}
-                  className="flex items-center gap-2.5 text-left"
+                  className="tap-target flex items-center gap-2.5 text-left"
                 >
                   <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent/10 text-accent">
                     <TargetIcon size={18} />
@@ -263,7 +263,7 @@ export function BudgetsClient({
                   <button
                     onClick={() => remove(total.id)}
                     aria-label="削除"
-                    className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                    className="tap-target grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                   >
                     <TrashIcon size={16} />
                   </button>
@@ -380,7 +380,7 @@ export function BudgetsClient({
             <button
               type="button"
               onClick={() => applyAmount(suggested)}
-              className="flex w-full items-center justify-between rounded-xl bg-surface-2 px-4 py-2.5 text-left transition hover:bg-surface-3"
+              className="flex min-h-11 w-full items-center justify-between rounded-xl bg-surface-2 px-4 py-2.5 text-left transition hover:bg-surface-3"
             >
               <span className="text-[13px] text-text-secondary">
                 過去3ヶ月の平均: <b className="tabular-nums text-text-primary">{formatMoney(suggested, currency)}</b>

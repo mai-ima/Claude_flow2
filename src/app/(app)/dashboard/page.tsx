@@ -29,7 +29,7 @@ import { colorOf } from "@/lib/colors";
 import { buildActivityRings } from "@/lib/activity-rings";
 import { budgetInsight, PACE_LABEL } from "@/lib/budget-insight";
 import { AnimatedNumber } from "@/components/ui/animated-number";
-import { weeklyExpenseTotals } from "@/modules/transactions/queries";
+import { weeklyExpenseTotals, expenseSoFar } from "@/modules/transactions/queries";
 import { onboardingState } from "@/modules/account/queries";
 import { OnboardingCard } from "@/modules/account";
 import { monthEndForecast, weekDelta } from "@/lib/insight";
@@ -56,17 +56,20 @@ export default async function DashboardPage({
     { summary, subTotals, totalBudget, byCategory, upcoming, wasteful, recent, showBudget },
     weekly,
     onboarding,
+    spentSoFar,
   ] = await Promise.all([
     getDashboardData(ledgerId, tier, month),
     isCurrentMonth ? weeklyExpenseTotals(ledgerId, now) : Promise.resolve(null),
     // 案内は一度閉じたら二度と出さない。閉じた人のぶんは引きにいかない。
     user.onboardedAt ? Promise.resolve(null) : onboardingState(ledgerId, now),
+    // 予測の分子は「今日まで」。月全体だと、先の日付の記録まで数えてしまう。
+    isCurrentMonth ? expenseSoFar(ledgerId, month, now) : Promise.resolve(0),
   ]);
 
   const wage = user.assumedHourlyWage ?? 0;
   const expenseRatio = summary.income > 0 ? summary.expense / summary.income : 0;
   const wd = weekly ? weekDelta(weekly.thisWeek, weekly.lastWeek) : null;
-  const forecast = isCurrentMonth ? monthEndForecast(summary.expense, now) : summary.expense;
+  const forecast = isCurrentMonth ? monthEndForecast(spentSoFar, now) : summary.expense;
 
   return (
     <PageContainer>
@@ -139,9 +142,13 @@ export default async function DashboardPage({
               <div className="rounded-xl bg-surface-2 px-4 py-3">
                 <div className="text-[12px] text-text-tertiary">今月の着地予測</div>
                 <div className="mt-0.5 text-[18px] font-bold tabular-nums">
-                  {formatMoney(forecast, currency)}
+                  {forecast === null ? "—" : formatMoney(forecast, currency)}
                 </div>
-                <div className="mt-0.5 text-[12px] text-text-tertiary">このペースが続いた場合</div>
+                <div className="mt-0.5 text-[12px] text-text-tertiary">
+                  {forecast === null
+                    ? "月初は日数が少なく、予測できません"
+                    : "このペースが続いた場合"}
+                </div>
               </div>
               <div className="rounded-xl bg-surface-2 px-4 py-3">
                 <div className="text-[12px] text-text-tertiary">今月の最多カテゴリ</div>
@@ -302,7 +309,7 @@ export default async function DashboardPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>予算</CardTitle>
-              <Link href="/budgets" className="text-[13px] text-accent">
+              <Link href="/budgets" className="tap-target text-[13px] text-accent">
                 予算を見る
               </Link>
             </div>
@@ -361,7 +368,7 @@ export default async function DashboardPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>カテゴリ別の支出</CardTitle>
-              <Link href="/reports" className="text-[13px] text-accent">
+              <Link href="/reports" className="tap-target text-[13px] text-accent">
                 分析を見る
               </Link>
             </div>
@@ -404,7 +411,7 @@ export default async function DashboardPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>近づく更新</CardTitle>
-              <Link href="/subscriptions" className="text-[13px] text-accent">
+              <Link href="/subscriptions" className="tap-target text-[13px] text-accent">
                 すべて見る
               </Link>
             </div>
@@ -420,7 +427,7 @@ export default async function DashboardPage({
               <div className="-mx-1 space-y-1">
                 {upcoming.map((s) => (
                   <div key={s.id} className="flex items-center gap-3 rounded-xl px-1 py-2">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-text-secondary">
+                    <span className="tap-target grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-text-secondary">
                       <CategoryIcon name={s.category?.icon ?? "repeat"} size={18} />
                     </span>
                     <span className="flex-1">
@@ -477,7 +484,7 @@ export default async function DashboardPage({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>最近の取引</CardTitle>
-            <Link href="/transactions" className="text-[13px] text-accent">
+            <Link href="/transactions" className="tap-target text-[13px] text-accent">
               すべて見る
             </Link>
           </div>

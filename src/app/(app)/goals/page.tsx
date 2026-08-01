@@ -17,7 +17,7 @@ export default async function GoalsPage() {
 
   if (!canUse(tier, "goals")) {
     return (
-      <PageContainer>
+      <PageContainer width="list">
         <PageHeader title="貯金目標" />
         <Card className="flex flex-col items-center gap-4 p-10 text-center">
           <div className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent">
@@ -76,7 +76,7 @@ export default async function GoalsPage() {
   const totalTarget = items.reduce((s, g) => s + g.targetAmount, 0);
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="貯金目標" subtitle="貯めたい未来を、かたちに。" />
       <GoalsClient
         goals={items}

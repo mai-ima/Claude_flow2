@@ -57,11 +57,11 @@ export default async function PriceChangesPage() {
   });
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="価格の変更" subtitle="値上げ・値下げを、年額の影響で並べて。" />
       <PriceChangesClient rows={rows} currency={currency} />
       <div className="mt-6">
-        <Link href="/subscriptions" className="text-[14px] font-medium text-accent">
+        <Link href="/subscriptions" className="inline-flex min-h-11 items-center text-[14px] font-medium text-accent">
           サブスク一覧へ戻る
         </Link>
       </div>

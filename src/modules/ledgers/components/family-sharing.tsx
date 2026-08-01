@@ -227,7 +227,7 @@ export function FamilySharing({
       <div className="space-y-2">
         {members.map((m) => (
           <div key={m.userId} className="flex items-center gap-3 rounded-xl bg-surface-2 px-3 py-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-pod/12 text-pod">
+            <span className="tap-target grid h-9 w-9 place-items-center rounded-full bg-pod/12 text-pod">
               <UsersIcon size={18} />
             </span>
             <span className="flex-1">
@@ -257,7 +257,7 @@ export function FamilySharing({
                 <button
                   onClick={() => kick(m.userId)}
                   aria-label={`${m.name} をメンバーから外す`}
-                  className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                  className="tap-target grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                 >
                   <TrashIcon size={16} />
                 </button>

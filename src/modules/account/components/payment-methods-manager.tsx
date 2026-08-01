@@ -79,7 +79,7 @@ export function PaymentMethodsManager({ methods }: { methods: PM[] }) {
               <button
                 onClick={() => remove(m.id)}
                 aria-label="削除"
-                className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                className="tap-target grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
               >
                 <TrashIcon size={16} />
               </button>

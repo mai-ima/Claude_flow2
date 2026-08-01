@@ -138,7 +138,7 @@ function FamilyMock() {
       <div className="space-y-2">
         {MEMBERS.map((m) => (
           <div key={m.name} className="flex items-center gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-pod/12 text-pod">
+            <span className="tap-target grid h-8 w-8 place-items-center rounded-full bg-pod/12 text-pod">
               <UsersIcon size={16} />
             </span>
             <span className="flex-1">
@@ -175,7 +175,7 @@ function AutomationMock() {
       <div className="space-y-2">
         {AUTOMATION_ROWS.map((r) => (
           <div key={r.name} className="flex items-center gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-surface-1 text-text-secondary">
+            <span className="tap-target grid h-8 w-8 place-items-center rounded-full bg-surface-1 text-text-secondary">
               {r.icon}
             </span>
             <span className="flex-1">

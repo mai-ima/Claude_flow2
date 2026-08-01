@@ -25,7 +25,7 @@ export default async function SharingSettingsPage() {
   }));
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="ファミリー共有" />
       <SettingsBack />
 

@@ -23,20 +23,20 @@ export default async function SettlementPage({
   const next = new Date(month.getFullYear(), month.getMonth() + 1, 1);
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="精算" subtitle="誰がいくら払って、いくら渡せばよいか。" />
 
       <div className="mb-4 flex items-center justify-between">
         <Link
           href={`/settlement?m=${monthParam(prev)}`}
-          className="rounded-full px-3 py-2 text-[13px] font-medium text-accent"
+          className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-accent"
         >
           ← 前の月
         </Link>
         <span className="text-[14px] font-semibold">{formatMonth(month)}</span>
         <Link
           href={`/settlement?m=${monthParam(next)}`}
-          className="rounded-full px-3 py-2 text-[13px] font-medium text-accent"
+          className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-accent"
         >
           次の月 →
         </Link>

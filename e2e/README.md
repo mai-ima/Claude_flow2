@@ -10,6 +10,13 @@
 | `reset_flow.py` | パスワード再設定、メールアドレスの確認 |
 | `two_factor.py` | 二要素認証（コードの生成は RFC 6238 を別実装で行う） |
 | `maint_changelog.py` | メンテナンス中の出口、リリースノートの通常版／詳細版 |
+| `category_budget_ui.py` | カテゴリ管理の表記、金額欄で入力が続けられること |
+| `subscription_insights.py` | 価格の変更一覧、解約したときの数字 |
+| `settlement.py` | 共有帳簿の精算（負担・差引・やり取りの案） |
+| `saved_search.py` | 保存した検索、絞り込みの保持、使い始めの案内 |
+| `tags_report.py` | タグ、健康度、資産、月次レポート |
+| `settings_split.py` | 設定の分割、色とアイコンの選び方 |
+| `audit_layout.py` | 全画面の横はみ出しと、押すには小さすぎる操作要素 |
 
 ## 走らせ方
 

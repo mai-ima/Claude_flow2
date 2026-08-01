@@ -323,7 +323,7 @@ export function SubscriptionsClient({
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
               aria-label="ステータスで絞り込み"
-              className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2.5 text-[13px]"
+              className="h-11 rounded-lg border border-border-subtle bg-surface-1 px-2.5 text-[13px]"
             >
               <option value="ALL">すべて</option>
               <option value="ACTIVE">利用中</option>
@@ -334,7 +334,7 @@ export function SubscriptionsClient({
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               aria-label="並び替え"
-              className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2.5 text-[13px]"
+              className="h-11 rounded-lg border border-border-subtle bg-surface-1 px-2.5 text-[13px]"
             >
               <option value="renewal">更新が近い順</option>
               <option value="amount">金額が高い順</option>
@@ -416,7 +416,7 @@ export function SubscriptionsClient({
                         href={it.cancelUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-full px-2.5 py-1.5 text-[12px] font-medium text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
+                        className="tap-target rounded-full px-2.5 py-1.5 text-[12px] font-medium text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
                       >
                         解約アシスト
                       </a>
@@ -429,7 +429,7 @@ export function SubscriptionsClient({
                         <button
                           onClick={() => remove(it.id)}
                           aria-label="削除"
-                          className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                          className="tap-target grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                         >
                           <TrashIcon size={16} />
                         </button>

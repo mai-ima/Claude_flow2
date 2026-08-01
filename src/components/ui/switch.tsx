@@ -26,7 +26,8 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-300 ease-spring",
+        // つまみは 31px しかない。見た目は変えず、当たり判定だけ 44px に広げる。
+        "tap-target h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-300 ease-spring",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1",
         // オフのトラックは面の色だけでは背景から見分けられないため輪郭線を添える
         // （オンは --income が背景に対して十分な差を持つので不要）。

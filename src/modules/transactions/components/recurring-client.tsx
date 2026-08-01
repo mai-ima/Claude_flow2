@@ -229,14 +229,14 @@ export function RecurringClient({
                   <button
                     onClick={() => openEdit(it)}
                     aria-label="編集"
-                    className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary transition hover:bg-surface-2 hover:text-text-primary"
+                    className="tap-target grid h-8 w-8 place-items-center rounded-full text-text-tertiary transition hover:bg-surface-2 hover:text-text-primary"
                   >
                     <EditIcon size={16} />
                   </button>
                   <button
                     onClick={() => remove(it)}
                     aria-label="削除"
-                    className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary transition hover:bg-expense/10 hover:text-expense"
+                    className="tap-target grid h-8 w-8 place-items-center rounded-full text-text-tertiary transition hover:bg-expense/10 hover:text-expense"
                   >
                     <TrashIcon size={16} />
                   </button>

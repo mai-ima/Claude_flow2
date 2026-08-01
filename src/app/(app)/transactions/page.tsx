@@ -161,7 +161,7 @@ export default async function TransactionsPage({
   const pmOpts = paymentMethods.map((p) => ({ id: p.id, name: p.name }));
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader
         title="家計簿"
         action={

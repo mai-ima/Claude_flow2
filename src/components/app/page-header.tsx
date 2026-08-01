@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAppChrome } from "./app-chrome";
+import { cn } from "@/lib/cn";
 
 /**
  * iOS 風の大型タイトル。スクロールで上のセンチネルがヘッダー下へ隠れると
@@ -57,6 +58,31 @@ export function PageHeader({
   );
 }
 
-export function PageContainer({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:max-w-5xl">{children}</div>;
+/**
+ * ページの外枠。
+ *
+ * 幅は中身の並びで決める。
+ * - list: 縦に1列だけ並ぶ画面（家計簿・目標・設定など）。
+ *   広い画面でいっぱいまで伸ばすと、日付と金額が左右の端に離れ、
+ *   1行読むのに目が往復する。読みやすい幅で止める。
+ * - wide: 横に並べる意味がある画面（ホーム・分析）。
+ *   カードやグラフを並べられるので、広さがそのまま情報量になる。
+ */
+export function PageContainer({
+  children,
+  width = "wide",
+}: {
+  children: React.ReactNode;
+  width?: "list" | "wide";
+}) {
+  return (
+    <div
+      className={cn(
+        "mx-auto px-4 py-6 sm:px-6",
+        width === "list" ? "max-w-3xl" : "max-w-3xl lg:max-w-5xl",
+      )}
+    >
+      {children}
+    </div>
+  );
 }

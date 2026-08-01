@@ -83,7 +83,7 @@ export function OnboardingCard({
           onClick={close}
           disabled={pending}
           aria-label="この案内を閉じる"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
+          className="tap-target grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-surface-2 hover:text-text-primary"
         >
           <XIcon size={16} />
         </button>

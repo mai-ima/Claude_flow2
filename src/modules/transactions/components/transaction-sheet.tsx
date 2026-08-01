@@ -285,7 +285,7 @@ export function TransactionSheet({
                       }))
                     }
                     className={cn(
-                      "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] transition",
+                      "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-[13px] transition",
                       on
                         ? "border-accent bg-accent/10 font-medium text-text-primary"
                         : "border-border-subtle text-text-secondary",

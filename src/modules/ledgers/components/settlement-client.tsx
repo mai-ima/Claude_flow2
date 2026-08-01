@@ -195,7 +195,7 @@ export function SettlementClient({
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-[13px] font-semibold text-text-tertiary">メンバーごとの差引</h3>
         {isOwner && (
-          <button onClick={openRatios} className="py-1 text-[13px] font-medium text-accent">
+          <button onClick={openRatios} className="tap-target py-1 text-[13px] font-medium text-accent">
             負担の割合を変える
           </button>
         )}
@@ -324,7 +324,7 @@ export function SettlementClient({
                 <button
                   onClick={() => remove(r.id)}
                   aria-label="この精算を取り消す"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                  className="tap-target grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                 >
                   <TrashIcon size={16} />
                 </button>

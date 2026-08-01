@@ -1,16 +1,35 @@
 import { describe, it, expect } from "vitest";
-import { monthEndForecast, weekDelta, savingsRate } from "./insight";
+import { monthEndForecast, weekDelta, savingsRate, FORECAST_MIN_DAYS } from "./insight";
 
 describe("monthEndForecast", () => {
   it("半分経過で支出の倍を予測（30日月の15日）", () => {
     // 6月=30日。15日時点で 30000 → 60000
     expect(monthEndForecast(30000, new Date(2026, 5, 15))).toBe(60000);
   });
-  it("月初・支出0は0", () => {
-    expect(monthEndForecast(0, new Date(2026, 5, 1))).toBe(0);
+  it("月初は支出0でも予測しない", () => {
+    // 0 を返すと「今月は0円で終わる」と読めてしまう。
+    expect(monthEndForecast(0, new Date(2026, 5, 1))).toBeNull();
   });
   it("月末は概ね実支出", () => {
     expect(monthEndForecast(50000, new Date(2026, 5, 30))).toBe(50000);
+  });
+
+  // 実際に出た表示: 8月1日に「今月の着地予測 ￥5,111,900」。
+  // 1日ぶんの支出をそのまま31倍していた。
+  it("月初は予測を出さない", () => {
+    expect(monthEndForecast(164900, new Date(2026, 7, 1))).toBeNull();
+    expect(monthEndForecast(164900, new Date(2026, 7, 2))).toBeNull();
+  });
+
+  it("日数がたてば予測を出す", () => {
+    const r = monthEndForecast(30000, new Date(2026, 7, FORECAST_MIN_DAYS));
+    expect(r).not.toBeNull();
+    // 8月=31日。3日で 30,000 → 31日で 310,000
+    expect(r).toBe(310000);
+  });
+
+  it("日数がたっていて支出0なら0", () => {
+    expect(monthEndForecast(0, new Date(2026, 7, 20))).toBe(0);
   });
 });
 

@@ -406,3 +406,27 @@ export async function recordingActivity(
     elapsedDays: until.getDate(),
   };
 }
+
+/**
+ * 月初から指定時点までの支出。
+ *
+ * 着地予測に使う。月全体の支出を経過日数で割ると、先の日付で入れた記録
+ * （旅行の予定など）まで分子に入り、経過日数で割った瞬間に実態と
+ * かけ離れた数字になる。分子と分母の期間を揃えるために要る。
+ */
+export async function expenseSoFar(
+  ledgerId: string,
+  month: Date,
+  now: Date = new Date(),
+): Promise<number> {
+  const { start, end } = monthRange(month);
+  const until =
+    now > start && now < end
+      ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+      : end;
+  const agg = await db.transaction.aggregate({
+    where: { ledgerId, type: "EXPENSE", occurredAt: { gte: start, lte: until } },
+    _sum: { amount: true },
+  });
+  return agg._sum.amount ?? 0;
+}

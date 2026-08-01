@@ -24,7 +24,7 @@ export default async function LedgerSettingsPage() {
   ]);
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="帳簿の中身" />
       <SettingsBack />
 

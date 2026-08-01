@@ -78,7 +78,7 @@ export function SubscriptionReview({
         </span>
         <button
           onClick={done ? finish : onClose}
-          className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-text-secondary"
+          className="tap-target grid h-9 w-9 place-items-center rounded-full bg-surface-2 text-text-secondary"
           aria-label="閉じる"
         >
           <XIcon size={18} />

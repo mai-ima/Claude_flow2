@@ -129,14 +129,14 @@ export function TagManager({ tags }: { tags: TagItem[] }) {
                       setEditing(t.id);
                       setEdit({ name: t.name, color: t.color });
                     }}
-                    className="-my-2 px-2 py-2 text-[12px] font-medium text-accent"
+                    className="tap-target -my-2 px-2 py-2 text-[12px] font-medium text-accent"
                   >
                     編集
                   </button>
                   <button
                     onClick={() => remove(t)}
                     aria-label={`${t.name} を削除`}
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                    className="tap-target grid h-9 w-9 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                   >
                     <TrashIcon size={16} />
                   </button>

@@ -48,7 +48,7 @@ export default async function AdminUserDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/admin/users" className="text-[13px] font-medium text-accent">
+        <Link href="/admin/users" className="tap-target inline-flex min-h-11 items-center text-[13px] font-medium text-accent">
           ← ユーザー一覧
         </Link>
         <h1 className="mt-2 flex flex-wrap items-center gap-2 text-[24px] font-bold tracking-[-0.02em]">

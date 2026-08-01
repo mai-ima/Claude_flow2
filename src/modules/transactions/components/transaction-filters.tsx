@@ -246,7 +246,7 @@ export function TransactionFilters({
               <button
                 onClick={() => removeSaved(s.id)}
                 aria-label={`「${s.name}」の保存を消す`}
-                className="grid h-9 w-8 place-items-center rounded-full text-text-tertiary hover:text-expense"
+                className="tap-target grid h-9 w-8 place-items-center rounded-full text-text-tertiary hover:text-expense"
               >
                 <XIcon size={13} />
               </button>
@@ -256,7 +256,7 @@ export function TransactionFilters({
             <>
               <button
                 onClick={() => setNaming((v) => !v)}
-                className="inline-flex min-h-9 items-center gap-1 rounded-full border border-dashed border-border-strong px-3 text-[13px] font-medium text-accent"
+                className="inline-flex min-h-11 items-center gap-1 rounded-full border border-dashed border-border-strong px-3 text-[13px] font-medium text-accent"
               >
                 <StarIcon size={13} /> この条件を保存
               </button>

@@ -264,7 +264,7 @@ export function TransactionsClient({
             <>
               <button
                 onClick={selectAll}
-                className="text-[13px] font-medium text-accent"
+                className="tap-target text-[13px] font-medium text-accent"
               >
                 すべて選択（{visibleItems.length}）
               </button>
@@ -278,7 +278,7 @@ export function TransactionsClient({
           ) : (
             <button
               onClick={() => setSelectMode(true)}
-              className="ml-auto inline-flex items-center gap-1 rounded-full bg-surface-2 px-3.5 py-1.5 text-[13px] font-medium text-text-secondary transition hover:bg-surface-3"
+              className="ml-auto inline-flex min-h-11 items-center gap-1 rounded-full bg-surface-2 px-3.5 text-[13px] font-medium text-text-secondary transition hover:bg-surface-3"
             >
               <CheckIcon size={15} />
               選択

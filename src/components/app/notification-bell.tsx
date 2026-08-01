@@ -97,7 +97,7 @@ export function NotificationBell({
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
               <span className="text-[14px] font-semibold">通知</span>
               {unread > 0 && (
-                <button onClick={readAll} className="text-[12px] font-medium text-accent">
+                <button onClick={readAll} className="tap-target text-[12px] font-medium text-accent">
                   すべて既読
                 </button>
               )}

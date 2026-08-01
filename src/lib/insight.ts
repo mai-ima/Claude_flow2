@@ -1,13 +1,31 @@
 import { getDate, getDaysInMonth } from "date-fns";
 
 /**
- * 今月の支出ペースから月末の着地額を予測（線形）。
- * 月初や 0 支出では spent をそのまま返す。純関数・テスト可能。
+ * 予測を出すのに要る最低の経過日数。
+ *
+ * 1日や2日で割ると、その日の1回の買い物がそのまま月末まで続く前提になり、
+ * 月初に家賃を払っただけで「今月は50万円」のような数字が出る。
+ * 実際にそうなった（8月1日に着地予測 511万円と表示された）。
  */
-export function monthEndForecast(spent: number, now: Date = new Date()): number {
+export const FORECAST_MIN_DAYS = 3;
+
+/**
+ * 今月の支出ペースから月末の着地額を予測（線形）。
+ *
+ * spent には「今日までに使った額」を渡すこと。その月の全支出を渡すと、
+ * 先の日付で入れた記録（旅行の予定など）まで分子に入り、
+ * 経過日数で割った瞬間に実態とかけ離れた数字になる。
+ *
+ * まだ日が浅くて予測できないときは null。数字を出さないほうが、
+ * 当てにならない数字を出すより正直でいられる。
+ */
+export function monthEndForecast(spent: number, now: Date = new Date()): number | null {
   const day = getDate(now);
   const days = getDaysInMonth(now);
-  if (day <= 0 || spent <= 0) return Math.max(0, spent);
+  // 日数の判定を先に行う。支出0を先に見ると、月の1日目で
+  // 「￥0・このペースが続いた場合」と出て、今月は0円で終わると読める。
+  if (day < FORECAST_MIN_DAYS) return null;
+  if (spent <= 0) return 0;
   return Math.round((spent / day) * days);
 }
 

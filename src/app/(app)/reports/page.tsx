@@ -8,6 +8,7 @@ import {
   monthSummary,
   assetHistory,
   recordingActivity,
+  expenseSoFar,
 } from "@/modules/transactions/queries";
 import { subscriptionTotals } from "@/modules/subscriptions/queries";
 import { listBudgetsWithSpending } from "@/modules/budgets/queries";
@@ -48,6 +49,7 @@ export default async function ReportsPage() {
     assets,
     activity,
     subTotals,
+    spentSoFar,
   ] = await Promise.all([
     monthlyTrend(ledgerId, 6),
     yearlyTrend(ledgerId, year),
@@ -60,6 +62,7 @@ export default async function ReportsPage() {
     assetHistory(ledgerId),
     recordingActivity(ledgerId, now),
     subscriptionTotals(ledgerId),
+    expenseSoFar(ledgerId, now),
   ]);
 
   const health = healthScore({
@@ -106,7 +109,7 @@ export default async function ReportsPage() {
               year12,
               summary,
               prev,
-              forecast: monthEndForecast(summary.expense, now),
+              forecast: monthEndForecast(spentSoFar, now),
               dailyAvg: Math.round(summary.expense / getDate(now)),
               budgets,
               goals: goals.map((g) => ({

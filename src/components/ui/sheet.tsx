@@ -160,7 +160,7 @@ export function Sheet({
           <h2 id={titleId} className="text-[18px] font-semibold tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-text-secondary hover:text-text-primary"
+            className="tap-target grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-text-secondary hover:text-text-primary"
             aria-label="閉じる"
           >
             <XIcon size={18} />

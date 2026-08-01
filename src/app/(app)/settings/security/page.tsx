@@ -31,7 +31,7 @@ export default async function SecuritySettingsPage() {
   }));
 
   return (
-    <PageContainer>
+    <PageContainer width="list">
       <PageHeader title="ログインと安全性" />
       <SettingsBack />
 

@@ -219,14 +219,14 @@ export function GoalsClient({
                   </ActivityRing>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <button onClick={() => openEdit(g)} className="truncate text-left text-[16px] font-semibold">
+                      <button onClick={() => openEdit(g)} className="tap-target truncate text-left text-[16px] font-semibold">
                         {g.name}
                       </button>
                       {canEdit && (
                         <button
                           onClick={() => remove(g.id)}
                           aria-label="削除"
-                          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                          className="tap-target grid h-8 w-8 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                         >
                           <TrashIcon size={16} />
                         </button>
@@ -405,7 +405,7 @@ export function GoalsClient({
               <button
                 key={v}
                 onClick={() => setContribAmount((a) => a + v)}
-                className="rounded-xl bg-surface-2 py-2 text-[13px] font-medium hover:opacity-80"
+                className="min-h-11 rounded-xl bg-surface-2 text-[13px] font-medium hover:opacity-80"
               >
                 +{v / 1000}千
               </button>
