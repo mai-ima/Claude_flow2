@@ -8,7 +8,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { CategoryIcon, PlusIcon, ArchiveIcon } from "@/components/icons";
 import { useToast } from "@/components/ui/toast";
 import { colorOf } from "@/lib/colors";
-import { createCategory, toggleArchiveCategory } from "../actions";
+import { createCategory, toggleArchiveCategory, setCategoryParent } from "../actions";
 import { cn } from "@/lib/cn";
 
 interface Cat {
@@ -18,6 +18,8 @@ interface Cat {
   icon: string;
   color: string;
   isArchived: boolean;
+  /** 親カテゴリ。null なら自分が親（またはサブカテゴリを持たない）。 */
+  parentId: string | null;
 }
 
 const ICONS = ["tag", "food", "cart", "home", "bolt", "train", "wifi", "play", "heart", "gift", "briefcase", "music", "cloud", "sparkles", "card", "wallet"];
@@ -57,6 +59,23 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
 
   const visible = categories.filter((c) => showArchived || !c.isArchived);
 
+  /** サブカテゴリにできる相手（同じ収支区分で、自分自身と既存のサブカテゴリを除く）。 */
+  function parentOptions(c: Cat) {
+    const hasChildren = categories.some((x) => x.parentId === c.id);
+    if (hasChildren) return [];
+    return categories.filter(
+      (x) => x.id !== c.id && x.type === c.type && x.parentId === null && !x.isArchived,
+    );
+  }
+
+  function changeParent(id: string, parentId: string | null) {
+    start(async () => {
+      const res = await setCategoryParent({ id, parentId });
+      if (res.ok) router.refresh();
+      else toast.error(res.error);
+    });
+  }
+
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
@@ -69,11 +88,27 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
               <CategoryIcon name={c.icon} size={16} />
             </span>
             <span className={cn("flex-1 text-[14px]", c.isArchived && "text-text-tertiary line-through")}>
+              {c.parentId && <span className="mr-1 text-text-tertiary">└</span>}
               {c.name}
               <span className="ml-2 text-[11px] text-text-tertiary">
                 {c.type === "INCOME" ? "収入" : "支出"}
               </span>
             </span>
+            {!c.isArchived && parentOptions(c).length > 0 && (
+              <Select
+                value={c.parentId ?? ""}
+                onChange={(e) => changeParent(c.id, e.target.value || null)}
+                aria-label={`${c.name} のまとめ先`}
+                className="h-9 w-32 text-[13px]"
+              >
+                <option value="">まとめない</option>
+                {parentOptions(c).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}の下
+                  </option>
+                ))}
+              </Select>
+            )}
             <button
               onClick={() => archive(c.id, !c.isArchived)}
               className="text-[12px] font-medium text-accent"

@@ -4,6 +4,7 @@ export {
   createPaymentMethod,
   deletePaymentMethod,
   createCategory,
+  setCategoryParent,
   toggleArchiveCategory,
   deleteAccountAction,
   deleteAllDataAction,

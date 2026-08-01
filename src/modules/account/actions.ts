@@ -23,6 +23,7 @@ import { isEmailEnabled } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 import { isBetaFeatureKey, enabledBetaFeatures } from "@/lib/beta-features";
+import { canSetParent } from "@/lib/category-tree";
 import { Prisma } from "@/generated/prisma";
 
 export const updateProfile = authedAction(
@@ -137,15 +138,69 @@ export const createCategory = authedAction(
     type: z.enum(["INCOME", "EXPENSE"]),
     icon: z.string().default("tag"),
     color: z.string().default("gray"),
+    /** 親カテゴリ。指定するとサブカテゴリになる。 */
+    parentId: z.string().optional(),
   }),
   async (input, user) => {
     const ledgerId = await getActiveLedgerId(user.id);
     await requireLedgerMember(ledgerId, user.id, "EDITOR");
+
+    let parentId: string | null = null;
+    if (input.parentId) {
+      const siblings = await db.category.findMany({
+        where: { ledgerId },
+        select: { id: true, name: true, parentId: true, type: true },
+      });
+      const parent = siblings.find((c) => c.id === input.parentId);
+      // 収入のカテゴリを支出の下に置くと、集計がどちらに入るのか決まらない。
+      if (!parent || parent.type !== input.type) throw new Error("PARENT_TYPE_MISMATCH");
+      // 深さの制限はここでも見る。画面だけの制限は API を直接叩けば抜けられる。
+      const verdict = canSetParent(siblings, "new", input.parentId);
+      if (!verdict.ok) throw new Error("PARENT_INVALID");
+      parentId = input.parentId;
+    }
+
     await db.category.create({
-      data: { ledgerId, name: input.name, type: input.type, icon: input.icon, color: input.color },
+      data: {
+        ledgerId,
+        name: input.name,
+        type: input.type,
+        icon: input.icon,
+        color: input.color,
+        parentId,
+      },
     });
     revalidatePath("/settings");
     revalidatePath("/transactions");
+    return { ok: true };
+  },
+);
+
+/** 既存カテゴリの親を変える（サブカテゴリにする／親に戻す）。 */
+export const setCategoryParent = authedAction(
+  z.object({ id: z.string(), parentId: z.string().nullable() }),
+  async ({ id, parentId }, user) => {
+    const ledgerId = await getActiveLedgerId(user.id);
+    await requireLedgerMember(ledgerId, user.id, "EDITOR");
+
+    const categories = await db.category.findMany({
+      where: { ledgerId },
+      select: { id: true, name: true, parentId: true, type: true },
+    });
+    const self = categories.find((c) => c.id === id);
+    if (!self) throw new Error("NOT_FOUND");
+
+    if (parentId) {
+      const parent = categories.find((c) => c.id === parentId);
+      if (!parent || parent.type !== self.type) throw new Error("PARENT_TYPE_MISMATCH");
+    }
+    const verdict = canSetParent(categories, id, parentId);
+    if (!verdict.ok) throw new Error("PARENT_INVALID");
+
+    await db.category.update({ where: { id }, data: { parentId } });
+    revalidatePath("/settings");
+    revalidatePath("/transactions");
+    revalidatePath("/reports");
     return { ok: true };
   },
 );

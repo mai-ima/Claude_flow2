@@ -1,4 +1,5 @@
 import "server-only";
+import { rollUp } from "@/lib/category-tree";
 import { startOfWeek, subWeeks } from "date-fns";
 import type { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
@@ -142,16 +143,39 @@ async function categoryBreakdown(
     _sum: { amount: true },
   });
   const categories = await db.category.findMany({ where: { ledgerId } });
-  const map = new Map(categories.map((c) => [c.id, c]));
-  return rows
-    .map((r) => ({
-      categoryId: r.categoryId,
-      name: r.categoryId ? (map.get(r.categoryId)?.name ?? "未分類") : "未分類",
-      color: r.categoryId ? (map.get(r.categoryId)?.color ?? "gray") : "gray",
-      icon: r.categoryId ? (map.get(r.categoryId)?.icon ?? "tag") : "tag",
-      amount: r._sum.amount ?? 0,
-    }))
-    .sort((a, b) => b.amount - a.amount);
+  const amount = new Map(rows.map((r) => [r.categoryId, r._sum.amount ?? 0]));
+  const amountOf = (id: string) => amount.get(id) ?? 0;
+
+  // 子の額は親に畳んで出す。「食費」と「食費 > 外食」が並ぶと、
+  // どちらが全体なのか読み取れない。内訳は children に残す。
+  const rolled = rollUp(categories, amountOf).map((r) => ({
+    categoryId: r.category.id as string | null,
+    name: r.category.name,
+    color: r.category.color,
+    icon: r.category.icon,
+    amount: r.total,
+    children: r.children.map((c) => ({
+      categoryId: c.category.id,
+      name: c.category.name,
+      color: c.category.color,
+      icon: c.category.icon,
+      amount: c.amount,
+    })),
+  }));
+
+  // カテゴリの無い取引。畳む相手がいないので最後に足す。
+  const uncategorized = amount.get(null) ?? 0;
+  if (uncategorized !== 0) {
+    rolled.push({
+      categoryId: null,
+      name: "未分類",
+      color: "gray",
+      icon: "tag",
+      amount: uncategorized,
+      children: [],
+    });
+  }
+  return rolled.sort((a, b) => b.amount - a.amount);
 }
 
 export function expenseByCategory(ledgerId: string, month: Date) {

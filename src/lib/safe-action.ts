@@ -54,6 +54,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   NOT_ENABLED: "二要素認証が有効になっていません。",
   SETUP_NOT_STARTED: "設定が開始されていません。最初からやり直してください。",
   INVALID_CODE: "コードが正しくありません。認証アプリの表示をご確認ください。",
+  PARENT_TYPE_MISMATCH: "収入と支出のカテゴリは、まとめられません。",
+  PARENT_INVALID: "この組み合わせではまとめられません。サブカテゴリは1段までです。",
 };
 
 /**

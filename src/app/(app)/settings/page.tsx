@@ -124,6 +124,7 @@ export default async function SettingsPage() {
               icon: c.icon,
               color: c.color,
               isArchived: c.isArchived,
+              parentId: c.parentId,
             }))}
           />
         </ListGroup>
