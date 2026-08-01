@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { adminAction } from "@/lib/safe-action";
 import { writeAudit } from "@/lib/audit";
+import { effectiveAdminRole, hasAdminRole } from "@/lib/admin-role";
 import {
   LOG_KINDS,
   LOG_KIND_LABEL,
@@ -49,6 +50,13 @@ const TARGET: Record<LogKind, { dateField: string; delete: (where: object) => Pr
  * 先に行う（監査ログの掃除で、いま書いた行まで巻き込まないため）。
  */
 export const purgeLogs = adminAction("SUPER", purgeInput, async (input, user) => {
+  // 監査ログだけは、この action の最低権限が将来ゆるめられても
+  // 最高責任者に限る。証跡を消せる人を増やさない。
+  if (input.kind === "AUDIT") {
+    const role = effectiveAdminRole(user.adminRole, user.isAdmin);
+    if (!hasAdminRole(role, "SUPER")) throw new Error("AUDIT_SUPER_ONLY");
+  }
+
   const verdict = checkPurge(input, { hasReason: Boolean(input.reason?.trim()) });
   if (!verdict.ok) throw new Error(verdict.code);
 

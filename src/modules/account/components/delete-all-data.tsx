@@ -44,7 +44,7 @@ export function DeleteAllData() {
       <div className="min-w-0">
         <div className="text-[14px] font-medium">すべての記録を削除</div>
         <div className="text-[12px] text-text-tertiary">
-          取引・サブスク・予算・目標・支払い方法を削除し、カテゴリを初期状態に戻します。
+          この帳簿の記録をすべて消して、使い始めたときの状態に戻します。
         </div>
         {done && <div className="mt-1 text-[12px] text-success">削除しました。</div>}
       </div>
@@ -78,7 +78,7 @@ export function DeleteAllData() {
       >
         <div className="space-y-4">
           <div className="rounded-xl border border-expense/30 bg-expense/5 p-4 text-[13px] leading-relaxed text-text-secondary">
-            この帳簿のすべての取引・サブスク・予算・貯金目標・支払い方法が削除され、カテゴリは初期状態に戻ります。
+            この帳簿の取引・定期取引・サブスク・予算・貯金目標・資産・タグ・保存した検索・精算の記録・支払い方法がすべて削除され、カテゴリは初期状態に戻ります。この帳簿についてのお知らせも消え、使い始めのご案内がもう一度表示されます。
             <b className="text-expense">この操作は取り消せません。</b>
             なお、アカウント自体は削除されません。
           </div>

@@ -51,6 +51,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   AUDIT_NO_SELECTIVE_DELETE:
     "監査ログは1件ずつ削除できません。証跡として残す必要があるため、古いものをまとめて削除する形のみ可能です。",
   AUDIT_MIN_RETENTION: "監査ログは30日より新しいものを削除できません。",
+  AUDIT_SUPER_ONLY: "監査ログを削除できるのは最高責任者のみです。",
   CONFIRM_MISMATCH: "確認の入力が一致しません。",
   IMPERSONATION_READONLY: "他のユーザーとして閲覧中は、変更操作を行えません。",
   INVALID_PASSWORD: "現在のパスワードが正しくありません。",

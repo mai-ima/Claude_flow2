@@ -229,7 +229,7 @@ export function LogSection({
           <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-[12px] leading-relaxed text-text-secondary">
             いま {total.toLocaleString("ja-JP")} 件あります。
             {kind === "AUDIT"
-              ? "監査ログは管理操作の証跡です。30日より新しいものは削除できません。削除したこと自体も記録に残ります。"
+              ? "監査ログは管理操作の証跡です。削除できるのは最高責任者のみで、30日より新しいものは削除できません。削除したこと自体も記録に残ります。"
               : "運用のための控えなので、消してもアプリの動きには影響しません。"}
           </p>
 

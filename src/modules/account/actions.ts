@@ -221,22 +221,38 @@ export const toggleArchiveCategory = authedAction(
 
 /**
  * アクティブな帳簿の全データを削除して初期状態に戻す（アカウントは残す）。
- * 取引・サブスク・予算・目標・支払い方法を消し、カテゴリを既定値で再生成する。
+ *
+ * 「初期状態に戻す」と言う以上、使い始めの案内も戻す。戻さないと、
+ * 中身が空なのに「まず記録してみましょう」の案内だけが出ないという、
+ * いちばん案内が要る状態でいちばん不親切な画面になる。
+ *
+ * 消す対象は、帳簿にぶら下がるものを漏れなく挙げる。あとから足した
+ * タグ・資産・定期取引・精算・保存した検索が残っていたため、
+ * 「全部消したのにタグだけ残っている」状態になっていた。
  */
 export const deleteAllDataAction = authedAction(z.object({}), async (_input, user) => {
   const ledgerId = await getActiveLedgerId(user.id);
   await requireLedgerMember(ledgerId, user.id, "OWNER");
-  // 依存関係の順に削除（取引→サブスク/予算/目標→支払い方法→カテゴリ）→ 既定カテゴリを再生成。
+  // 依存関係の順に削除（取引 → それにぶら下がるもの → カテゴリ）→ 既定カテゴリを再生成。
   await db.$transaction([
     db.transaction.deleteMany({ where: { ledgerId } }),
+    db.recurringTransaction.deleteMany({ where: { ledgerId } }),
     db.subscription.deleteMany({ where: { ledgerId } }),
     db.budget.deleteMany({ where: { ledgerId } }),
     db.goal.deleteMany({ where: { ledgerId } }),
+    db.assetSnapshot.deleteMany({ where: { ledgerId } }),
+    db.settlement.deleteMany({ where: { ledgerId } }),
+    db.savedSearch.deleteMany({ where: { ledgerId } }),
+    db.tag.deleteMany({ where: { ledgerId } }),
     db.paymentMethod.deleteMany({ where: { ledgerId } }),
     db.category.deleteMany({ where: { ledgerId } }),
     db.category.createMany({
       data: DEFAULT_CATEGORIES.map((c) => ({ ...c, ledgerId })),
     }),
+    // この帳簿について出していたお知らせも、指す先が無くなるので消す。
+    db.notification.deleteMany({ where: { ledgerId } }),
+    // 使い始めの案内を出し直す。
+    db.user.update({ where: { id: user.id }, data: { onboardedAt: null } }),
   ]);
   revalidatePath("/", "layout");
   return { ok: true };
