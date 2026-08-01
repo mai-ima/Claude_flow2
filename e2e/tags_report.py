@@ -42,7 +42,7 @@ def main():
         page.wait_for_url(lambda url: "/login" not in url, timeout=15000)
 
         # ── タグを作る ──────────────────────────────────
-        page.goto(f"{BASE}/settings", wait_until="domcontentloaded")
+        page.goto(f"{BASE}/settings/ledger", wait_until="domcontentloaded")
         page.get_by_text("タグは、カテゴリとは別に", exact=False).first.wait_for(timeout=8000)
         settings = page.locator("body").inner_text()
         check("タグの説明が出る", "何枚でも貼れます" in settings)

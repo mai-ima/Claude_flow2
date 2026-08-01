@@ -63,7 +63,7 @@ def main():
         page.keyboard.press("Escape")
 
         # ── 2. カテゴリ管理の表記 ────────────────────────────
-        page.goto(f"{BASE}/settings", wait_until="domcontentloaded")
+        page.goto(f"{BASE}/settings/ledger", wait_until="domcontentloaded")
         section = page.get_by_text("サブカテゴリ", exact=False).first
         section.wait_for(state="visible", timeout=5000)
 

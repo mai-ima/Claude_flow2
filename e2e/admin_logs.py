@@ -56,10 +56,36 @@ def main():
         page.screenshot(path=f"{SHOT_DIR}/pr27-admin-ops.png", full_page=True)
 
         # 手動実行して履歴を1件作る（消す対象を用意する）。
-        run = page.get_by_role("button", name=re.compile("いま実行|手動で実行|実行する"))
+        # 確認のダイアログが出るので、そこまで進める。
+        run = page.get_by_role("button", name="いま実行する")
         if run.count() > 0:
             run.first.click()
-            page.wait_for_timeout(4000)
+            dlg = page.get_by_role("dialog", name=re.compile("自動処理をいま実行"))
+            dlg.wait_for(state="visible", timeout=6000)
+            dlg.get_by_role("button", name="実行する").click()
+            page.wait_for_timeout(6000)
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_timeout(1500)
+            check(
+                "手動で実行すると履歴に残る",
+                "手動" in page.locator("body").inner_text(),
+            )
+
+        # ── まとめて削除のシート ────────────────────────
+        # 記録を消す前に見る。消して 0 件になると、そのセクションには
+        # ボタンを出さない作りなので、あとから見ると見つからない。
+        bulk = page.get_by_role("button", name="まとめて削除")
+        check("まとめて削除が出ている", bulk.count() > 0, f"{bulk.count()}箇所")
+        bulk.first.click()
+        sheet = page.get_by_role("dialog", name=re.compile("削除"))
+        sheet.wait_for(state="visible", timeout=6000)
+        sheet_text = sheet.inner_text()
+        check("期間を選べる", "7日より古いものを削除" in sheet_text)
+        check("すべて削除も選べる", "すべて削除" in sheet_text)
+        check("影響の説明がある", "アプリの動きには影響しません" in sheet_text)
+        page.screenshot(path=f"{SHOT_DIR}/pr27-purge-sheet.png")
+        sheet.get_by_role("button", name="閉じる").click()
+        page.wait_for_timeout(500)
 
         # ── 選んで消す ──────────────────────────────────
         page.reload(wait_until="domcontentloaded")
@@ -84,18 +110,6 @@ def main():
             )
         else:
             check("消せる記録がある", False, "履歴が1件も無く確認できなかった")
-
-        # ── まとめて削除のシート ────────────────────────
-        page.get_by_role("button", name="まとめて削除").first.click()
-        sheet = page.get_by_role("dialog", name=re.compile("削除"))
-        sheet.wait_for(state="visible", timeout=6000)
-        sheet_text = sheet.inner_text()
-        check("期間を選べる", "7日より古いものを削除" in sheet_text)
-        check("すべて削除も選べる", "すべて削除" in sheet_text)
-        check("影響の説明がある", "アプリの動きには影響しません" in sheet_text)
-        page.screenshot(path=f"{SHOT_DIR}/pr27-purge-sheet.png")
-        sheet.get_by_role("button", name="閉じる").click()
-        page.wait_for_timeout(500)
 
         # ── 監査ログ ────────────────────────────────────
         page.goto(f"{BASE}/admin/audit", wait_until="domcontentloaded")

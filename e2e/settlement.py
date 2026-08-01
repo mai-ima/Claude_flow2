@@ -78,6 +78,15 @@ def main():
         page.screenshot(path=f"{SHOT_DIR}/settlement.png", full_page=True)
 
         # ── やり取りの案から記録する ──────────────────
+        # 前回の実行で残った履歴を消してから始める。残っていると
+        # 「記録すると履歴に載る」が確かめられない。
+        while page.get_by_role("button", name="この精算を取り消す").count() > 0:
+            page.get_by_role("button", name="この精算を取り消す").first.click()
+            dlg = page.get_by_role("dialog", name=re.compile("取り消"))
+            dlg.wait_for(state="visible", timeout=5000)
+            dlg.get_by_role("button", name=re.compile("取り消|削除")).first.click()
+            page.wait_for_timeout(1800)
+
         before = page.locator("body").inner_text()
         check("記録前は履歴が空", "まだ記録がありません" in before)
 
