@@ -143,7 +143,7 @@ export const replyFeedback = adminAction(
       });
     }
 
-    // メールは「返信がほしい」と書いた人にだけ送る。
+    // メールは「返信を希望する」と書いた人にだけ送る。
     // 送信できなくても返信そのものは残す（アプリ内では読める）。
     if (existing.contactEmail) {
       try {

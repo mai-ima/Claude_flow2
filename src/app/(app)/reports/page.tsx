@@ -86,7 +86,7 @@ export default async function ReportsPage() {
     <PageContainer>
       <PageHeader
         title="分析"
-        subtitle="お金の流れを、いろいろな角度から。"
+        subtitle="お金の流れを、さまざまな角度から。"
         action={tier === "PRO" ? <Badge tone="pod" size="md">PRO</Badge> : undefined}
       />
 

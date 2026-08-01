@@ -22,7 +22,7 @@ export function fail(
 const ERROR_MESSAGES: Record<string, string> = {
   FORBIDDEN: "この操作を行う権限がありません。",
   NOT_YOUR_RECORD:
-    "あなたの権限では、自分で入力した記録だけを変更できます。この記録は他の方が入力したものです。",
+    "あなたの権限では、自分で入力した記録のみ変更できます。この記録は他の方が入力したものです。",
   SETTLEMENT_SAME_USER: "同じ方どうしの精算は記録できません。",
   SETTLEMENT_AMOUNT: "精算の金額は1円以上で入力してください。",
   TAG_DUPLICATE: "同じ名前のタグがすでにあります。別の名前にしてください。",

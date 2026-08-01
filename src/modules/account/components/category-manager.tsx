@@ -131,7 +131,7 @@ export function CategoryManager({ categories }: { categories: Cat[] }) {
       <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-[12px] leading-relaxed text-text-secondary">
         カテゴリは、別のカテゴリの中に入れて「サブカテゴリ」にできます。
         たとえば「外食」を「食費」の中に入れると、分析と予算では食費にまとめて数えられ、
-        そのうち外食がいくらだったかも内訳で見られます。入れ子にできるのは1段までです。
+        そのうち外食がいくらだったかも内訳でご確認いただけます。入れ子にできるのは1段までです。
       </p>
 
       {SECTIONS.map((section) => {

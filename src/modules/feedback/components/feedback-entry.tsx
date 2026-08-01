@@ -27,8 +27,8 @@ export function FeedbackEntry({
   return (
     <div className="space-y-3">
       <p className="text-[13px] leading-relaxed text-text-secondary">
-        うまく動かないところや、こうしてほしいという要望をお送りいただけます。
-        いただいた内容は開発の判断に使わせていただきます。
+        うまく動作しない点や、追加を希望される機能などをお送りいただけます。
+        いただいた内容は今後の開発の参考にさせていただきます。
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="tinted" size="sm" onClick={() => setOpen(true)}>

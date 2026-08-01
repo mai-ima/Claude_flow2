@@ -219,7 +219,7 @@ export default async function DashboardPage({
             >
               <ClockIcon size={24} className="text-accent" />
               <span className="flex-1 text-[14px]">
-                想定時給を設定すると、支出を「時間」で見られます。
+                想定時給を設定すると、支出を「時間」に換算してご覧いただけます。
               </span>
               <ChevronRightIcon size={18} className="text-text-tertiary" />
             </Link>

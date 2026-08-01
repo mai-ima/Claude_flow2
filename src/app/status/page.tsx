@@ -73,7 +73,7 @@ export default function StatusPage() {
           <Link href="/api/health" className="font-medium text-accent">
             /api/health
           </Link>{" "}
-          で確認できます。
+          で確認いただけます。
         </p>
       </div>
     </div>

@@ -286,7 +286,7 @@ export function TransactionFilters({
             保存
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setNaming(false)}>
-            やめる
+            キャンセル
           </Button>
         </div>
       )}

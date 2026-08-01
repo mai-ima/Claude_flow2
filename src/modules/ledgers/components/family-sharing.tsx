@@ -185,7 +185,7 @@ export function FamilySharing({
       <div className="flex items-center gap-3 rounded-xl bg-surface-2 px-4 py-4">
         <UsersIcon size={22} className="text-pod" />
         <span className="flex-1 text-[14px] text-text-secondary">
-          ファミリー共有はプラス以上で利用できます。
+          ファミリー共有はプラス以上で利用いただけます。
         </span>
         <ButtonLink href="/billing" size="sm" variant="tinted">
           アップグレード

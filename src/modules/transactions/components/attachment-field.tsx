@@ -161,7 +161,7 @@ export function AttachmentField({
           </label>
           <p className="mt-1 text-[11px] leading-relaxed text-text-tertiary">
             写真（JPEG・PNG・WebP・HEIC）と PDF、1つ5MBまで、1件につき{MAX_PER_TXN}個までです。
-            中身の読み取りはしません。後から見返すために預かるだけです。
+            中身の読み取りはしません。後から見返していただくためにお預かりするのみです。
           </p>
         </>
       )}

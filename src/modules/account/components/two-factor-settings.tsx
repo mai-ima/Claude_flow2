@@ -152,7 +152,7 @@ export function TwoFactorSettings({
             {pending ? "確認中…" : "有効にする"}
           </Button>
           <Button variant="gray" onClick={() => setSetup(undefined)} disabled={pending}>
-            やめる
+            キャンセル
           </Button>
         </div>
       </div>

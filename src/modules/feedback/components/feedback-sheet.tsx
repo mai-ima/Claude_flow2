@@ -91,7 +91,7 @@ export function FeedbackSheet({
         setError(res.fieldErrors?.body?.[0] ?? res.fieldErrors?.contactEmail?.[0] ?? res.error);
         return;
       }
-      toast.success("送信しました。ありがとうございます。");
+      toast.success("送信いたしました。ご協力ありがとうございます。");
       setBody("");
       setWantReply(false);
       onClose();
@@ -105,7 +105,7 @@ export function FeedbackSheet({
       ? "例: 予算の画面で金額を入れて保存を押しても、何も起きません。iPhone の Safari です。"
       : kind === "REQUEST"
         ? "例: 週ごとの支出も見られるようにしてほしいです。"
-        : "お気づきのことをご自由にお書きください。";
+        : "お気づきの点をご自由にご記入ください。";
 
   const tooShort = body.trim().length < 5;
   const tooLong = body.length > MAX;
@@ -123,8 +123,8 @@ export function FeedbackSheet({
     >
       <div className="space-y-4">
         <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-[12px] leading-relaxed text-text-secondary">
-          お困りのことや、こうしてほしいという要望をお送りください。
-          いただいた内容は開発の判断に使わせていただきます。
+          ご不便な点や、追加を希望される機能などをお送りください。
+          いただいた内容は今後の開発の参考にさせていただきます。
         </p>
 
         <Field label="種類">
@@ -143,7 +143,7 @@ export function FeedbackSheet({
           label="内容"
           hint={
             kind === "BUG"
-              ? "どの画面で、何をしたときに、どうなったかを書いていただけると助かります。"
+              ? "どの画面で、何をしたときに、どうなったかをご記入いただけますと幸いです。"
               : undefined
           }
         >
@@ -156,7 +156,7 @@ export function FeedbackSheet({
         </Field>
 
         <div className="-mt-2 flex items-center justify-between text-[11px] text-text-tertiary">
-          <span>書きかけは自動で保存されます。</span>
+          <span>入力中の内容は自動的に保存されます。</span>
           <span className={tooLong ? "text-expense" : "tabular-nums"}>
             {body.length} / {MAX}
           </span>
@@ -174,7 +174,7 @@ export function FeedbackSheet({
             }
             className="tap-target text-[12px] text-accent underline underline-offset-2"
           >
-            書き方の型を入れる
+            記入例を挿入する
           </button>
         )}
 
@@ -187,9 +187,9 @@ export function FeedbackSheet({
               className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent-solid)]"
             />
             <span className="min-w-0 text-[13px] leading-relaxed">
-              返信がほしい
+              返信を希望する
               <span className="mt-0.5 block text-[12px] text-text-tertiary">
-                内容によってはお返事できないことがあります。
+                内容によってはお返事いたしかねる場合がございます。
               </span>
             </span>
           </label>
@@ -210,7 +210,7 @@ export function FeedbackSheet({
           お送りいただく内容のほかに、いま開いている画面の場所と、端末の種類
           （「iPhone の Safari」程度）、アプリの版を一緒にお送りします。
           家計簿に入力された金額やメモが送られることはありません。
-          お返事は「設定 → データとその他 → 送ったご報告」でも読めます。
+          お返事は「設定 → データとその他 → 送ったご報告」でもご覧いただけます。
         </p>
 
         {error && (

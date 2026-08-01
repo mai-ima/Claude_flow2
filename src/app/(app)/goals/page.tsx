@@ -25,7 +25,7 @@ export default async function GoalsPage() {
           </div>
           <h2 className="text-[20px] font-bold tracking-tight">貯金目標はプラス以上の機能です</h2>
           <p className="max-w-sm text-[15px] text-text-secondary">
-            目標額と期日を決めて、コツコツ積み立て。プラスにアップグレードすると利用できます。
+            目標額と期日を決めて、コツコツ積み立て。プラスにアップグレードするとご利用いただけます。
           </p>
           <ButtonLink href="/billing">アップグレード</ButtonLink>
         </Card>

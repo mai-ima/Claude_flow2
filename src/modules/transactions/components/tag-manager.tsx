@@ -109,7 +109,7 @@ export function TagManager({ tags }: { tags: TagItem[] }) {
                       保存
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
-                      やめる
+                      キャンセル
                     </Button>
                   </div>
                 </div>

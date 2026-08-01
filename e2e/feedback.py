@@ -60,7 +60,7 @@ def main():
         sheet.wait_for(state="visible", timeout=6000)
         sheet_text = sheet.inner_text()
 
-        check("種類を選べる", "うまく動かない" in sheet_text and "こうしてほしい" in sheet_text)
+        check("種類を選べる", "不具合のご報告" in sheet_text and "機能のご要望" in sheet_text)
         check(
             "何を一緒に送るか書いてある",
             "画面の場所" in sheet_text and "端末の種類" in sheet_text,
@@ -88,7 +88,7 @@ def main():
         admin_body = apage.locator("body").inner_text()
 
         check("管理画面に届いている", BODY in admin_body, )
-        check("件数の内訳が出る", "未読" in admin_body and "対応済み" in admin_body)
+        check("件数の内訳が出る", "未対応" in admin_body and "対応済み" in admin_body)
         check("送信元の画面が分かる", "/settings/advanced" in admin_body)
         check("端末が分かる", "送り主" in admin_body and "端末" in admin_body)
 

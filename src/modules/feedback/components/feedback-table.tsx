@@ -209,7 +209,7 @@ export function FeedbackTable({
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(
           [
-            ["未読", counts.new],
+            ["未対応", counts.new],
             ["確認中", counts.reading],
             ["対応済み", counts.done],
             ["見送り", counts.wontfix],
@@ -273,7 +273,7 @@ export function FeedbackTable({
           description={
             filter === "ALL"
               ? "利用者が設定から送ると、ここに届きます。"
-              : "絞り込みを「すべて」に戻すと、届いているものを確認できます。"
+              : "絞り込みを「すべて」に戻すと、届いているものを確認いただけます。"
           }
         />
       ) : (
@@ -397,7 +397,7 @@ export function FeedbackTable({
                   <p className="text-[11px] leading-relaxed text-text-secondary">
                     ここに書いた文は送り主にそのまま届きます（アプリ内の通知と、
                     {r.contactEmail ? `メール ${r.contactEmail}` : "返信先の記入が無いためメールは送られません"}
-                    ）。内部の記録は「メモ」にお書きください。
+                    ）。内部の記録は「メモ」にご記入ください。
                   </p>
                   <Textarea
                     value={reply}

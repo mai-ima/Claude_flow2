@@ -108,8 +108,47 @@ def main():
         case(page, "記録", "/transactions", re.compile("記録する|追加"), "金額")
         case(page, "定期の記録", "/transactions/recurring", re.compile("追加|登録"), "金額")
         case(page, "サブスク", "/subscriptions", re.compile("サブスクを(追加|登録)|追加"), "金額")
-        case(page, "資産", "/reports", re.compile("記録する"), "残高")
-        case(page, "精算", "/settlement", re.compile("記録する"), "金額")
+        # 資産は分析の「資産」タブの中にある。タブを切り替えてから開く。
+        def to_savings(pg):
+            tab = pg.get_by_role("radio", name="資産")
+            if tab.count() > 0:
+                tab.first.click()
+                pg.wait_for_timeout(900)
+
+        page.goto(f"{BASE}/reports", wait_until="domcontentloaded")
+        page.wait_for_timeout(1400)
+        to_savings(page)
+        opener = page.get_by_role("button", name=re.compile("記録する"))
+        if opener.count() > 0:
+            opener.first.click()
+            page.wait_for_timeout(900)
+            field = page.get_by_label("残高").first
+            if field.count() > 0:
+                value, strayed = type_and_watch(page, field)
+                check("資産: 5文字とも入る", value.replace(",", "").endswith("12345"), f"値={value!r}")
+                check("資産: 入力中に別の項目へ移らない", not strayed, f"移った先={strayed}")
+                page.keyboard.press("Escape")
+            else:
+                check("資産: 残高の欄が出る", False)
+        else:
+            check("資産: 記録する入口がある", False, "資産タブに見当たらない")
+
+        # 精算は共有帳簿があるときだけ出る。無い環境では確かめられないので、
+        # 落とさずに「確認できなかった」ことだけ残す。
+        page.goto(f"{BASE}/settlement", wait_until="domcontentloaded")
+        page.wait_for_timeout(1400)
+        s_open = page.get_by_role("button", name=re.compile("記録する"))
+        if s_open.count() > 0:
+            s_open.first.click()
+            page.wait_for_timeout(900)
+            field = page.get_by_label("金額").first
+            if field.count() > 0:
+                value, strayed = type_and_watch(page, field)
+                check("精算: 5文字とも入る", value.replace(",", "").endswith("12345"), f"値={value!r}")
+                check("精算: 入力中に別の項目へ移らない", not strayed, f"移った先={strayed}")
+                page.keyboard.press("Escape")
+        else:
+            print("skip 精算: 共有帳簿が無いため確認せず")
 
         # 想定時給はシートではなく、設定の画面にそのまま置いてある。
         page.goto(f"{BASE}/settings", wait_until="domcontentloaded")

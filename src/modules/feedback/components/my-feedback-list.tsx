@@ -27,7 +27,7 @@ export function MyFeedbackList({ rows }: { rows: MyFeedbackRow[] }) {
       <EmptyState
         icon={<FlagIcon size={28} />}
         title="まだ送っていません"
-        description="うまく動かないところや、こうしてほしいという要望をお送りいただけます。"
+        description="うまく動作しない点や、追加を希望される機能などをお送りいただけます。"
       />
     );
   }

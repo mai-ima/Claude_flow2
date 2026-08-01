@@ -37,9 +37,9 @@ export const MEMBER_ROLE_LABEL: Record<MemberRole, string> = {
 /** 権限を選ぶときに添える説明。何ができて何ができないかを先に伝える。 */
 export const MEMBER_ROLE_HINT: Record<MemberRole, string> = {
   OWNER: "すべての操作と、メンバーの管理ができます。",
-  EDITOR: "誰の記録でも追加・編集・削除できます。",
-  SELF_EDITOR: "記録の追加はできますが、直したり消したりできるのは自分が入れたものだけです。",
-  VIEWER: "見ることだけができます。追加や編集はできません。",
+  EDITOR: "誰の記録でも追加・編集・削除ができます。",
+  SELF_EDITOR: "記録の追加はできますが、編集・削除ができるのはご自身で入力したもののみです。",
+  VIEWER: "閲覧のみ可能です。追加・編集はできません。",
 };
 
 export const PaymentMethodType = z.enum(["CARD", "BANK", "CASH", "EMONEY"]);

@@ -74,9 +74,9 @@ def main():
         # 書き方の型。
         page.get_by_role("textbox", name=re.compile("^内容")).fill("")
         page.wait_for_timeout(300)
-        page.get_by_role("button", name="書き方の型を入れる").click()
+        page.get_by_role("button", name="記入例を挿入する").click()
         typed = page.get_by_role("textbox", name=re.compile("^内容")).input_value()
-        check("書き方の型を入れられる", "どの画面で:" in typed and "どうなった:" in typed)
+        check("記入例を挿入できる", "どの画面で:" in typed and "どうなった:" in typed)
 
         page.get_by_role("textbox", name=re.compile("^内容")).fill(BODY)
         page.wait_for_timeout(300)
@@ -91,7 +91,7 @@ def main():
         page.get_by_role("heading", name="送ったご報告").first.wait_for(timeout=8000)
         mine = page.locator("body").inner_text()
         check("送った内容が自分の画面に出る", BODY in mine)
-        check("対応状況が出る", "未読" in mine)
+        check("対応状況が出る", "未対応" in mine)
         page.screenshot(path=f"{SHOT_DIR}/pr27-my-reports.png", full_page=True)
 
         ctx.close()

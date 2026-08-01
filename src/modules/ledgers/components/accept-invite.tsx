@@ -52,7 +52,7 @@ export function AcceptInvite({
         <p className="rounded-xl border border-border-subtle bg-surface-2 px-3.5 py-3 text-[13px] leading-relaxed text-text-secondary">
           参加するには、メールアドレスの確認が必要です。
           他人のアドレスで登録した人が招待を横取りできないようにするためです。
-          設定画面から確認メールを送れます。
+          設定画面から確認メールを再送いただけます。
         </p>
         <Link href="/settings/security" className="block">
           <Button full variant="tinted">

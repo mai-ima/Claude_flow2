@@ -56,7 +56,7 @@ export function EmailVerification({
         <>
           <p className="text-[13px] leading-relaxed text-text-tertiary">
             {emailEnabled
-              ? "確認しておくと、パスワードを忘れたときにご自身で再設定できます。"
+              ? "確認しておくと、パスワードを忘れたときにご自身で再設定いただけます。"
               : "ただいまメールの送信を準備中のため、確認メールをお送りできません。"}
           </p>
           {emailEnabled && (
