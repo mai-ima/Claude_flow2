@@ -124,8 +124,40 @@ export async function auditActions(): Promise<string[]> {
 
 // ── 運用の可視化 ────────────────────────────
 
-export async function listCronRuns(limit = 30) {
-  return db.cronRun.findMany({ orderBy: { startedAt: "desc" }, take: limit });
+export async function listCronRuns(
+  opts: { job?: string; status?: string; limit?: number } | number = {},
+) {
+  // 数値で呼んでいた頃の書き方も受ける（呼び出し元を一斉に直すより安全）。
+  const o = typeof opts === "number" ? { limit: opts } : opts;
+  return db.cronRun.findMany({
+    where: {
+      ...(o.job ? { job: o.job } : {}),
+      ...(o.status ? { status: o.status } : {}),
+    },
+    orderBy: { startedAt: "desc" },
+    take: Math.min(o.limit ?? 30, 200),
+  });
+}
+
+/** 自動処理に実際に現れたジョブ名（絞り込みの選択肢用）。 */
+export async function cronJobs(): Promise<string[]> {
+  const rows = await db.cronRun.groupBy({ by: ["job"], orderBy: { job: "asc" } });
+  return rows.map((r) => r.job);
+}
+
+/**
+ * ログの総件数。
+ * 「20件しか見えないが実際は何件あるのか」が分からないと、
+ * 消すべきかどうかの判断ができない。
+ */
+export async function logCounts() {
+  const [cron, email, error, audit] = await Promise.all([
+    db.cronRun.count(),
+    db.emailLog.count(),
+    db.errorEvent.count(),
+    db.auditLog.count(),
+  ]);
+  return { cron, email, error, audit };
 }
 
 /** 直近の失敗。管理画面の先頭で警告を出すために使う。 */

@@ -10,6 +10,7 @@ import {
   DangerZone,
 } from "@/modules/account";
 import { FeedbackEntry } from "@/modules/feedback";
+import { myFeedbackCounts } from "@/modules/feedback/queries";
 import { tierAtLeast } from "@/lib/plans";
 import { enabledBetaFeatures } from "@/lib/beta-features";
 import { pageMetadata } from "@/lib/seo";
@@ -18,6 +19,7 @@ export const metadata: Metadata = pageMetadata({ title: "データとその他",
 
 export default async function AdvancedSettingsPage() {
   const ctx = await getAppContext();
+  const sent = await myFeedbackCounts(ctx.user.id);
 
   return (
     <PageContainer width="list">
@@ -26,7 +28,11 @@ export default async function AdvancedSettingsPage() {
 
       <div className="space-y-6">
         <ListGroup title="ご意見・不具合のご報告" padded>
-          <FeedbackEntry defaultEmail={ctx.user.email} />
+          <FeedbackEntry
+            defaultEmail={ctx.user.email}
+            sentCount={sent.total}
+            repliedCount={sent.replied}
+          />
         </ListGroup>
 
         <ListGroup title="データ（CSV）" padded>

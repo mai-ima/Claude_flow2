@@ -10,8 +10,13 @@ import { Segmented } from "@/components/ui/segmented";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { BellIcon, TrashIcon } from "@/components/icons";
-import { updateFeedback, deleteFeedback } from "../actions";
+import { BellIcon, TrashIcon, DownloadIcon } from "@/components/icons";
+import {
+  updateFeedback,
+  deleteFeedback,
+  replyFeedback,
+  bulkUpdateFeedback,
+} from "../actions";
 import {
   FEEDBACK_KIND_LABEL,
   FEEDBACK_STATUS_LABEL,
@@ -29,6 +34,8 @@ export interface FeedbackRow {
   appVersion: string | null;
   status: string;
   adminNote: string | null;
+  replyBody: string | null;
+  repliedAtLabel: string | null;
   handledByName: string | null;
   handledAtLabel: string | null;
   userName: string | null;
@@ -37,6 +44,11 @@ export interface FeedbackRow {
 }
 
 const STATUSES: FeedbackStatus[] = ["NEW", "READING", "DONE", "WONTFIX"];
+
+/** CSV の1セル。改行とカンマと引用符を含みうるので必ず括る。 */
+function cell(v: string | null): string {
+  return `"${(v ?? "").replace(/"/g, '""')}"`;
+}
 
 /**
  * 届いた報告の一覧（管理）。
@@ -61,8 +73,21 @@ export function FeedbackTable({
   const [filter, setFilter] = useState<"ALL" | FeedbackStatus>("ALL");
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [replyFor, setReplyFor] = useState<string | null>(null);
+  const [reply, setReply] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const shown = rows.filter((r) => filter === "ALL" || r.status === filter);
+  const allShownSelected = shown.length > 0 && shown.every((r) => selected.has(r.id));
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function change(id: string, status: FeedbackStatus, adminNote?: string | null) {
     start(async () => {
@@ -72,6 +97,45 @@ export function FeedbackTable({
         return;
       }
       setNoteFor(null);
+      router.refresh();
+    });
+  }
+
+  function sendReply(id: string, status: FeedbackStatus) {
+    const text = reply.trim();
+    if (text.length === 0) {
+      toast.error("返信の内容を入力してください。");
+      return;
+    }
+    start(async () => {
+      const res = await replyFeedback({ id, replyBody: text, status });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setReplyFor(null);
+      setReply("");
+      toast.success("返信しました。アプリ内の通知と、返信先が入力されていればメールで届きます。");
+      router.refresh();
+    });
+  }
+
+  async function bulk(status: FeedbackStatus) {
+    const ids = [...selected];
+    const ok = await confirm({
+      title: `選択した${ids.length}件を「${FEEDBACK_STATUS_LABEL[status]}」にしますか？`,
+      body: "対応状況だけを変えます。送り主への返信は送られません。",
+      confirmText: "変更する",
+    });
+    if (!ok) return;
+    start(async () => {
+      const res = await bulkUpdateFeedback({ ids, status });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setSelected(new Set());
+      toast.success(`${res.data.updated}件を変更しました。`);
       router.refresh();
     });
   }
@@ -94,6 +158,51 @@ export function FeedbackTable({
     });
   }
 
+  /** いま表示している範囲を CSV で書き出す。集計や共有は表計算のほうが早い。 */
+  function exportCsv() {
+    const header = [
+      "受付日時",
+      "種類",
+      "対応状況",
+      "本文",
+      "送り主",
+      "返信先",
+      "送信元の画面",
+      "端末",
+      "アプリの版",
+      "返信",
+      "内部メモ",
+    ];
+    const lines = [
+      header.join(","),
+      ...shown.map((r) =>
+        [
+          cell(r.createdAtLabel),
+          cell(FEEDBACK_KIND_LABEL[r.kind as FeedbackKind] ?? r.kind),
+          cell(FEEDBACK_STATUS_LABEL[r.status as FeedbackStatus] ?? r.status),
+          cell(r.body),
+          cell(r.userName ?? r.userEmail ?? "退会した方"),
+          cell(r.contactEmail),
+          cell(r.fromPath),
+          cell(r.userAgent),
+          cell(r.appVersion),
+          cell(r.replyBody),
+          cell(r.adminNote),
+        ].join(","),
+      ),
+    ];
+    // Excel が UTF-8 と判断できるよう BOM を付ける。付けないと日本語が化ける。
+    const blob = new Blob(["﻿" + lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `feedback-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div>
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -112,7 +221,7 @@ export function FeedbackTable({
         ))}
       </div>
 
-      <div className="mb-4">
+      <div className="mb-3">
         <Segmented<"ALL" | FeedbackStatus>
           className="w-full"
           value={filter}
@@ -122,6 +231,38 @@ export function FeedbackTable({
             ...STATUSES.map((s) => ({ value: s, label: FEEDBACK_STATUS_LABEL[s] })),
           ]}
         />
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px]">
+        {shown.length > 0 && (
+          <label className="tap-target flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={allShownSelected}
+              aria-label="表示中をすべて選択"
+              onChange={() =>
+                setSelected(allShownSelected ? new Set() : new Set(shown.map((r) => r.id)))
+              }
+              className="h-4 w-4 accent-[var(--color-accent-solid)]"
+            />
+            表示中をすべて選択
+          </label>
+        )}
+        {selected.size > 0 && (
+          <>
+            <span className="text-text-tertiary">{selected.size}件を選択中</span>
+            {(["READING", "DONE", "WONTFIX"] as const).map((s) => (
+              <Button key={s} size="sm" variant="ghost" disabled={pending} onClick={() => bulk(s)}>
+                {FEEDBACK_STATUS_LABEL[s]}にする
+              </Button>
+            ))}
+          </>
+        )}
+        {shown.length > 0 && (
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={exportCsv}>
+            <DownloadIcon size={14} /> CSVで書き出す
+          </Button>
+        )}
       </div>
 
       {shown.length === 0 ? (
@@ -139,6 +280,13 @@ export function FeedbackTable({
           {shown.map((r) => (
             <Card key={r.id} className="p-4">
               <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selected.has(r.id)}
+                  aria-label="この報告を選択"
+                  onChange={() => toggle(r.id)}
+                  className="h-4 w-4 accent-[var(--color-accent-solid)]"
+                />
                 <Badge tone={r.kind === "BUG" ? "expense" : "accent"} size="sm">
                   {FEEDBACK_KIND_LABEL[r.kind as FeedbackKind] ?? r.kind}
                 </Badge>
@@ -150,6 +298,11 @@ export function FeedbackTable({
                 >
                   {FEEDBACK_STATUS_LABEL[r.status as FeedbackStatus] ?? r.status}
                 </Badge>
+                {r.replyBody && (
+                  <Badge tone="accent" size="sm">
+                    返信済み
+                  </Badge>
+                )}
                 <span className="ml-auto text-[12px] text-text-tertiary">{r.createdAtLabel}</span>
               </div>
 
@@ -175,9 +328,21 @@ export function FeedbackTable({
                 )}
               </dl>
 
+              {r.replyBody && (
+                <div className="mt-2.5 rounded-xl border border-accent/25 bg-accent/5 px-3 py-2">
+                  <div className="text-[11px] font-semibold text-accent">
+                    送り主に見せている返信
+                    {r.repliedAtLabel ? ` ・ ${r.repliedAtLabel}` : ""}
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[12px] leading-relaxed">
+                    {r.replyBody}
+                  </p>
+                </div>
+              )}
+
               {r.adminNote && (
                 <p className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-[12px] leading-relaxed text-text-secondary">
-                  メモ: {r.adminNote}
+                  メモ（送り主には見せません）: {r.adminNote}
                 </p>
               )}
 
@@ -195,6 +360,16 @@ export function FeedbackTable({
                     </option>
                   ))}
                 </Select>
+                <Button
+                  size="sm"
+                  variant="tinted"
+                  onClick={() => {
+                    setReplyFor(replyFor === r.id ? null : r.id);
+                    setReply(r.replyBody ?? "");
+                  }}
+                >
+                  {r.replyBody ? "返信を直す" : "返信する"}
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -215,6 +390,37 @@ export function FeedbackTable({
                   </button>
                 )}
               </div>
+
+              {replyFor === r.id && (
+                <div className="mt-2.5 space-y-2 rounded-xl border border-accent/25 bg-accent/5 p-3">
+                  <p className="text-[11px] leading-relaxed text-text-secondary">
+                    ここに書いた文は送り主にそのまま届きます（アプリ内の通知と、
+                    {r.contactEmail ? `メール ${r.contactEmail}` : "返信先の記入が無いためメールは送られません"}
+                    ）。内部の記録は「メモ」にお書きください。
+                  </p>
+                  <Textarea
+                    value={reply}
+                    aria-label="送り主への返信"
+                    placeholder="例: ご報告ありがとうございます。ご指摘の不具合を修正し、次回の更新で反映します。"
+                    rows={4}
+                    onChange={(e) => setReply(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" disabled={pending} onClick={() => sendReply(r.id, "DONE")}>
+                      返信して対応済みにする
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={pending}
+                      onClick={() => sendReply(r.id, "READING")}
+                      title="途中経過を伝えるとき"
+                    >
+                      返信して確認中のままにする
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {noteFor === r.id && (
                 <div className="mt-2.5 space-y-2">

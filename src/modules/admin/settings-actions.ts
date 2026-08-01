@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { adminAction } from "@/lib/safe-action";
 import { SETTING_DEFAULTS } from "@/lib/settings";
-import { writeAudit } from "./audit";
+import { writeAudit } from "@/lib/audit";
 
 /** 機能フラグの登録・更新。 */
 export const upsertFlag = adminAction(

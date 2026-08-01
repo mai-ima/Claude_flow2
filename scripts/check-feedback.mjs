@@ -86,10 +86,63 @@ const map = new Map(rows.map((r) => [r.status, r._count._all]));
 check("未読の件数を数えられる", (map.get("NEW") ?? 0) === 1, `${map.get("NEW") ?? 0}件`);
 check("確認中の件数を数えられる", (map.get("READING") ?? 0) === 1);
 
+// ── 送り主への返信 ─────────────────────────────────
+await db.feedback.update({
+  where: { id: fb.id },
+  data: {
+    replyBody: "ご報告ありがとうございます。次回の更新で修正します。",
+    repliedAt: new Date(),
+    status: "DONE",
+  },
+});
+const replied = await db.feedback.findUnique({ where: { id: fb.id } });
+check("返信を保存できる", replied.replyBody?.includes("次回の更新"));
+check("返信すると対応済みになる", replied.status === "DONE");
+check(
+  "内部メモと返信は別の欄に入る（取り違えない）",
+  replied.adminNote === "再現を確認中" && replied.replyBody !== replied.adminNote,
+);
+
+// 送り主が見る一覧には内部メモを含めない。
+const asUser = await db.feedback.findMany({
+  where: { userId: user.id },
+  select: { id: true, body: true, status: true, replyBody: true, repliedAt: true },
+});
+check(
+  "送り主の一覧に内部メモが混ざらない",
+  asUser.every((r) => !("adminNote" in r)),
+);
+check("送り主の一覧から返信が読める", asUser.some((r) => r.replyBody?.includes("次回の更新")));
+
+// アプリ内通知が作られること（返信の合図）。
+const notif = await db.notification.create({
+  data: {
+    userId: user.id,
+    type: "FEEDBACK",
+    title: "お送りいただいたご報告に返信があります",
+    body: "ご報告ありがとうございます。",
+    href: "/settings/feedback",
+  },
+});
+check("返信の通知を作れる", notif.type === "FEEDBACK" && notif.href === "/settings/feedback");
+
+// ── まとめて対応状況を変える ───────────────────────
+const bulkTargets = await Promise.all([
+  db.feedback.create({ data: { kind: "OTHER", body: "まとめ1", userId: user.id } }),
+  db.feedback.create({ data: { kind: "OTHER", body: "まとめ2", userId: user.id } }),
+]);
+const bulk = await db.feedback.updateMany({
+  where: { id: { in: bulkTargets.map((r) => r.id) } },
+  data: { status: "WONTFIX", handledByUserId: admin.id, handledAt: new Date() },
+});
+check("まとめて対応状況を変えられる", bulk.count === 2, `${bulk.count}件`);
+await db.feedback.deleteMany({ where: { id: { in: bulkTargets.map((r) => r.id) } } });
+
 // ── 退会しても内容は残る ───────────────────────────
 await db.user.delete({ where: { id: user.id } });
 const afterLeave = await db.feedback.findUnique({ where: { id: fb.id } });
 check("退会しても報告は残る", afterLeave !== null);
+check("返信も残る", afterLeave.replyBody?.includes("次回の更新"));
 check("送り主だけ null になる", afterLeave.userId === null);
 check("本文は消えない", afterLeave.body.includes("保存を押しても"));
 

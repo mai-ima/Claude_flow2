@@ -1,11 +1,15 @@
 import "server-only";
 import { headers } from "next/headers";
-import { db } from "@/lib/db";
-import { logger } from "@/lib/logger";
-import type { SessionUser } from "@/lib/auth";
+import { db } from "./db";
+import { logger } from "./logger";
+import type { SessionUser } from "./auth";
 
 /**
  * 管理操作の証跡。
+ *
+ * ここに置いているのは、証跡を残すのが admin モジュール固有の仕事では
+ * ないため。ご意見への対応など、他のモジュールの管理操作も同じ台帳に
+ * 書く必要がある。モジュール同士を直接つながせないための置き場でもある。
  *
  * 対象が削除されたあとも「誰を消したのか」が分かる必要があるため、
  * 参照ではなくスナップショット（actorEmail / targetLabel）で持つ。
@@ -26,7 +30,10 @@ export type AuditAction =
   | "RELEASE_NOTE_PUBLISH"
   | "FEATURE_FLAG_CHANGE"
   | "SYSTEM_SETTING_CHANGE"
-  | "STRIPE_SYNC";
+  | "STRIPE_SYNC"
+  | "LOG_PURGE"
+  | "FEEDBACK_REPLY"
+  | "FEEDBACK_DELETE";
 
 export interface AuditInput {
   actor: SessionUser;

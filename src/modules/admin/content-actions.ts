@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { adminAction } from "@/lib/safe-action";
-import { writeAudit } from "./audit";
+import { writeAudit } from "@/lib/audit";
 
 const sections = z.array(
   z.object({

@@ -49,3 +49,26 @@ export const updateFeedbackInput = z.object({
   adminNote: z.string().max(2000).optional().nullable(),
 });
 export const deleteFeedbackInput = z.object({ id: z.string() });
+
+/**
+ * 送り主への返信。
+ *
+ * adminNote（内部メモ）とは別の入力にする。同じ欄を使い回すと、
+ * 内部向けに書いた言葉がそのまま本人に届く事故がいつか起きる。
+ */
+export const replyFeedbackInput = z.object({
+  id: z.string(),
+  replyBody: z
+    .string()
+    .trim()
+    .min(1, "返信の内容を入力してください。")
+    .max(2000, "2000文字以内でお願いします。"),
+  /** 返信と同時に対応状況も変える。既定は「対応済み」。 */
+  status: FeedbackStatus.optional(),
+});
+
+/** まとめて状態を変える（未読を一気に片付けるため）。 */
+export const bulkUpdateFeedbackInput = z.object({
+  ids: z.array(z.string()).min(1).max(200),
+  status: FeedbackStatus,
+});

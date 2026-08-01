@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { adminAction } from "@/lib/safe-action";
 import { AdminRole } from "@/lib/admin-role";
-import { writeAudit } from "./audit";
+import { writeAudit } from "@/lib/audit";
 import { runReminders } from "@/lib/run-reminders";
 import { startImpersonation } from "@/lib/auth";
 

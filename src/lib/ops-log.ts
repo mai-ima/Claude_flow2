@@ -54,7 +54,14 @@ export async function finishCronRun(
 
 // ── メール送信 ──────────────────────────────
 
-export type EmailKind = "REMINDER" | "CONTACT" | "VERIFY" | "RESET" | "BROADCAST";
+export type EmailKind =
+  | "REMINDER"
+  | "CONTACT"
+  | "VERIFY"
+  | "RESET"
+  | "BROADCAST"
+  /** ご意見・不具合の報告への返信。 */
+  | "FEEDBACK";
 
 export async function recordEmail(input: {
   to: string;

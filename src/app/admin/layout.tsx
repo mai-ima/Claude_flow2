@@ -1,20 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  ShieldIcon,
-  ChartIcon,
-  UsersIcon,
-  LogoutIcon,
-  ClockIcon,
-  BoltIcon,
-  SparklesIcon,
-  BellIcon,
-  SlidersIcon,
-  CardIcon,
-  FlagIcon,
-} from "@/components/icons";
+import { ShieldIcon } from "@/components/icons";
 import { effectiveAdminRole, hasAdminRole, ADMIN_ROLE_LABEL } from "@/lib/admin-role";
+import { AdminNav } from "@/modules/admin/components/admin-nav";
+import { openFeedbackCount } from "@/modules/feedback/queries";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -24,11 +13,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/dashboard");
   }
 
+  // 手つかずの報告があることは、どの画面にいても分かるようにする。
+  // 「ご意見」を開かないと気づけないと、届いた声が放置される。
+  const openFeedback = await openFeedbackCount();
+
   return (
     <div className="min-h-screen bg-surface-0">
       <header className="sticky top-0 z-30 border-b border-border-subtle bg-glass backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-5">
-          <div className="flex items-center gap-2 font-semibold">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-5">
+          <div className="flex shrink-0 items-center gap-2 font-semibold">
             <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-pod text-white">
               <ShieldIcon size={18} />
             </span>
@@ -37,71 +30,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               {ADMIN_ROLE_LABEL[effectiveAdminRole(user.adminRole, user.isAdmin)]}
             </span>
           </div>
-          <nav className="flex items-center gap-1">
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <ChartIcon size={17} /> 概要
-            </Link>
-            <Link
-              href="/admin/users"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <UsersIcon size={17} /> ユーザー
-            </Link>
-            <Link
-              href="/admin/analytics"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <SparklesIcon size={17} /> 分析
-            </Link>
-            <Link
-              href="/admin/ops"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <BoltIcon size={17} /> 運用
-            </Link>
-            <Link
-              href="/admin/billing"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <CardIcon size={17} /> 課金
-            </Link>
-            <Link
-              href="/admin/content"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <BellIcon size={17} /> 配信
-            </Link>
-            <Link
-              href="/admin/feedback"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <FlagIcon size={17} /> ご意見
-            </Link>
-            <Link
-              href="/admin/settings"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <SlidersIcon size={17} /> 設定
-            </Link>
-            <Link
-              href="/admin/audit"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <ClockIcon size={17} /> 監査ログ
-            </Link>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[14px] text-text-secondary transition hover:bg-surface-2 hover:text-text-primary"
-            >
-              <LogoutIcon size={17} /> アプリへ
-            </Link>
-          </nav>
+          <div className="min-w-0 flex-1">
+            <AdminNav openFeedback={openFeedback} />
+          </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-5 py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-5 py-8">{children}</main>
     </div>
   );
 }

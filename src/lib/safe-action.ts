@@ -45,6 +45,12 @@ const ERROR_MESSAGES: Record<string, string> = {
     "オーナーになっている共有帳簿があります。先にオーナーを譲るか帳簿を削除してください。",
   ADMIN_FORBIDDEN: "この管理操作を行う権限がありません。",
   REASON_REQUIRED: "理由の入力が必要です。",
+  PURGE_NO_TARGET: "削除するものが選ばれていません。",
+  PURGE_AMBIGUOUS: "「選んで削除」と「まとめて削除」は同時に実行できません。",
+  PURGE_TOO_MANY: "一度に削除できるのは500件までです。分けて実行してください。",
+  AUDIT_NO_SELECTIVE_DELETE:
+    "監査ログは1件ずつ削除できません。証跡として残す必要があるため、古いものをまとめて削除する形のみ可能です。",
+  AUDIT_MIN_RETENTION: "監査ログは30日より新しいものを削除できません。",
   CONFIRM_MISMATCH: "確認の入力が一致しません。",
   IMPERSONATION_READONLY: "他のユーザーとして閲覧中は、変更操作を行えません。",
   INVALID_PASSWORD: "現在のパスワードが正しくありません。",

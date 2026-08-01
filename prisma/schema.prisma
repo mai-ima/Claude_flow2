@@ -345,6 +345,10 @@ model Feedback {
   status      String   @default("NEW")
   // 対応の記録。利用者には見せない。
   adminNote   String?
+  // 送り主に見せる返信。adminNote と分けているのは、内部のメモを
+  // 誤って本人に出さないため。列が同じなら、いつか必ず取り違える。
+  replyBody   String?
+  repliedAt   DateTime?
   handledByUserId String?
   handledBy   User?    @relation("FeedbackHandledBy", fields: [handledByUserId], references: [id], onDelete: SetNull)
   handledAt   DateTime?
@@ -353,6 +357,8 @@ model Feedback {
 
   @@index([status, createdAt])
   @@index([userId])
+  // 管理画面は種類での絞り込みと新着順が既定。
+  @@index([kind, createdAt])
 }
 
 /**
