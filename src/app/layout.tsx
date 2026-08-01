@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SITE } from "@/lib/seo";
 import { Providers } from "@/components/providers";
+import { ServiceWorkerRegistrar } from "@/components/app/service-worker";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -50,6 +51,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
