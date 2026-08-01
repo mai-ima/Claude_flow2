@@ -6,6 +6,8 @@ export const subscriptionInput = z.object({
   cycle: z.enum(["MONTHLY", "YEARLY", "WEEKLY", "QUARTERLY"]),
   status: z.enum(["ACTIVE", "PAUSED", "CANCELED", "TRIAL"]).default("ACTIVE"),
   nextRenewalAt: z.coerce.date(),
+  /** 使い始めた日。利用期間と累計支払額の見積りに使う（任意）。 */
+  startedAt: z.coerce.date().optional().nullable(),
   trialEndsAt: z.coerce.date().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   paymentMethodId: z.string().optional().nullable(),

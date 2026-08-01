@@ -85,6 +85,7 @@ export async function allPriceChanges(ledgerId: string, limit = 200) {
     take: limit,
   });
   return rows.map((r) => ({
+    id: r.id,
     subscriptionId: r.subscription.id,
     name: r.subscription.name,
     cycle: r.subscription.cycle,

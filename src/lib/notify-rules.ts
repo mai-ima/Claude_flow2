@@ -1,9 +1,11 @@
 import "server-only";
 import { db } from "./db";
 import { monthRange, daysSince, daysUntil } from "./date";
-import { formatMoney } from "./money";
+import { formatMoney, toYearlyAmount } from "./money";
+import type { BillingCycle } from "./enums";
 import { createNotificationsOnce, type NotificationDraft } from "./notify";
 import { detectWaste, WASTE_THRESHOLD_DAYS } from "@/modules/subscriptions/waste-detect";
+import { needsReview, REVIEW_INTERVAL_DAYS } from "@/modules/subscriptions/insights";
 import { percentDelta, perDayToGoal, unusedEvidence } from "./notify-evidence";
 
 /**
@@ -246,6 +248,70 @@ export async function notifyRecurringPosted(now: Date = new Date()): Promise<num
   }
 
   return createNotificationsOnce("RECURRING", drafts, 1, now);
+}
+
+/**
+ * 棚卸しを促す（REVIEW）。
+ *
+ * 判定は「最後に見直してから REVIEW_INTERVAL_DAYS 日たったか」だけ。
+ * 使用状況の推測はしない（C1）。件数と年額を書き、なぜ今なのかを示す。
+ *
+ * 帳簿ごとに1通にまとめる。1件ずつ送ると、サブスクが多い人ほど
+ * 通知で埋まって読まれなくなる。
+ */
+export async function notifySubscriptionReview(now: Date = new Date()): Promise<number> {
+  const subs = await db.subscription.findMany({
+    where: { status: { in: ["ACTIVE", "TRIAL"] }, ownerUserId: { not: null } },
+    select: {
+      id: true,
+      name: true,
+      amount: true,
+      cycle: true,
+      currency: true,
+      ledgerId: true,
+      ownerUserId: true,
+      lastReviewedAt: true,
+    },
+  });
+
+  // 帳簿ごとに、見直し時期が来ているものを集める。
+  const byLedger = new Map<
+    string,
+    { userId: string; ledgerId: string; currency: string; names: string[]; yearly: number }
+  >();
+  for (const s of subs) {
+    if (!needsReview(s.lastReviewedAt, now)) continue;
+    const g = byLedger.get(s.ledgerId) ?? {
+      userId: s.ownerUserId!,
+      ledgerId: s.ledgerId,
+      currency: s.currency,
+      names: [],
+      yearly: 0,
+    };
+    g.names.push(s.name);
+    g.yearly += toYearlyAmount(s.amount, s.cycle as BillingCycle);
+    byLedger.set(s.ledgerId, g);
+  }
+
+  const drafts: NotificationDraft[] = [];
+  for (const g of byLedger.values()) {
+    // 名前を全部並べると本文が長くなる。先頭3件と残数にする。
+    const head = g.names.slice(0, 3).join("、");
+    const rest = g.names.length > 3 ? ` ほか${g.names.length - 3}件` : "";
+    drafts.push({
+      userId: g.userId,
+      ledgerId: g.ledgerId,
+      type: "REVIEW",
+      title: "サブスクの見直し時期です",
+      body:
+        `${g.names.length}件が、最後の見直しから${REVIEW_INTERVAL_DAYS}日以上たっています` +
+        `（${head}${rest}）。合計は年 ${formatMoney(g.yearly, g.currency)} です。`,
+      href: "/subscriptions?review=1",
+    });
+  }
+
+  // 知らせるのは棚卸しの間隔と同じ周期で十分。毎日蒸し返さない。
+  return createNotificationsOnce("REVIEW", drafts, REVIEW_INTERVAL_DAYS, now);
 }
 
 /** 当月の実支出（予算タブ等と同じ範囲）。将来の通知で使う共通部品。 */

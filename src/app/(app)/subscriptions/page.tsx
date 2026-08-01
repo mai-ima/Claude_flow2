@@ -12,6 +12,8 @@ import { listCategories, listPaymentMethods } from "@/modules/transactions/queri
 import {
   detectWaste,
   wasteMessage,
+  needsReview,
+  usagePeriod,
   SubscriptionsClient,
   type SubItem,
   type StackGroup,
@@ -27,7 +29,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({ title: "サブスク管理", noindex: true });
 
 export default async function SubscriptionsPage() {
-  const { ledgerId, canEdit, tier, currency } = await getAppContext();
+  const { ledgerId, canEdit, tier, currency, user } = await getAppContext();
 
   const [subs, totals, byPayment, categories, paymentMethods] = await Promise.all([
     listSubscriptions(ledgerId),
@@ -72,6 +74,10 @@ export default async function SubscriptionsPage() {
         newAmount: c.newAmount,
         increase: c.newAmount > c.oldAmount,
       })),
+      // Date のままクライアントへ渡さない（画面では相対表記しか使わない）。
+      lastReviewedAt: s.lastReviewedAt ? s.lastReviewedAt.toISOString() : null,
+      needsReview: needsReview(s.lastReviewedAt),
+      usageLabel: usagePeriod(s.startedAt)?.label ?? null,
       edit: {
         id: s.id,
         name: s.name,
@@ -79,6 +85,7 @@ export default async function SubscriptionsPage() {
         cycle,
         status: s.status as SubItem["edit"]["status"],
         nextRenewalAt: toDateInput(s.nextRenewalAt),
+        startedAt: s.startedAt ? toDateInput(s.startedAt) : "",
         trialEndsAt: s.trialEndsAt ? toDateInput(s.trialEndsAt) : "",
         categoryId: s.categoryId ?? "",
         paymentMethodId: s.paymentMethodId ?? "",
@@ -162,6 +169,7 @@ export default async function SubscriptionsPage() {
         isPro={tier === "PRO"}
         canUseReminders={canUse(tier, "reminders")}
         subLimit={PLANS[tier].maxSubscriptions}
+        hourlyWage={user.assumedHourlyWage}
       />
 
       <AdSlot

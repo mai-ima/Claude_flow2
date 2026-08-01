@@ -40,6 +40,7 @@ export const NotificationType = z.enum([
   "BUDGET",
   "PRICE_CHANGE",
   "TRIAL_END",
+  "REVIEW",
 ]);
 export type NotificationType = z.infer<typeof NotificationType>;
 

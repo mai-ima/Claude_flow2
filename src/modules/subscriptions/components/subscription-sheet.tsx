@@ -11,11 +11,19 @@ import { Switch } from "@/components/ui/switch";
 import { ButtonLink } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { BellIcon } from "@/components/icons";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatWorkTime } from "@/lib/money";
 import { toDateInput } from "@/lib/date";
 import { CYCLE_LABEL, STATUS_LABEL } from "@/lib/enums";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { createSubscription, updateSubscription } from "../actions";
+import {
+  cancelImpact,
+  usagePeriod,
+  estimatedTotalPaid,
+  reviewAge,
+  needsReview,
+  REVIEW_INTERVAL_DAYS,
+} from "../insights";
 
 export interface SubFormValue {
   id?: string;
@@ -24,6 +32,8 @@ export interface SubFormValue {
   cycle: "MONTHLY" | "YEARLY" | "WEEKLY" | "QUARTERLY";
   status: "ACTIVE" | "PAUSED" | "CANCELED" | "TRIAL";
   nextRenewalAt: string;
+  /** 使い始めた日（任意）。空なら利用期間・累計は出せない。 */
+  startedAt: string;
   trialEndsAt: string;
   categoryId: string;
   paymentMethodId: string;
@@ -49,6 +59,7 @@ function defaults(): SubFormValue {
     cycle: "MONTHLY",
     status: "ACTIVE",
     nextRenewalAt: toDateInput(d),
+    startedAt: "",
     trialEndsAt: "",
     categoryId: "",
     paymentMethodId: "",
@@ -68,6 +79,8 @@ export function SubscriptionSheet({
   currency = "JPY",
   canUseReminders = false,
   priceHistory = [],
+  lastReviewedAt = null,
+  hourlyWage = null,
 }: {
   open: boolean;
   onClose: () => void;
@@ -77,6 +90,10 @@ export function SubscriptionSheet({
   currency?: string;
   canUseReminders?: boolean;
   priceHistory?: { dateLabel: string; oldAmount: number; newAmount: number; increase: boolean }[];
+  /** 最後に見直した日（ISO 文字列）。未見直しなら null。 */
+  lastReviewedAt?: string | null;
+  /** 想定時給。設定されていれば解約額を労働時間に換算する。 */
+  hourlyWage?: number | null;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -113,6 +130,7 @@ export function SubscriptionSheet({
         cycle: v.cycle,
         status: v.status,
         nextRenewalAt: new Date(v.nextRenewalAt),
+        startedAt: v.startedAt ? new Date(v.startedAt) : null,
         trialEndsAt: v.status === "TRIAL" && v.trialEndsAt ? new Date(v.trialEndsAt) : null,
         categoryId: v.categoryId || null,
         paymentMethodId: v.paymentMethodId || null,
@@ -205,13 +223,22 @@ export function SubscriptionSheet({
           )}
         </p>
 
-        <Field label="次回更新日">
-          <Input
-            type="date"
-            value={v.nextRenewalAt}
-            onChange={(e) => setV((s) => ({ ...s, nextRenewalAt: e.target.value }))}
-          />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="次回更新日">
+            <Input
+              type="date"
+              value={v.nextRenewalAt}
+              onChange={(e) => setV((s) => ({ ...s, nextRenewalAt: e.target.value }))}
+            />
+          </Field>
+          <Field label="使い始めた日" hint="任意。入れると利用期間が出ます。">
+            <Input
+              type="date"
+              value={v.startedAt}
+              onChange={(e) => setV((s) => ({ ...s, startedAt: e.target.value }))}
+            />
+          </Field>
+        </div>
 
         <Field label="ステータス">
           <Segmented
@@ -236,6 +263,17 @@ export function SubscriptionSheet({
               終了が近づくと通知でお知らせします（リマインダー設定の日数を使用）。
             </p>
           </Field>
+        )}
+
+        {v.id && (
+          <DecisionPanel
+            amount={v.amount}
+            cycle={v.cycle}
+            startedAt={v.startedAt}
+            lastReviewedAt={lastReviewedAt}
+            hourlyWage={hourlyWage}
+            currency={currency}
+          />
         )}
 
         {priceHistory.length > 0 && (
@@ -341,5 +379,85 @@ export function SubscriptionSheet({
         {error && <p className="text-[13px] text-expense">{error}</p>}
       </div>
     </Sheet>
+  );
+}
+
+/**
+ * 続けるか止めるかを決めるための材料。
+ *
+ * 結論は書かない。「解約すべき」と言われても確かめようがない。
+ * いくら払ってきて、やめると年いくら浮くのか、数字だけを並べる。
+ * 入力中の金額に追従するので、値上げ後の額を入れて効きを見ることもできる。
+ */
+function DecisionPanel({
+  amount,
+  cycle,
+  startedAt,
+  lastReviewedAt,
+  hourlyWage,
+  currency,
+}: {
+  amount: number;
+  cycle: SubFormValue["cycle"];
+  startedAt: string;
+  lastReviewedAt: string | null;
+  hourlyWage: number | null;
+  currency: string;
+}) {
+  const started = startedAt ? new Date(startedAt) : null;
+  const reviewed = lastReviewedAt ? new Date(lastReviewedAt) : null;
+  const period = usagePeriod(started);
+  const paid = estimatedTotalPaid(amount, cycle, started);
+  const impact = cancelImpact(amount, cycle, hourlyWage);
+  const age = reviewAge(reviewed);
+  const due = needsReview(reviewed);
+
+  return (
+    <div className="rounded-xl bg-surface-2 px-4 py-3">
+      <div className="mb-2 text-[13px] font-medium text-text-secondary">判断のための数字</div>
+
+      <dl className="space-y-2">
+        <Row label="解約すると年間で">
+          <span className="font-semibold text-income">{formatMoney(impact.yearly, currency)}</span>
+          <span className="text-text-tertiary"> 浮きます</span>
+        </Row>
+        <Row label="月あたりに直すと">
+          {formatMoney(impact.monthly, currency)}
+        </Row>
+        {impact.workMinutes !== null && (
+          <Row label="年額を働く時間に直すと">
+            {formatWorkTime(impact.workMinutes)}
+          </Row>
+        )}
+        <Row label="使っている期間">
+          {period ? period.label : <span className="text-text-tertiary">使い始めた日が未記入</span>}
+        </Row>
+        <Row label="これまでの支払い（およそ）">
+          {paid !== null ? (
+            formatMoney(paid, currency)
+          ) : (
+            <span className="text-text-tertiary">使い始めた日が未記入</span>
+          )}
+        </Row>
+        <Row label="最後に見直したのは">
+          {age ? age.label : <span className="text-text-tertiary">まだ見直していません</span>}
+          {due && <span className="ml-1.5 text-warning">見直しどき</span>}
+        </Row>
+      </dl>
+
+      <p className="mt-2.5 text-[11px] leading-relaxed text-text-tertiary">
+        支払いの合計は「いまの金額 × 経過した月数」の見積りです。途中で金額が
+        変わっていた場合はずれます。見直しは{REVIEW_INTERVAL_DAYS}日ごとを目安にしています。
+      </p>
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 text-[13px]">
+      <dt className="shrink-0 text-text-tertiary">{label}</dt>
+      <dd className="min-w-0 text-right tabular-nums">{children}</dd>
+    </div>
   );
 }

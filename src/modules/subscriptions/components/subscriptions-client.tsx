@@ -20,11 +20,13 @@ import {
   TrashIcon,
   SparklesIcon,
   CardIcon,
+  ChartIcon,
 } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { gradientOf } from "@/lib/colors";
 import { cn } from "@/lib/cn";
 import { Fab } from "@/components/ui/fab";
+import { REVIEW_INTERVAL_DAYS } from "../insights";
 
 export interface SubItem {
   id: string;
@@ -48,6 +50,12 @@ export interface SubItem {
   trialEndsLabel: string | null;
   trialDaysLeft: number | null;
   priceHistory: { dateLabel: string; oldAmount: number; newAmount: number; increase: boolean }[];
+  /** 最後に見直した日（ISO 文字列）。未見直しなら null。 */
+  lastReviewedAt: string | null;
+  /** 見直しの間隔を過ぎているか。 */
+  needsReview: boolean;
+  /** 「2年3ヶ月」のような利用期間。開始日が未記入なら null。 */
+  usageLabel: string | null;
   edit: SubFormValue;
 }
 
@@ -82,6 +90,7 @@ export function SubscriptionsClient({
   isPro,
   canUseReminders = false,
   subLimit = null,
+  hourlyWage = null,
 }: {
   items: SubItem[];
   stack: { groups: StackGroup[]; unassigned: StackGroup | null };
@@ -94,6 +103,8 @@ export function SubscriptionsClient({
   isPro: boolean;
   canUseReminders?: boolean;
   subLimit?: number | null;
+  /** 想定時給。解約額を労働時間に換算するのに使う（未設定なら換算しない）。 */
+  hourlyWage?: number | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -109,18 +120,25 @@ export function SubscriptionsClient({
   );
   const [editing, setEditing] = useState<SubFormValue | undefined>();
   const [editingHistory, setEditingHistory] = useState<SubItem["priceHistory"]>([]);
-  const [reviewing, setReviewing] = useState(false);
+  const [editingReviewedAt, setEditingReviewedAt] = useState<string | null>(null);
+  // 棚卸しの通知から来たときは、そのまま仕分けを開く（?review=1）。
+  // 押してからもう一度「始める」を探させない。
+  const [reviewing, setReviewing] = useState(
+    () => isPro && searchParams.get("review") === "1",
+  );
   const [, start] = useTransition();
 
   function openAdd() {
     setEditing(undefined);
     setEditingHistory([]);
+    setEditingReviewedAt(null);
     setSheetOpen(true);
   }
   function openEdit(it: SubItem) {
     if (!canEdit) return;
     setEditing(it.edit);
     setEditingHistory(it.priceHistory);
+    setEditingReviewedAt(it.lastReviewedAt);
     setSheetOpen(true);
   }
   function used(id: string) {
@@ -159,8 +177,14 @@ export function SubscriptionsClient({
       return a.daysUntil - b.daysUntil; // renewal（近い順）
     });
 
-  const reviewItems: ReviewItem[] = items
-    .filter((it) => it.status === "ACTIVE" || it.status === "TRIAL")
+  const reviewTargets = items.filter((it) => it.status === "ACTIVE" || it.status === "TRIAL");
+  // 見直し時期が来ているものから先に出す。同じ順位なら金額の大きい順。
+  // 全部を毎回さらうと途中で止まるため、効きの大きいものを先に見せる。
+  const reviewItems: ReviewItem[] = [...reviewTargets]
+    .sort((a, b) => {
+      if (a.needsReview !== b.needsReview) return a.needsReview ? -1 : 1;
+      return b.yearly - a.yearly;
+    })
     .map((it) => ({
       id: it.id,
       name: it.name,
@@ -171,6 +195,8 @@ export function SubscriptionsClient({
       cancelUrl: it.cancelUrl,
       cancelSteps: it.cancelSteps,
     }));
+  const dueCount = reviewTargets.filter((it) => it.needsReview).length;
+  const hasPriceChanges = items.some((it) => it.priceHistory.length > 0);
 
   const remaining = subLimit !== null ? subLimit - items.length : null;
   const nearLimit = remaining !== null && remaining <= 1;
@@ -229,7 +255,11 @@ export function SubscriptionsClient({
             サブスク・レビュー
             {!isPro && <Badge tone="pod" size="sm">PRO</Badge>}
           </div>
-          <p className="text-[13px] text-text-secondary">1件ずつ仕分けして、固定費を見直す。</p>
+          <p className="text-[13px] text-text-secondary">
+            {dueCount > 0
+              ? `${dueCount}件が、最後の見直しから${REVIEW_INTERVAL_DAYS}日以上たっています。`
+              : "1件ずつ仕分けして、固定費を見直す。"}
+          </p>
         </div>
         {isPro ? (
           <Button size="sm" onClick={() => setReviewing(true)} disabled={reviewItems.length === 0}>
@@ -241,6 +271,23 @@ export function SubscriptionsClient({
           </ButtonLink>
         )}
       </Card>
+
+      {hasPriceChanges && (
+        <Card className="mb-5 flex items-center gap-3 p-4">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-secondary">
+            <ChartIcon size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-semibold">価格の変更</div>
+            <p className="text-[13px] text-text-secondary">
+              値上げ・値下げを、年額でいくら変わったかの順に並べます。
+            </p>
+          </div>
+          <ButtonLink href="/subscriptions/price-changes" size="sm" variant="tinted">
+            見る
+          </ButtonLink>
+        </Card>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <Segmented<"list" | "stack" | "calendar">
@@ -316,12 +363,16 @@ export function SubscriptionsClient({
                       {it.priceIncrease && (
                         <Badge tone="expense" size="sm">値上げ</Badge>
                       )}
+                      {it.needsReview && it.status !== "CANCELED" && (
+                        <Badge tone="warning" size="sm">見直しどき</Badge>
+                      )}
                     </span>
                     <span className="block truncate text-[12px] text-text-tertiary">
                       {it.status === "TRIAL" && it.trialDaysLeft !== null && it.trialDaysLeft >= 0
                         ? `体験終了まであと${it.trialDaysLeft}日`
                         : `${it.cycleLabel} ・ 次回 ${it.nextRenewalLabel}`}
                       {it.paymentName ? ` ・ ${it.paymentName}` : ""}
+                      {it.usageLabel ? ` ・ 利用${it.usageLabel}` : ""}
                     </span>
                   </span>
                 </button>
@@ -430,6 +481,8 @@ export function SubscriptionsClient({
         currency={currency}
         canUseReminders={canUseReminders}
         priceHistory={editingHistory}
+        lastReviewedAt={editingReviewedAt}
+        hourlyWage={hourlyWage}
       />
 
       {reviewing && (

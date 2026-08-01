@@ -2,6 +2,7 @@
 export * from "./schema";
 export * from "./waste-detect";
 export * from "./renewal";
+export * from "./insights";
 export {
   createSubscription,
   updateSubscription,
@@ -16,3 +17,7 @@ export {
 } from "./components/subscriptions-client";
 export { SubscriptionSheet, type SubFormValue } from "./components/subscription-sheet";
 export { SubscriptionReview, type ReviewItem } from "./components/subscription-review";
+export {
+  PriceChangesClient,
+  type PriceChangeView,
+} from "./components/price-changes-client";

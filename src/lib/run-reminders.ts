@@ -16,6 +16,7 @@ import {
   notifyWeeklySummary,
   notifyGoals,
   notifyRecurringPosted,
+  notifySubscriptionReview,
 } from "./notify-rules";
 import { sendEmail, emailLayout, escapeHtml } from "./email";
 import { formatMoney } from "./money";
@@ -58,6 +59,7 @@ export async function runReminders(
       weeklySummaries,
       goalAlerts,
       recurringAlerts,
+      reviewAlerts,
     ] = await Promise.all([
       notifyDueRenewals(now, reminders),
       notifyBudgetOverages(now),
@@ -68,6 +70,7 @@ export async function runReminders(
       notifyWeeklySummary(now),
       notifyGoals(now),
       notifyRecurringPosted(now),
+      notifySubscriptionReview(now),
     ]);
 
     // 期限切れの使い捨てトークンを片付ける。放っておくと使えない行が
@@ -126,6 +129,7 @@ export async function runReminders(
       weeklySummaries,
       goalAlerts,
       recurringAlerts,
+      reviewAlerts,
       emailsSent,
       reminders: reminders.length,
       emailEnabled: isEmailEnabled,

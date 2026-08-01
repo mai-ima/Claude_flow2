@@ -11,6 +11,7 @@ import {
   WalletIcon,
   ArrowUpIcon,
   ClockIcon,
+  SlidersIcon,
 } from "@/components/icons";
 import { markAllRead, markRead } from "@/modules/notifications/actions";
 import { cn } from "@/lib/cn";
@@ -33,6 +34,7 @@ function iconFor(type: string) {
   if (type === "BUDGET") return WalletIcon;
   if (type === "PRICE_CHANGE") return ArrowUpIcon;
   if (type === "TRIAL_END") return ClockIcon;
+  if (type === "REVIEW") return SlidersIcon;
   return SparklesIcon;
 }
 
