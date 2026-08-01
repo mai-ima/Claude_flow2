@@ -14,6 +14,7 @@ import { UsersIcon, SwapIcon, TrashIcon, PlusIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
 import { MEMBER_ROLE_LABEL, type MemberRole } from "@/lib/enums";
 import { recordSettlement, deleteSettlement, updateShareRatios } from "../actions";
+import { fromInputJST } from "@/lib/date";
 
 export interface SettlementMemberView {
   userId: string;
@@ -100,7 +101,7 @@ export function SettlementClient({
         fromUserId: form.fromUserId,
         toUserId: form.toUserId,
         amount: form.amount,
-        settledAt: new Date(form.settledAt),
+        settledAt: fromInputJST(form.settledAt),
         memo: form.memo || null,
       });
       if (!res.ok) {

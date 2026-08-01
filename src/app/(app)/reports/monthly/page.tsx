@@ -12,7 +12,7 @@ import { listBudgetsWithSpending } from "@/modules/budgets/queries";
 import { subscriptionTotals } from "@/modules/subscriptions/queries";
 import { MonthlyReport } from "@/modules/transactions";
 import { healthScore } from "@/lib/health-score";
-import { formatMonth } from "@/lib/date";
+import { formatMonth, addMonthsJST } from "@/lib/date";
 import { savingsRate } from "@/lib/insight";
 import { pageMetadata } from "@/lib/seo";
 
@@ -56,8 +56,8 @@ export default async function MonthlyReportPage({
     daysInMonth: activity.elapsedDays,
   });
 
-  const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
-  const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  const prevMonth = addMonthsJST(month, -1);
+  const nextMonth = addMonthsJST(month, 1);
   const latestAsset = assets.length > 0 ? assets[assets.length - 1] : null;
 
   return (

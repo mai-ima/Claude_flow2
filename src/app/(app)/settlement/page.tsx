@@ -4,7 +4,7 @@ import { getAppContext, resolveMonth, monthParam } from "@/lib/app-context";
 import { PageHeader, PageContainer } from "@/components/app/page-header";
 import { settlementView } from "@/modules/ledgers/queries";
 import { SettlementClient } from "@/modules/ledgers";
-import { formatDate, formatMonth, todayLocal } from "@/lib/date";
+import { formatDate, formatMonth, todayLocal, addMonthsJST } from "@/lib/date";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({ title: "精算", noindex: true });
@@ -19,8 +19,10 @@ export default async function SettlementPage({
   const month = resolveMonth(m);
   const view = await settlementView(ledgerId, month);
 
-  const prev = new Date(month.getFullYear(), month.getMonth() - 1, 1);
-  const next = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  // 月の前後は日本時間の暦で数える。ローカルの年月で数えると、
+  // サーバーが UTC のとき月アンカーが前月末に見えてひと月ずれる。
+  const prev = addMonthsJST(month, -1);
+  const next = addMonthsJST(month, 1);
 
   return (
     <PageContainer width="list">

@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { BellIcon, TrashIcon, DownloadIcon } from "@/components/icons";
+import { dateKeyJST } from "@/lib/date";
 import {
   updateFeedback,
   deleteFeedback,
@@ -198,7 +199,7 @@ export function FeedbackTable({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `feedback-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `feedback-${dateKeyJST(new Date())}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

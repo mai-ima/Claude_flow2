@@ -6,6 +6,7 @@ import { tierAtLeast } from "@/lib/plans";
 import { rateLimit } from "@/lib/rate-limit";
 import type { PlanTier } from "@/lib/enums";
 import { API_MESSAGE } from "@/lib/api-messages";
+import { dateKeyJST } from "@/lib/date";
 
 /**
  * CSV の1セルを安全に整形する。
@@ -46,7 +47,8 @@ export async function GET() {
 
   const header = ["日付", "種別", "金額", "通貨", "カテゴリ", "支払い方法", "メモ"];
   const rows = txns.map((t) => [
-    t.occurredAt.toISOString().slice(0, 10),
+    // toISOString は UTC。日本時間 8/1 の記録が 7/31 として出ていた。
+    dateKeyJST(t.occurredAt),
     t.type === "INCOME" ? "収入" : "支出",
     String(t.amount),
     t.currency,

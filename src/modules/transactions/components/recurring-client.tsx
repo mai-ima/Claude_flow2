@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CategoryIcon, RepeatIcon, TrashIcon, EditIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
-import { todayLocal } from "@/lib/date";
+import { todayLocal, fromInputJST } from "@/lib/date";
 import { CYCLE_LABEL, type BillingCycle } from "@/lib/enums";
 import { cn } from "@/lib/cn";
 import { Fab } from "@/components/ui/fab";
@@ -126,7 +126,7 @@ export function RecurringClient({
         type: v.type,
         amount: v.amount,
         cycle: v.cycle,
-        nextRunAt: new Date(v.nextRunAt),
+        nextRunAt: fromInputJST(v.nextRunAt),
         categoryId: v.categoryId || null,
         paymentMethodId: v.paymentMethodId || null,
         memo: v.memo || null,

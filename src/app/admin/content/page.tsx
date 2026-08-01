@@ -5,6 +5,7 @@ import { allReleases } from "@/modules/releases/queries";
 import { BroadcastForm } from "@/modules/admin/components/broadcast-form";
 import { BannerManager } from "@/modules/admin/components/banner-manager";
 import { pageMetadata } from "@/lib/seo";
+import { dateTimeInputJST } from "@/lib/date";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = pageMetadata({ title: "コンテンツ運用", noindex: true });
@@ -46,8 +47,10 @@ export default async function AdminContentPage() {
             message: b.message,
             href: b.href,
             tone: b.tone as "INFO" | "WARNING" | "CRITICAL",
-            startsAt: b.startsAt.toISOString().slice(0, 16),
-            endsAt: b.endsAt.toISOString().slice(0, 16),
+            // toISOString は UTC。管理者が日本時間で入れた 9:00 が
+            // 0:00 と表示され、開くたびに9時間ずれていた。
+            startsAt: dateTimeInputJST(b.startsAt),
+            endsAt: dateTimeInputJST(b.endsAt),
           }))}
         />
       </section>

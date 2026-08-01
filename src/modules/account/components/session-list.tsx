@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { formatJST } from "@/lib/date";
 import { revokeSessionAction, revokeOtherSessionsAction } from "../actions";
 
 export interface SessionItem {
@@ -26,7 +27,8 @@ function relative(iso: string): string {
   if (hour < 24) return `${hour}時間前`;
   const day = Math.floor(hour / 24);
   if (day < 31) return `${day}日前`;
-  return new Date(iso).toLocaleDateString("ja-JP");
+  // 31日を超えたら日付で出す。端末の時間帯ではなく日本時間で揃える。
+  return formatJST(iso, "date");
 }
 
 export function SessionList({ sessions }: { sessions: SessionItem[] }) {

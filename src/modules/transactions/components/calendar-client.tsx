@@ -11,7 +11,13 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { CategoryIcon, PlusIcon, TrashIcon, EditIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
-import { buildCalendarWeeks, toDateInput, formatDate, parseDateInput } from "@/lib/date";
+import {
+  buildCalendarWeeks,
+  toDateInput,
+  dateKeyJST,
+  formatCalendarDay,
+  parseDateInput,
+} from "@/lib/date";
 import { cn } from "@/lib/cn";
 import { Fab } from "@/components/ui/fab";
 
@@ -105,7 +111,9 @@ export function CalendarClient({
   const totalsByDate = new Map(days.map((d) => [d.date, d]));
   const itemsByDate = new Map<string, TxnListItem[]>();
   for (const it of items) {
-    const key = toDateInput(new Date(it.occurredAt));
+    // 集計側（サーバー）と同じ切り方にする。端末の時間帯で切ると、
+    // 日本以外の設定の端末で明細がひとつ隣の日に入る。
+    const key = dateKeyJST(new Date(it.occurredAt));
     const arr = itemsByDate.get(key) ?? [];
     arr.push(it);
     itemsByDate.set(key, arr);
@@ -136,7 +144,7 @@ export function CalendarClient({
       id: it.id,
       type: it.type,
       amount: it.amount,
-      occurredAt: toDateInput(new Date(it.occurredAt)),
+      occurredAt: dateKeyJST(new Date(it.occurredAt)),
       categoryId: it.categoryId ?? "",
       categoryName: it.categoryName,
       paymentMethodId: it.paymentMethodId ?? "",
@@ -199,7 +207,7 @@ export function CalendarClient({
                 key={key}
                 type="button"
                 onClick={() => setSelected(key)}
-                aria-label={`${formatDate(day, "M月d日")}を表示`}
+                aria-label={`${formatCalendarDay(day, "M月d日")}を表示`}
                 aria-current={isSelected ? "date" : undefined}
                 className={cn(
                   "min-h-[60px] min-w-0 border-b border-r border-border-subtle p-1 text-left align-top transition-colors duration-[var(--dur-1)] ease-spring",
@@ -268,7 +276,7 @@ export function CalendarClient({
       <div className="mt-5">
         <div className="mb-1.5 flex items-center justify-between px-1">
           <span className="text-[13px] font-medium text-text-tertiary">
-            {formatDate(parseDateInput(selected), "M月d日(E)")}
+            {formatCalendarDay(parseDateInput(selected), "M月d日(E)")}
           </span>
           {canEdit && (
             <button

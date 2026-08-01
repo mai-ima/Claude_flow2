@@ -1,7 +1,6 @@
 import "server-only";
-import { subMonths } from "date-fns";
 import { db } from "@/lib/db";
-import { monthRange } from "@/lib/date";
+import { monthRange, addMonthsJST } from "@/lib/date";
 
 /**
  * 直近 N ヶ月（当月を除く）のカテゴリ別・全体の平均支出を返す（予算の自動提案用）。
@@ -13,8 +12,8 @@ export async function categoryAverages(
   now: Date = new Date(),
 ): Promise<{ byCategory: Record<string, number>; total: number }> {
   const period = Math.max(1, months);
-  const start = monthRange(subMonths(now, period)).start; // N ヶ月前の月初
-  const end = monthRange(subMonths(now, 1)).end; // 前月末（当月は除外）
+  const start = monthRange(addMonthsJST(now, -period)).start; // N ヶ月前の月初
+  const end = monthRange(addMonthsJST(now, -1)).end; // 前月末（当月は除外）
 
   const [byCat, totalAgg] = await Promise.all([
     db.transaction.groupBy({

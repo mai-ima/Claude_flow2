@@ -12,9 +12,26 @@
  *   monthEndForecast / budgetInsight（残り日数）/ 日別集計
  *
  * TZ が外から与えられている場合はそれを尊重する。
+ *
+ * ここが効かなかった場合に黙って動き続けないよう、実際の時間帯を
+ * 確かめて記録に残す。/api/health からも現在の時間帯を確認できる。
+ * なお日付の切り出し・入力欄の値・書き出しは、この設定に頼らず
+ * src/lib/date.ts の日本時間の関数を通している（二重の備え）。
  */
+import { APP_TIME_ZONE } from "@/lib/date";
+import { logger } from "@/lib/logger";
+
 export function register() {
   if (!process.env.TZ) {
-    process.env.TZ = "Asia/Tokyo";
+    process.env.TZ = APP_TIME_ZONE;
+  }
+
+  const actual = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (actual !== APP_TIME_ZONE) {
+    logger.warn("時間帯が日本時間になっていません", {
+      expected: APP_TIME_ZONE,
+      actual,
+      TZ: process.env.TZ,
+    });
   }
 }

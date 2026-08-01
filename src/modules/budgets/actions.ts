@@ -7,6 +7,7 @@ import { getActiveLedgerId, requireLedgerMember, assertLedgerOwnedRefs } from "@
 import { canUse } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
 import { setBudgetInput, deleteBudgetInput } from "./schema";
+import { jstYearMonth, monthAnchorJST } from "@/lib/date";
 
 async function requireBudgetsFeature(userId: string) {
   const b = await db.billingProfile.findUnique({ where: { userId } });
@@ -15,11 +16,10 @@ async function requireBudgetsFeature(userId: string) {
   }
 }
 
+/** 今月の1日（日本時間）。予算の開始月として持つ。 */
 function thisMonthStart(): Date {
-  const d = new Date();
-  d.setDate(1);
-  d.setHours(0, 0, 0, 0);
-  return d;
+  const { year, month } = jstYearMonth(new Date());
+  return monthAnchorJST(year, month);
 }
 
 /**

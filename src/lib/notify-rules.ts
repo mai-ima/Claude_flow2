@@ -1,6 +1,13 @@
 import "server-only";
 import { db } from "./db";
-import { monthRange, daysSince, daysUntil } from "./date";
+import {
+  monthRange,
+  daysSince,
+  daysUntil,
+  dateKeyJST,
+  startOfDayJST,
+  dayOfWeekJST,
+} from "./date";
 import { formatMoney, toYearlyAmount } from "./money";
 import type { BillingCycle } from "./enums";
 import { createNotificationsOnce, type NotificationDraft } from "./notify";
@@ -105,10 +112,12 @@ export async function notifyPriceChanges(now: Date = new Date()): Promise<number
  */
 export async function notifyWeeklySummary(now: Date = new Date()): Promise<number> {
   // 月曜以外は作らない（毎日届くと通知の意味が薄れる）。
-  if (now.getDay() !== 1) return 0;
+  // 曜日は日本時間で見る。サーバーが UTC だと、日本時間の月曜の朝は
+  // まだ日曜と判定され、週のまとめが届かない。
+  if (dayOfWeekJST(now) !== 1) return 0;
 
   const dayMs = 24 * 60 * 60 * 1000;
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfToday = startOfDayJST(now);
   const thisWeekStart = new Date(startOfToday.getTime() - 7 * dayMs);
   const lastWeekStart = new Date(startOfToday.getTime() - 14 * dayMs);
 
@@ -133,7 +142,9 @@ export async function notifyWeeklySummary(now: Date = new Date()): Promise<numbe
   });
   const ledgerById = new Map(ledgers.map((l) => [l.id, l]));
 
-  const weekKey = startOfToday.toISOString().slice(0, 10);
+  // 重複抑止の鍵。UTC で切ると、日本時間の朝と夜で別の鍵になり、
+  // 同じ週のお知らせが2回届く。日本時間の日付で揃える。
+  const weekKey = dateKeyJST(startOfToday);
   const drafts: NotificationDraft[] = [];
   for (const row of thisWeek) {
     const ledger = ledgerById.get(row.ledgerId);
@@ -227,9 +238,7 @@ export async function notifyRecurringPosted(now: Date = new Date()): Promise<num
   });
   const ledgerById = new Map(ledgers.map((l) => [l.id, l]));
 
-  const dayKey = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    .toISOString()
-    .slice(0, 10);
+  const dayKey = dateKeyJST(now);
 
   const drafts: NotificationDraft[] = [];
   for (const p of posted) {

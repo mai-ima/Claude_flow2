@@ -5,6 +5,7 @@ import { getCurrentUser } from "./auth";
 import { getActiveLedger } from "./ledger-access";
 import type { MemberRole, PlanTier } from "./enums";
 import { isBetaEnabled, type BetaFeatureKey } from "./beta-features";
+import { jstYearMonth, monthAnchorJST } from "./date";
 
 /**
  * 認証済みページ用: ユーザー + アクティブ帳簿 + 権限 + プランをまとめて取得。
@@ -39,16 +40,23 @@ export const getAppContext = cache(async () => {
   };
 });
 
-/** searchParams から対象月を解決（?m=YYYY-MM）。 */
+/**
+ * searchParams から対象月を解決（?m=YYYY-MM）。
+ *
+ * 返すのは「日本時間のその月の1日 0:00」。実行環境の時間帯で作ると、
+ * サーバーが UTC のとき日本時間の朝8時台に前の月が選ばれる
+ * （日本時間 8/1 05:00 は UTC ではまだ 7/31）。
+ */
 export function resolveMonth(m?: string): Date {
   if (m && /^\d{4}-\d{2}$/.test(m)) {
     const [y, mo] = m.split("-").map(Number);
-    return new Date(y, mo - 1, 1);
+    return monthAnchorJST(y, mo - 1);
   }
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1);
+  const { year, month } = jstYearMonth(new Date());
+  return monthAnchorJST(year, month);
 }
 
 export function monthParam(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const { year, month } = jstYearMonth(d);
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
 }

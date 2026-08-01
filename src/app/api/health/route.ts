@@ -11,6 +11,7 @@ import { logger } from "@/lib/logger";
 import { isSentryActive } from "@/lib/logger";
 import { EXPECTED_MIGRATIONS } from "@/lib/expected-migrations";
 import { APP_VERSION } from "@/lib/seo";
+import { APP_TIME_ZONE, formatJST } from "@/lib/date";
 
 // DB 疎通を確認するため常に動的・Node ランタイムで実行。
 export const dynamic = "force-dynamic";
@@ -104,6 +105,14 @@ export async function GET() {
       sentry: isSentryActive(),
     },
     time: new Date().toISOString(),
+    // 時間帯。ここが Asia/Tokyo でないと、「今月」「今日」の判定が
+    // 最大9時間ずれる。画面を触らずに確かめられるようにしておく。
+    timeZone: {
+      expected: APP_TIME_ZONE,
+      actual: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      ok: Intl.DateTimeFormat().resolvedOptions().timeZone === APP_TIME_ZONE,
+      nowJST: formatJST(new Date(), "dateTime"),
+    },
   };
 
   return NextResponse.json(body, { status: healthy ? 200 : 503 });

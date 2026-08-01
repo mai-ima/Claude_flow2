@@ -12,7 +12,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { BellIcon } from "@/components/icons";
 import { formatMoney, formatWorkTime } from "@/lib/money";
-import { toDateInput } from "@/lib/date";
+import { toDateInput, fromInputJST } from "@/lib/date";
 import { CYCLE_LABEL, STATUS_LABEL } from "@/lib/enums";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { createSubscription, updateSubscription } from "../actions";
@@ -129,9 +129,9 @@ export function SubscriptionSheet({
         amount: v.amount,
         cycle: v.cycle,
         status: v.status,
-        nextRenewalAt: new Date(v.nextRenewalAt),
-        startedAt: v.startedAt ? new Date(v.startedAt) : null,
-        trialEndsAt: v.status === "TRIAL" && v.trialEndsAt ? new Date(v.trialEndsAt) : null,
+        nextRenewalAt: fromInputJST(v.nextRenewalAt),
+        startedAt: v.startedAt ? fromInputJST(v.startedAt) : null,
+        trialEndsAt: v.status === "TRIAL" && v.trialEndsAt ? fromInputJST(v.trialEndsAt) : null,
         categoryId: v.categoryId || null,
         paymentMethodId: v.paymentMethodId || null,
         reminderDaysBefore: v.reminderDaysBefore,

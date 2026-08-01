@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { PLANS } from "@/lib/plans";
 import type { PlanTier } from "@/lib/enums";
 import { effectiveAdminRole, type AdminRole } from "@/lib/admin-role";
+import { dateKeyJST } from "@/lib/date";
 
 export interface AdminStats {
   users: number;
@@ -317,8 +318,9 @@ export async function userDetail(userId: string) {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** 日別の集計キー。日本時間で切る（UTC で切ると9時間ぶん前の日に入る）。 */
 function dayKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return dateKeyJST(d);
 }
 
 /**

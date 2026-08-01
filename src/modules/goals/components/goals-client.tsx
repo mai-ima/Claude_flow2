@@ -16,7 +16,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Switch } from "@/components/ui/switch";
 import { TargetIcon, PlusIcon, TrashIcon, RepeatIcon } from "@/components/icons";
 import { formatMoney } from "@/lib/money";
-import { toDateInput } from "@/lib/date";
+import { toDateInput, fromInputJST } from "@/lib/date";
 import { colorOf } from "@/lib/colors";
 import { cn } from "@/lib/cn";
 import { Fab } from "@/components/ui/fab";
@@ -110,7 +110,7 @@ export function GoalsClient({
         ...(form.id ? { id: form.id } : {}),
         name: form.name,
         targetAmount: form.targetAmount,
-        deadline: form.deadline ? new Date(form.deadline) : null,
+        deadline: form.deadline ? fromInputJST(form.deadline) : null,
         color: form.color,
         autoContributionAmount: form.autoOn ? form.autoAmount : null,
         autoContributionDay: form.autoOn ? form.autoDay : null,

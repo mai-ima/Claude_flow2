@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
 import { AmountPad } from "./amount-pad";
 import { formatMoney } from "@/lib/money";
-import { todayLocal } from "@/lib/date";
+import { todayLocal, fromInputJST } from "@/lib/date";
 import { createTransaction, updateTransaction, setTransactionTags } from "../actions";
 import { colorOf } from "@/lib/colors";
 import { AttachmentField, type AttachmentItem } from "./attachment-field";
@@ -117,7 +117,7 @@ export function TransactionSheet({
         ...(v.id ? { id: v.id } : {}),
         type: v.type,
         amount: v.amount,
-        occurredAt: new Date(v.occurredAt),
+        occurredAt: fromInputJST(v.occurredAt),
         categoryId: v.categoryId || null,
         paymentMethodId: v.paymentMethodId || null,
         paidByUserId: v.paidByUserId || null,

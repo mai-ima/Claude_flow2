@@ -3,7 +3,7 @@ import { rollUp } from "@/lib/category-tree";
 import { startOfWeek, subWeeks } from "date-fns";
 import type { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
-import { monthRange, toDateInput } from "@/lib/date";
+import { monthRange, dateKeyJST, startOfDayJST, dayOfMonthJST } from "@/lib/date";
 
 /** 今週・先週の支出合計（週は月曜始まり）。ベータのインサイト用。 */
 export async function weeklyExpenseTotals(ledgerId: string, now: Date = new Date()) {
@@ -221,7 +221,9 @@ function bucketByDay(
 ): DayTotal[] {
   const map = new Map<string, DayTotal>();
   for (const t of rows) {
-    const key = toDateInput(t.occurredAt);
+    // 日本時間で切る。サーバーの時間帯設定に頼ると、設定が外れた
+    // 環境で「8月1日の記録が7月31日に入る」形で静かにずれる。
+    const key = dateKeyJST(t.occurredAt);
     const bucket = map.get(key) ?? { date: key, income: 0, expense: 0, count: 0 };
     if (t.type === "INCOME") bucket.income += t.amount;
     else bucket.expense += t.amount;
@@ -428,16 +430,19 @@ export async function recordingActivity(
 ): Promise<{ count: number; recordedDays: number; elapsedDays: number }> {
   const { start, end } = monthRange(month);
   // 進行中の月なら今日の終わりまで。過ぎた月・先の月はその月いっぱい。
-  const until = now < end && now > start ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999) : end;
+  // 「今日の終わり」も日本時間で切る。ここが UTC だと、日本時間の
+  //  夜に見たときだけ分母が1日ぶん足りなくなる。
+  const until =
+    now < end && now > start ? new Date(startOfDayJST(now).getTime() + 24 * 60 * 60 * 1000 - 1) : end;
   const rows = await db.transaction.findMany({
     where: { ledgerId, occurredAt: { gte: start, lte: until } },
     select: { occurredAt: true },
   });
   return {
     count: rows.length,
-    recordedDays: new Set(rows.map((r) => toDateInput(r.occurredAt))).size,
+    recordedDays: new Set(rows.map((r) => dateKeyJST(r.occurredAt))).size,
     // 分母。ここまでで何日ぶんが対象かを、数える側と揃えて返す。
-    elapsedDays: until.getDate(),
+    elapsedDays: dayOfMonthJST(until),
   };
 }
 

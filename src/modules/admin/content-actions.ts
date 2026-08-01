@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { adminAction } from "@/lib/safe-action";
 import { writeAudit } from "@/lib/audit";
+import { fromInputJST } from "@/lib/date";
 
 const sections = z.array(
   z.object({
@@ -141,8 +142,10 @@ export const upsertBanner = adminAction(
     endsAt: z.string(),
   }),
   async (input, user) => {
-    const startsAt = new Date(input.startsAt);
-    const endsAt = new Date(input.endsAt);
+    // 入力欄の値は「日本時間の日時」。new Date() だと実行環境の
+    // 時間帯で読まれ、サーバーが UTC のときに9時間ずれる。
+    const startsAt = fromInputJST(input.startsAt);
+    const endsAt = fromInputJST(input.endsAt);
     if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
       throw new Error("INVALID_DATE");
     }
