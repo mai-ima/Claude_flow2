@@ -65,6 +65,7 @@ model User {
   ownedSubs       Subscription[]  @relation("SubOwner")
   billing         BillingProfile?
   notifications   Notification[]
+  sentInvites     LedgerInvite[]  @relation("InviteSentBy")
 }
 
 model Session {
@@ -107,6 +108,7 @@ model Ledger {
   updatedAt DateTime @updatedAt
 
   members        LedgerMember[]
+  invites        LedgerInvite[]
   categories     Category[]
   transactions   Transaction[]
   budgets        Budget[]
@@ -116,6 +118,29 @@ model Ledger {
   recurringTransactions RecurringTransaction[]
 
   @@index([ownerId])
+}
+
+/**
+ * 帳簿への招待。
+ * 未登録の相手にも送れるよう、メールアドレスとトークンで持つ。
+ * token はハッシュを入れること（生の値はメールにしか出さない）。
+ */
+model LedgerInvite {
+  id              String    @id @default(cuid())
+  ledgerId        String
+  ledger          Ledger    @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  email           String
+  role            String    @default("EDITOR") // EDITOR | VIEWER
+  token           String    @unique
+  invitedByUserId String?
+  invitedBy       User?     @relation("InviteSentBy", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([ledgerId])
+  @@index([email])
 }
 
 model LedgerMember {

@@ -15,6 +15,7 @@ import {
   leaveLedger,
   deleteLedger,
   updateMemberRole,
+  revokeInvite,
 } from "../actions";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
@@ -26,12 +27,19 @@ interface Member {
   isOwner: boolean;
 }
 
+export interface PendingInviteItem {
+  id: string;
+  email: string;
+  role: string;
+}
+
 export function FamilySharing({
   ledgerId,
   ledgerName,
   isPod,
   isOwner,
   members,
+  pendingInvites,
   maxMembers,
   tier,
 }: {
@@ -40,6 +48,7 @@ export function FamilySharing({
   isPod: boolean;
   isOwner: boolean;
   members: Member[];
+  pendingInvites: PendingInviteItem[];
   maxMembers: number;
   tier: string;
 }) {
@@ -69,6 +78,7 @@ export function FamilySharing({
       const res = await inviteMember({ ledgerId, email, role });
       if (res.ok) {
         setEmail("");
+        toast.success("招待メールを送信しました。相手が受け取ると参加します。");
         router.refresh();
       } else setMsg(res.error);
     });
@@ -77,6 +87,15 @@ export function FamilySharing({
     setMsg(undefined);
     start(async () => {
       const res = await updateMemberRole({ ledgerId, userId, role: next });
+      if (res.ok) router.refresh();
+      else setMsg(res.error);
+    });
+  }
+
+  function cancelInvite(inviteId: string) {
+    setMsg(undefined);
+    start(async () => {
+      const res = await revokeInvite({ ledgerId, inviteId });
       if (res.ok) router.refresh();
       else setMsg(res.error);
     });
@@ -240,7 +259,35 @@ export function FamilySharing({
         ))}
       </div>
 
-      {isOwner && members.length < maxMembers && (
+      {pendingInvites.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[13px] font-medium text-text-secondary">送信済みの招待</div>
+          {pendingInvites.map((inv) => (
+            <div
+              key={inv.id}
+              className="flex items-center gap-3 rounded-xl border border-dashed border-border-subtle px-3 py-2.5"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px]">{inv.email}</span>
+                <span className="block text-[12px] text-text-tertiary">
+                  返事待ち ・ {inv.role === "VIEWER" ? "閲覧のみ" : "編集可"}
+                </span>
+              </span>
+              {isOwner && (
+                <button
+                  onClick={() => cancelInvite(inv.id)}
+                  disabled={pending}
+                  className="text-[12px] font-medium text-text-secondary hover:text-expense"
+                >
+                  取り消す
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isOwner && members.length + pendingInvites.length < maxMembers && (
         <div className="space-y-2 rounded-xl border border-border-subtle p-3">
           <div className="flex gap-2">
             <Input

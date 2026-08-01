@@ -7,6 +7,8 @@ import { authedAction } from "@/lib/safe-action";
 import { requireLedgerMember, setActiveLedger, clearActiveLedger } from "@/lib/ledger-access";
 import { PLANS, canUse } from "@/lib/plans";
 import { Currency, type PlanTier } from "@/lib/enums";
+import { isEmailEnabled } from "@/lib/env";
+import { createInvite, pendingInvitesFor, acceptInvite } from "./invites";
 
 async function userTier(userId: string): Promise<PlanTier> {
   const b = await db.billingProfile.findUnique({ where: { userId } });
@@ -72,37 +74,39 @@ export const inviteMember = authedAction(
     await requireLedgerMember(ledgerId, user.id, "OWNER");
 
     const normalized = email.trim().toLowerCase();
-    const invitee = await db.user.findUnique({ where: { email: normalized } });
-    if (!invitee) {
-      // 簡易招待: 既存ユーザーのみ。未登録は招待レコードを作らずエラー表示。
-      throw new Error("USER_NOT_FOUND");
-    }
-
-    const existing = await db.ledgerMember.findUnique({
-      where: { ledgerId_userId: { ledgerId, userId: invitee.id } },
+    const ledger = await db.ledger.findUnique({
+      where: { id: ledgerId },
+      select: { ownerId: true, name: true },
     });
+    if (!ledger) throw new Error("NOT_FOUND");
 
-    // 新規追加時のみ人数上限を判定（既存メンバーの役割変更は対象外）。
-    // 判定は「帳簿オーナーの tier」で行う。招待した人や画面を開いた人の tier で
-    // 判定すると、同じ帳簿なのに見る人によって上限が変わって食い違う。
-    if (!existing) {
-      const ledger = await db.ledger.findUnique({
-        where: { id: ledgerId },
-        select: { ownerId: true },
-      });
-      if (!ledger) throw new Error("NOT_FOUND");
-      const max = PLANS[await userTier(ledger.ownerId)].maxMembers;
-      const count = await db.ledgerMember.count({ where: { ledgerId } });
-      if (count >= max) {
-        throw new Error("MEMBER_LIMIT");
-      }
-    }
-
-    await db.ledgerMember.upsert({
-      where: { ledgerId_userId: { ledgerId, userId: invitee.id } },
-      create: { ledgerId, userId: invitee.id, role },
-      update: { role },
+    const existing = await db.ledgerMember.findFirst({
+      where: { ledgerId, user: { email: normalized } },
     });
+    if (existing) throw new Error("ALREADY_MEMBER");
+
+    // 人数上限は帳簿オーナーのプランで判定する。招待した人や画面を開いた人の
+    // tier で見ると、同じ帳簿なのに見る人によって上限が変わって食い違う。
+    const max = PLANS[await userTier(ledger.ownerId)].maxMembers;
+    const count = await db.ledgerMember.count({ where: { ledgerId } });
+    const pending = await pendingInvitesFor(normalized);
+    // 保留中の招待も席として数える。数えないと、招待を出しただけ上限を超える。
+    if (count + (pending > 0 ? 0 : 1) > max) throw new Error("MEMBER_LIMIT");
+
+    // 招待は必ずメールで送る。届けられない環境では、リンクだけ作っても
+    // 相手に渡す手段が無い。
+    if (!isEmailEnabled) throw new Error("EMAIL_DISABLED");
+
+    const { sent } = await createInvite({
+      ledgerId,
+      ledgerName: ledger.name,
+      email: normalized,
+      role,
+      invitedByUserId: user.id,
+      invitedByName: user.name ?? user.email ?? "メンバー",
+    });
+    if (!sent) throw new Error("EMAIL_SEND_FAILED");
+
     revalidatePath("/settings");
     return { ok: true };
   },
@@ -152,6 +156,51 @@ export const transferOwnership = authedAction(
       }),
     ]);
     revalidatePath("/", "layout");
+    return { ok: true };
+  },
+);
+
+/**
+ * 招待を受ける。
+ * 判定（宛先の一致・メール確認・人数上限）は invites.ts 側で行う。
+ */
+export const acceptInviteAction = authedAction(
+  z.object({ token: z.string().min(1) }),
+  async ({ token }, user) => {
+    const result = await acceptInvite(token, {
+      id: user.id,
+      email: user.email,
+      emailVerified: user.emailVerified,
+    });
+    if (!result.ok) {
+      throw new Error(
+        result.reason === "EMAIL_MISMATCH"
+          ? "INVITE_EMAIL_MISMATCH"
+          : result.reason === "UNVERIFIED"
+            ? "INVITE_UNVERIFIED"
+            : result.reason === "MEMBER_LIMIT"
+              ? "MEMBER_LIMIT"
+              : "INVITE_NOT_FOUND",
+      );
+    }
+    await setActiveLedger(result.ledgerId);
+    revalidatePath("/", "layout");
+    return { ledgerId: result.ledgerId, ledgerName: result.ledgerName };
+  },
+);
+
+/** 保留中の招待を取り消す。リンクはその場で使えなくなる。 */
+export const revokeInvite = authedAction(
+  z.object({ ledgerId: z.string(), inviteId: z.string() }),
+  async ({ ledgerId, inviteId }, user) => {
+    await requireLedgerMember(ledgerId, user.id, "OWNER");
+    const invite = await db.ledgerInvite.findUnique({ where: { id: inviteId } });
+    if (!invite || invite.ledgerId !== ledgerId) throw new Error("NOT_FOUND");
+    await db.ledgerInvite.update({
+      where: { id: inviteId },
+      data: { revokedAt: new Date() },
+    });
+    revalidatePath("/settings");
     return { ok: true };
   },
 );

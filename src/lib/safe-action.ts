@@ -56,6 +56,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   INVALID_CODE: "コードが正しくありません。認証アプリの表示をご確認ください。",
   PARENT_TYPE_MISMATCH: "収入と支出のカテゴリは、まとめられません。",
   PARENT_INVALID: "この組み合わせではまとめられません。サブカテゴリは1段までです。",
+  ALREADY_MEMBER: "その方はすでにこの帳簿のメンバーです。",
+  INVITE_NOT_FOUND: "この招待リンクは使えません。期限切れか、取り消されています。",
+  INVITE_EMAIL_MISMATCH:
+    "招待されたメールアドレスと、ログイン中のアカウントが違います。招待された方のアカウントでログインしてください。",
+  INVITE_UNVERIFIED:
+    "メールアドレスの確認が済んでいません。設定画面から確認を済ませてから、もう一度お試しください。",
 };
 
 /**
