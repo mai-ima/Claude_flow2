@@ -371,3 +371,17 @@ export const listBlockingLedgers = authedAction(z.object({}), async (_input, use
     ledgers: ledgers.map((l) => ({ id: l.id, name: l.name, memberCount: l._count.members })),
   };
 });
+
+/**
+ * 初回の案内を閉じる。
+ * 途中でも閉じられるようにする。全部やり終えないと消えない案内は、
+ * 使い始めの邪魔にしかならない。
+ */
+export const completeOnboarding = authedAction(z.object({}), async (_input, user) => {
+  await db.user.update({
+    where: { id: user.id },
+    data: { onboardedAt: new Date() },
+  });
+  revalidatePath("/dashboard");
+  return { ok: true };
+});

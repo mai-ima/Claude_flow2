@@ -49,6 +49,9 @@ model User {
   // null = 未設定（betaOptIn が真なら全て有効／既存ユーザーの挙動を維持）
   // 配列 = ここに載っているものだけ有効
   betaFeatures     Json?
+  // 初回の案内を終えた日時。null なら未案内。
+  // 「案内を見たか」を持たないと、閉じても毎回また出てしまう。
+  onboardedAt      DateTime?
   // 二要素認証。secret は Base32、復旧コードはハッシュの配列で持つ
   // （データベースを読めるだけでは突破できないようにする）。
   twoFactorSecret         String?
@@ -65,6 +68,7 @@ model User {
   settlementsPaid     Settlement[] @relation("SettlementFrom")
   settlementsReceived Settlement[] @relation("SettlementTo")
   settlementsCreated  Settlement[] @relation("SettlementCreatedBy")
+  savedSearches       SavedSearch[]
   recurringTxns   RecurringTransaction[] @relation("RecurringCreatedBy")
   ownedSubs       Subscription[]  @relation("SubOwner")
   billing         BillingProfile?
@@ -121,6 +125,7 @@ model Ledger {
   goals          Goal[]
   recurringTransactions RecurringTransaction[]
   settlements    Settlement[]
+  savedSearches  SavedSearch[]
 
   @@index([ownerId])
 }
@@ -276,6 +281,27 @@ model Settlement {
   createdAt       DateTime @default(now())
 
   @@index([ledgerId, settledAt])
+}
+
+/**
+ * 保存した検索条件。
+ *
+ * 個人のものにする。共有帳簿で他の人の検索まで一覧に並ぶと、
+ * 自分が作ったものを探すのに時間がかかる。
+ * 条件は URL のクエリ文字列のまま持つ。画面の絞り込みが増えても
+ * ここのスキーマを変えずに済む。
+ */
+model SavedSearch {
+  id        String   @id @default(cuid())
+  ledgerId  String
+  ledger    Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  query     String
+  createdAt DateTime @default(now())
+
+  @@index([ledgerId, userId])
 }
 
 // 繰り返し（定期）取引テンプレート。cron で nextRunAt 到来分を Transaction に自動生成。

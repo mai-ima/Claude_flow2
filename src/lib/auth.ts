@@ -36,6 +36,8 @@ export type SessionUser = {
   betaOptIn: boolean;
   /** 個別に有効化したベータ機能。null は未指定（親スイッチに従い全て有効）。 */
   betaFeatures: BetaFeatureKey[] | null;
+  /** 使い始めの案内を閉じた日時。null なら未案内。 */
+  onboardedAt: Date | null;
 };
 
 /**
@@ -409,6 +411,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     impersonatedBy: session.impersonatedBy,
     betaOptIn: u.betaOptIn,
     betaFeatures: parseBetaFeatures(u.betaFeatures),
+    onboardedAt: u.onboardedAt,
   };
 });
 

@@ -6,6 +6,7 @@ import {
   dailyTotals,
   listAllCategories,
   listPaymentMethods,
+  listSavedSearches,
 } from "@/modules/transactions/queries";
 import {
   TransactionsClient,
@@ -99,7 +100,7 @@ export default async function TransactionsPage({
   // カレンダー表示では一覧の検索・ページングは使わないため実行しない
   // （同じ月のデータを3回引かないようにする）。集計はどちらの表示でも要るので
   // カレンダー時は dailyTotals の結果から合算する。
-  const [searchResult, categories, paymentMethods, calendar] = await Promise.all([
+  const [searchResult, categories, paymentMethods, calendar, saved] = await Promise.all([
     view === "calendar"
       ? Promise.resolve(null)
       : searchTransactions(ledgerId, {
@@ -115,6 +116,7 @@ export default async function TransactionsPage({
     view === "calendar"
       ? Promise.all([dailyTotals(ledgerId, month), listTransactions(ledgerId, month)])
       : Promise.resolve(null),
+    listSavedSearches(ledgerId, user.id),
   ]);
 
   const summary = calendar
@@ -218,6 +220,8 @@ export default async function TransactionsPage({
               cat: sp.cat ?? "",
               pm: sp.pm ?? "",
             }}
+            saved={saved.map((s) => ({ id: s.id, name: s.name, query: s.query }))}
+            ledgerId={ledgerId}
           />
 
           <TransactionsClient

@@ -53,3 +53,11 @@ export type RecurringInput = z.infer<typeof recurringInput>;
 export const updateRecurringInput = recurringInput.extend({ id: z.string() });
 export const deleteRecurringInput = z.object({ id: z.string() });
 export const toggleRecurringInput = z.object({ id: z.string(), active: z.boolean() });
+
+// ── 保存した検索 ──
+export const savedSearchInput = z.object({
+  name: z.string().min(1, "名前を入力してください。").max(30),
+  /** URL のクエリ文字列（?q=&type=&cat=&pm=）。画面が増えても形を変えずに済む。 */
+  query: z.string().max(500),
+});
+export const deleteSavedSearchInput = z.object({ id: z.string() });

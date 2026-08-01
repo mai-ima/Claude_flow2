@@ -30,6 +30,8 @@ import { buildActivityRings } from "@/lib/activity-rings";
 import { budgetInsight, PACE_LABEL } from "@/lib/budget-insight";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { weeklyExpenseTotals } from "@/modules/transactions/queries";
+import { onboardingState } from "@/modules/account/queries";
+import { OnboardingCard } from "@/modules/account";
 import { monthEndForecast, weekDelta } from "@/lib/insight";
 import { formatDate, formatMonth } from "@/lib/date";
 import { type BillingCycle } from "@/lib/enums";
@@ -53,9 +55,12 @@ export default async function DashboardPage({
   const [
     { summary, subTotals, totalBudget, byCategory, upcoming, wasteful, recent, showBudget },
     weekly,
+    onboarding,
   ] = await Promise.all([
     getDashboardData(ledgerId, tier, month),
     isCurrentMonth ? weeklyExpenseTotals(ledgerId, now) : Promise.resolve(null),
+    // 案内は一度閉じたら二度と出さない。閉じた人のぶんは引きにいかない。
+    user.onboardedAt ? Promise.resolve(null) : onboardingState(ledgerId, now),
   ]);
 
   const wage = user.assumedHourlyWage ?? 0;
@@ -70,6 +75,17 @@ export default async function DashboardPage({
         subtitle={isPod ? "共有帳簿" : undefined}
         action={<MonthSwitcher current={monthParam(month)} todayParam={monthParam(new Date())} />}
       />
+
+      {/* 使い始めの案内。3つ全部済んだ人にも「閉じてよい」と分かるよう1度は出す。 */}
+      {onboarding && (
+        <OnboardingCard
+          hasTransaction={onboarding.hasTransaction}
+          hasOwnCategory={onboarding.hasOwnCategory}
+          hasBudget={onboarding.hasBudget}
+          suggestedBudget={onboarding.suggestedBudget}
+          currency={currency}
+        />
+      )}
 
       {/* クイック操作 */}
       <div className="mb-5 grid grid-cols-3 gap-3">

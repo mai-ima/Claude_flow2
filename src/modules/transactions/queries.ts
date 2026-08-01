@@ -323,3 +323,15 @@ export function recentTransactions(ledgerId: string, limit = 5) {
     take: limit,
   });
 }
+
+/**
+ * 保存した検索（自分のぶんだけ）。
+ * 共有帳簿で他の人の検索まで並ぶと、自分のものを探すのに時間がかかる。
+ */
+export function listSavedSearches(ledgerId: string, userId: string) {
+  return db.savedSearch.findMany({
+    where: { ledgerId, userId },
+    orderBy: { createdAt: "asc" },
+    take: 20,
+  });
+}

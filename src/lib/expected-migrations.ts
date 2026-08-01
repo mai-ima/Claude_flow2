@@ -25,4 +25,5 @@ export const EXPECTED_MIGRATIONS = [
   "20260801010000_drop_unused_account_table",
   "20260801020000_add_ledger_invite",
   "20260801030000_add_settlement",
+  "20260801040000_add_saved_search",
 ] as const;

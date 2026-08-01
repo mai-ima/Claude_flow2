@@ -19,6 +19,8 @@ import {
   updateRecurringInput,
   deleteRecurringInput,
   toggleRecurringInput,
+  savedSearchInput,
+  deleteSavedSearchInput,
 } from "./schema";
 
 export const createTransaction = authedAction(
@@ -197,5 +199,52 @@ export const deleteRecurring = authedAction(deleteRecurringInput, async ({ id },
   await requireOwnRecordOrEditor(ledgerId, user.id, existing.createdByUserId);
   await db.recurringTransaction.delete({ where: { id } });
   revalidatePath("/transactions/recurring");
+  return { ok: true };
+});
+
+// ── 保存した検索 ──
+
+/**
+ * いまの絞り込みに名前を付けて保存する。
+ * 保存は個人単位。共有帳簿でも、他の人の一覧には出ない。
+ */
+export const saveSearch = authedAction(savedSearchInput, async (input, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  await requireLedgerMember(ledgerId, user.id);
+
+  // 同じ名前が並ぶと、どれを押せばよいか分からなくなる。上書きする。
+  const existing = await db.savedSearch.findFirst({
+    where: { ledgerId, userId: user.id, name: input.name },
+  });
+  if (existing) {
+    await db.savedSearch.update({ where: { id: existing.id }, data: { query: input.query } });
+    revalidatePath("/transactions");
+    return { id: existing.id };
+  }
+
+  // 際限なく増やさない。20件を超えたら古いものから消す。
+  const count = await db.savedSearch.count({ where: { ledgerId, userId: user.id } });
+  if (count >= 20) {
+    const oldest = await db.savedSearch.findFirst({
+      where: { ledgerId, userId: user.id },
+      orderBy: { createdAt: "asc" },
+    });
+    if (oldest) await db.savedSearch.delete({ where: { id: oldest.id } });
+  }
+
+  const row = await db.savedSearch.create({
+    data: { ledgerId, userId: user.id, name: input.name, query: input.query },
+  });
+  revalidatePath("/transactions");
+  return { id: row.id };
+});
+
+export const deleteSavedSearch = authedAction(deleteSavedSearchInput, async ({ id }, user) => {
+  const ledgerId = await getActiveLedgerId(user.id);
+  const row = await db.savedSearch.findUnique({ where: { id } });
+  // 他人の保存を消せないよう、帳簿と持ち主の両方を見る。
+  if (!row || row.ledgerId !== ledgerId || row.userId !== user.id) throw new Error("FORBIDDEN");
+  await db.savedSearch.delete({ where: { id } });
+  revalidatePath("/transactions");
   return { ok: true };
 });
