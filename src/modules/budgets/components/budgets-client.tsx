@@ -20,6 +20,7 @@ import { budgetHealth } from "@/lib/budget-insight";
 import { setBudget, deleteBudget } from "../actions";
 import { cn } from "@/lib/cn";
 import { Fab } from "@/components/ui/fab";
+import { Switch } from "@/components/ui/switch";
 
 export interface BudgetItem {
   id: string;
@@ -28,8 +29,14 @@ export interface BudgetItem {
   name: string;
   icon: string;
   color: string;
+  /** 設定した予算額。 */
   amount: number;
+  /** 前月から繰り越した額。 */
+  carriedOver: number;
+  /** 今月使える額（amount + carriedOver）。表示と進捗はこちらを基準にする。 */
+  available: number;
   spent: number;
+  carryOver: boolean;
 }
 
 interface Option {
@@ -70,7 +77,7 @@ function BudgetCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const remaining = item.amount - item.spent;
+  const remaining = item.available - item.spent;
   const over = remaining < 0;
   return (
     <Card className="p-4">
@@ -86,6 +93,11 @@ function BudgetCard({
         <div className="min-w-0 flex-1">
           <button onClick={onEdit} className="block w-full text-left">
             <span className="text-[15px] font-semibold">{item.name}</span>
+            {item.carriedOver > 0 && (
+              <span className="ml-2 text-[12px] text-income">
+                +{formatMoney(item.carriedOver, currency)} 繰り越し
+              </span>
+            )}
           </button>
         </div>
         {canEdit && (
@@ -98,10 +110,10 @@ function BudgetCard({
           </button>
         )}
       </div>
-      <ProgressBar spent={item.spent} amount={item.amount} color={item.color} />
+      <ProgressBar spent={item.spent} amount={item.available} color={item.color} />
       <div className="mt-2 flex items-center justify-between text-[13px]">
         <span className="text-text-secondary tabular-nums">
-          {formatMoney(item.spent, currency)} / {formatMoney(item.amount, currency)}
+          {formatMoney(item.spent, currency)} / {formatMoney(item.available, currency)}
         </span>
         <span className={cn("font-semibold tabular-nums", over ? "text-expense" : "text-income")}>
           {over ? `${formatMoney(-remaining, currency)} 超過` : `残り ${formatMoney(remaining, currency)}`}
@@ -138,21 +150,30 @@ export function BudgetsClient({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string>();
-  const [form, setForm] = useState<{ categoryId: string; amount: number }>({
+  const [form, setForm] = useState<{
+    categoryId: string;
+    amount: number;
+    carryOver: boolean;
+  }>({
     categoryId: "",
     amount: 0,
+    carryOver: false,
   });
   // ベータ: 数式入力（"50000-3000" 等）用の生テキスト。
   const [amountText, setAmountText] = useState("");
 
   function openNew() {
-    setForm({ categoryId: "", amount: 0 });
+    setForm({ categoryId: "", amount: 0, carryOver: false });
     setAmountText("");
     setError(undefined);
     setSheetOpen(true);
   }
   function openEdit(item: BudgetItem) {
-    setForm({ categoryId: item.categoryId ?? "", amount: item.amount });
+    setForm({
+      categoryId: item.categoryId ?? "",
+      amount: item.amount,
+      carryOver: item.carryOver,
+    });
     setAmountText(String(item.amount));
     setError(undefined);
     setSheetOpen(true);
@@ -173,6 +194,7 @@ export function BudgetsClient({
       const res = await setBudget({
         categoryId: form.categoryId || null,
         amount: form.amount,
+        carryOver: form.carryOver,
       });
       if (res.ok) {
         setSheetOpen(false);
@@ -249,7 +271,7 @@ export function BudgetsClient({
               </div>
               <BudgetGauge
                 spent={total.spent}
-                amount={total.amount}
+                amount={total.available}
                 currency={currency}
                 insight={insight}
               />
@@ -261,11 +283,11 @@ export function BudgetsClient({
               <div className="mb-3 text-[14px] font-semibold">カテゴリ予算の配分</div>
               <div className="grid items-center gap-5 sm:grid-cols-2">
                 <CategoryDonut
-                  data={categories.map((c) => ({ name: c.name, amount: c.amount, color: c.color }))}
+                  data={categories.map((c) => ({ name: c.name, amount: c.available, color: c.color }))}
                 />
                 <div className="space-y-2">
                   {categories.map((c) => {
-                    const health = budgetHealth(c.spent, c.amount);
+                    const health = budgetHealth(c.spent, c.available);
                     return (
                       <div key={c.id} className="flex items-center gap-3">
                         <span
@@ -283,7 +305,7 @@ export function BudgetsClient({
                                 : "text-text-tertiary",
                           )}
                         >
-                          {c.amount > 0 ? Math.round((c.spent / c.amount) * 100) : 0}%
+                          {c.available > 0 ? Math.round((c.spent / c.available) * 100) : 0}%
                         </span>
                       </div>
                     );
@@ -338,6 +360,22 @@ export function BudgetsClient({
               ))}
             </Select>
           </Field>
+
+          <div className="flex items-start justify-between gap-3 rounded-xl bg-surface-2 px-3.5 py-3">
+            <span className="min-w-0">
+              <span className="block text-[14px] font-medium">前月の残りを繰り越す</span>
+              <span className="mt-0.5 block text-[12px] leading-relaxed text-text-tertiary">
+                先月使わなかった分を今月に足します。繰り越すのは1か月分だけで、
+                使いすぎた月は繰り越しません。
+              </span>
+            </span>
+            <Switch
+              checked={form.carryOver}
+              onChange={(v) => setForm((st) => ({ ...st, carryOver: v }))}
+              aria-label="前月の残りを繰り越す"
+            />
+          </div>
+
           {suggested > 0 && (
             <button
               type="button"

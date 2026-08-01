@@ -21,4 +21,5 @@ export const EXPECTED_MIGRATIONS = [
   "20260731000000_add_two_factor",
   "20260731010000_add_auto_post_idempotency",
   "20260731020000_add_release_summary",
+  "20260801000000_add_budget_carryover",
 ] as const;

@@ -43,7 +43,10 @@ export const setBudget = authedAction(setBudgetInput, async (input, user) => {
   });
 
   if (existing) {
-    await db.budget.update({ where: { id: existing.id }, data: { amount: input.amount } });
+    await db.budget.update({
+      where: { id: existing.id },
+      data: { amount: input.amount, carryOver: input.carryOver ?? existing.carryOver },
+    });
   } else {
     await db.budget.create({
       data: {
@@ -52,6 +55,7 @@ export const setBudget = authedAction(setBudgetInput, async (input, user) => {
         isTotalBudget: isTotal,
         period: "MONTHLY",
         amount: input.amount,
+        carryOver: input.carryOver ?? false,
         startMonth: thisMonthStart(),
       },
     });
