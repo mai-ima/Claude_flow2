@@ -1,7 +1,11 @@
 // 共有帳簿でメンバーが退会したとき、そのメンバーの記録が消えないことを実DBで確認する。
 import { PrismaClient } from "/home/user/Claude_flow2/src/generated/prisma/index.js";
 
-const db = new PrismaClient({ datasources: { db: { url: "postgresql://postgres@127.0.0.1:5433/tsumiki" } } });
+const db = new PrismaClient({
+  datasources: {
+    db: { url: process.env.DATABASE_URL ?? "postgresql://postgres@127.0.0.1:5432/tsumiki" },
+  },
+});
 const tag = "setnull-" + Date.now().toString().slice(-6);
 const results = [];
 const check = (n, ok, d = "") => { results.push(ok); console.log(`${ok ? "PASS" : "FAIL"}  ${n}${d ? " :: " + d : ""}`); };

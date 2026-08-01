@@ -6,7 +6,7 @@ import { PrismaClient } from "../src/generated/prisma/index.js";
 const BASE = process.env.BASE ?? "http://127.0.0.1:3127";
 const SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_test";
 const db = new PrismaClient({
-  datasources: { db: { url: process.env.DATABASE_URL ?? "postgresql://postgres@127.0.0.1:5433/tsumiki" } },
+  datasources: { db: { url: process.env.DATABASE_URL ?? "postgresql://postgres@127.0.0.1:5432/tsumiki" } },
 });
 
 const results = [];

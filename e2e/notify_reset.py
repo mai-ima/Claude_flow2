@@ -14,6 +14,8 @@ from playwright.sync_api import sync_playwright
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:3000")
 EMAIL = os.environ.get("E2E_EMAIL", "demo@tsumiki.app")
 PASSWORD = os.environ.get("E2E_PASSWORD", "demo1234")
+ADMIN_EMAIL = os.environ.get("E2E_ADMIN_EMAIL", "admin@tsumiki.app")
+ADMIN_PASSWORD = os.environ.get("E2E_ADMIN_PASSWORD", "AdminTest12345!")
 SHOT_DIR = os.environ.get("E2E_SHOTS", "/tmp")
 
 results = []
@@ -24,12 +26,35 @@ def check(name, ok, detail=""):
     print(f"{'PASS' if ok else 'FAIL'}  {name}" + (f" :: {detail}" if detail else ""))
 
 
-def login(page):
+def login(page, email=EMAIL, password=PASSWORD):
     page.goto(f"{BASE}/login", wait_until="domcontentloaded")
-    page.get_by_label("メールアドレス").fill(EMAIL)
-    page.get_by_label("パスワード", exact=True).fill(PASSWORD)
+    page.get_by_label("メールアドレス").fill(email)
+    page.get_by_label("パスワード", exact=True).fill(password)
     page.get_by_role("button", name=re.compile("ログイン")).click()
     page.wait_for_url(lambda url: "/login" not in url, timeout=15000)
+
+
+def seed_notifications(browser, n=3):
+    """管理の配信から、確認に使うお知らせを用意する。
+
+    前の実行で消しきっていると、次の実行では消す対象が無く
+    「削除ボタンがある」を確かめられない。テストの中で作る。
+    """
+    ctx = browser.new_context(viewport={"width": 1280, "height": 900})
+    page = ctx.new_page()
+    login(page, ADMIN_EMAIL, ADMIN_PASSWORD)
+    for i in range(n):
+        page.goto(f"{BASE}/admin/content", wait_until="domcontentloaded")
+        page.get_by_role("heading", name="コンテンツ運用").first.wait_for(timeout=8000)
+        page.get_by_label("件名").fill(f"確認用のお知らせ{i + 1}")
+        page.get_by_label("本文").fill("削除の確認に使います。")
+        page.get_by_role("button", name="送信する").click()
+        # 送信先が広いので、確認のダイアログを挟む作りになっている。
+        dlg = page.get_by_role("dialog", name=re.compile("お知らせを送りますか"))
+        dlg.wait_for(state="visible", timeout=6000)
+        dlg.get_by_role("button", name="送信する").click()
+        page.wait_for_timeout(2500)
+    ctx.close()
 
 
 def open_bell(page):
@@ -44,6 +69,7 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(**launch)
+        seed_notifications(browser)
         ctx = browser.new_context(viewport={"width": 1280, "height": 900})
         page = ctx.new_page()
         login(page)

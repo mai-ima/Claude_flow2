@@ -47,17 +47,21 @@ def main():
         settings = page.locator("body").inner_text()
         check("タグの説明が出る", "何枚でも貼れます" in settings)
 
-        # 2回目以降は同じ名前で作れない。すでにあればそれでよい。
-        if "旅行2026" not in settings:
+        # 存在の判定に本文の文字を使わない。説明文に「旅行2026」という
+        # 例が書いてあるため、それを拾って常に「ある」と判定していた
+        # （作成を一度も試さないまま通り続けていた）。
+        # 一覧の行にだけ出る「削除」ボタンで見る。
+        def tag_exists():
+            return page.get_by_role("button", name="旅行2026 を削除").count() > 0
+
+        if not tag_exists():
             page.get_by_role("button", name=re.compile("タグを追加")).click()
             page.get_by_label("タグ名").fill("旅行2026")
             page.get_by_role("button", name="追加", exact=True).click()
-        try:
-            page.get_by_text("旅行2026", exact=False).first.wait_for(timeout=8000)
-            made = True
-        except Exception:
-            made = False
-        check("タグを作れる", made)
+            page.wait_for_timeout(2500)
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_timeout(1200)
+        check("タグを作れる", tag_exists())
 
         # ── 記録に貼る ──────────────────────────────────
         page.goto(f"{BASE}/transactions", wait_until="domcontentloaded")

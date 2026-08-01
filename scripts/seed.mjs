@@ -33,6 +33,30 @@ function hashPassword(password) {
 const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d; };
 const daysAhead = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
 
+/**
+ * 今月の中の日付。
+ *
+ * daysAgo(4) のような相対日でデモの記録を置くと、月初に用意したときに
+ * 全部が前の月へ落ち、開いた人には「今月の記録がありません」と映る。
+ * デモとして成り立たないので、今月ぶんは必ず今月に収める。
+ *
+ * ratio は 0（月初）〜1（今日）の位置。
+ */
+const thisMonth = (ratio) => {
+  const now = new Date();
+  const today = now.getDate();
+  const day = Math.min(today, Math.max(1, Math.round(1 + (today - 1) * ratio)));
+  return new Date(now.getFullYear(), now.getMonth(), day, 12, 0, 0, 0);
+};
+
+/** 先月の中の日付。ratio は 0（月初）〜1（月末）。 */
+const lastMonth = (ratio) => {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  const day = Math.min(end, Math.max(1, Math.round(1 + (end - 1) * ratio)));
+  return new Date(now.getFullYear(), now.getMonth() - 1, day, 12, 0, 0, 0);
+};
+
 async function ensureUser({ email, password, name, isAdmin = false, tier = "FREE", wage = null }) {
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) {
@@ -56,18 +80,18 @@ async function seedDemoData(userId, ledgerId) {
   const card = await db.paymentMethod.create({ data: { ledgerId, name: "楽天カード", type: "CARD", color: "pink", icon: "card" } });
   const bank = await db.paymentMethod.create({ data: { ledgerId, name: "三井住友銀行", type: "BANK", color: "green", icon: "card" } });
   const txns = [
-    { type: "INCOME", amount: 320000, occurredAt: daysAgo(5), categoryId: cat("給与"), paymentMethodId: bank.id, memo: "今月の給与" },
-    { type: "EXPENSE", amount: 3280, occurredAt: daysAgo(1), categoryId: cat("食費"), paymentMethodId: card.id, memo: "スーパー" },
-    { type: "EXPENSE", amount: 1200, occurredAt: daysAgo(2), categoryId: cat("食費"), paymentMethodId: card.id, memo: "ランチ" },
-    { type: "EXPENSE", amount: 8500, occurredAt: daysAgo(3), categoryId: cat("日用品"), paymentMethodId: card.id, memo: null },
-    { type: "EXPENSE", amount: 85000, occurredAt: daysAgo(4), categoryId: cat("住居"), paymentMethodId: bank.id, memo: "家賃" },
-    { type: "EXPENSE", amount: 6800, occurredAt: daysAgo(6), categoryId: cat("水道・光熱"), paymentMethodId: bank.id, memo: null },
-    { type: "EXPENSE", amount: 4400, occurredAt: daysAgo(7), categoryId: cat("通信"), paymentMethodId: card.id, memo: null },
-    { type: "EXPENSE", amount: 12000, occurredAt: daysAgo(9), categoryId: cat("娯楽"), paymentMethodId: card.id, memo: "ライブ" },
-    { type: "INCOME", amount: 45000, occurredAt: daysAgo(18), categoryId: cat("副業"), paymentMethodId: bank.id, memo: "受託案件" },
-    { type: "INCOME", amount: 320000, occurredAt: daysAgo(35), categoryId: cat("給与"), paymentMethodId: bank.id, memo: null },
-    { type: "EXPENSE", amount: 85000, occurredAt: daysAgo(34), categoryId: cat("住居"), paymentMethodId: bank.id, memo: "家賃" },
-    { type: "EXPENSE", amount: 42000, occurredAt: daysAgo(33), categoryId: cat("食費"), paymentMethodId: card.id, memo: null },
+    { type: "INCOME", amount: 320000, occurredAt: thisMonth(0.15), categoryId: cat("給与"), paymentMethodId: bank.id, memo: "今月の給与" },
+    { type: "EXPENSE", amount: 3280, occurredAt: thisMonth(1), categoryId: cat("食費"), paymentMethodId: card.id, memo: "スーパー" },
+    { type: "EXPENSE", amount: 1200, occurredAt: thisMonth(0.9), categoryId: cat("食費"), paymentMethodId: card.id, memo: "ランチ" },
+    { type: "EXPENSE", amount: 8500, occurredAt: thisMonth(0.75), categoryId: cat("日用品"), paymentMethodId: card.id, memo: null },
+    { type: "EXPENSE", amount: 85000, occurredAt: thisMonth(0.1), categoryId: cat("住居"), paymentMethodId: bank.id, memo: "家賃" },
+    { type: "EXPENSE", amount: 6800, occurredAt: thisMonth(0.5), categoryId: cat("水道・光熱"), paymentMethodId: bank.id, memo: null },
+    { type: "EXPENSE", amount: 4400, occurredAt: thisMonth(0.4), categoryId: cat("通信"), paymentMethodId: card.id, memo: null },
+    { type: "EXPENSE", amount: 12000, occurredAt: thisMonth(0.3), categoryId: cat("娯楽"), paymentMethodId: card.id, memo: "ライブ" },
+    { type: "INCOME", amount: 45000, occurredAt: thisMonth(0.6), categoryId: cat("副業"), paymentMethodId: bank.id, memo: "受託案件" },
+    { type: "INCOME", amount: 320000, occurredAt: lastMonth(0.15), categoryId: cat("給与"), paymentMethodId: bank.id, memo: null },
+    { type: "EXPENSE", amount: 85000, occurredAt: lastMonth(0.1), categoryId: cat("住居"), paymentMethodId: bank.id, memo: "家賃" },
+    { type: "EXPENSE", amount: 42000, occurredAt: lastMonth(0.7), categoryId: cat("食費"), paymentMethodId: card.id, memo: null },
   ];
   await db.transaction.createMany({ data: txns.map((t) => ({ ...t, ledgerId, createdByUserId: userId })) });
   const subs = [
