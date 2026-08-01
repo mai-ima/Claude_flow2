@@ -7,7 +7,15 @@ import { Input, Select } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { UsersIcon, PlusIcon, TrashIcon } from "@/components/icons";
-import { createPod, inviteMember, removeMember, transferOwnership, leaveLedger, deleteLedger } from "../actions";
+import {
+  createPod,
+  inviteMember,
+  removeMember,
+  transferOwnership,
+  leaveLedger,
+  deleteLedger,
+  updateMemberRole,
+} from "../actions";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 
@@ -65,6 +73,15 @@ export function FamilySharing({
       } else setMsg(res.error);
     });
   }
+  function changeRole(userId: string, next: "EDITOR" | "VIEWER") {
+    setMsg(undefined);
+    start(async () => {
+      const res = await updateMemberRole({ ledgerId, userId, role: next });
+      if (res.ok) router.refresh();
+      else setMsg(res.error);
+    });
+  }
+
   function kick(userId: string) {
     start(async () => {
       const res = await removeMember({ ledgerId, userId });
@@ -196,13 +213,28 @@ export function FamilySharing({
               </span>
             </span>
             {isOwner && !m.isOwner && (
-              <button
-                onClick={() => kick(m.userId)}
-                aria-label="メンバーを外す"
-                className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
-              >
-                <TrashIcon size={16} />
-              </button>
+              <>
+                {/* 招待時にしか決められなかった権限を、あとからでも変えられるようにする。 */}
+                <select
+                  value={m.role === "VIEWER" ? "VIEWER" : "EDITOR"}
+                  onChange={(e) =>
+                    changeRole(m.userId, e.target.value as "EDITOR" | "VIEWER")
+                  }
+                  disabled={pending}
+                  aria-label={`${m.name} の権限`}
+                  className="h-9 rounded-lg border border-border-subtle bg-surface-1 px-2 text-[13px]"
+                >
+                  <option value="EDITOR">編集可</option>
+                  <option value="VIEWER">閲覧のみ</option>
+                </select>
+                <button
+                  onClick={() => kick(m.userId)}
+                  aria-label={`${m.name} をメンバーから外す`}
+                  className="grid h-8 w-8 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
+                >
+                  <TrashIcon size={16} />
+                </button>
+              </>
             )}
           </div>
         ))}

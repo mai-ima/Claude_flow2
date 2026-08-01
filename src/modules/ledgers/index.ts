@@ -6,6 +6,7 @@ export {
   removeMember,
   updateLedgerSettings,
   transferOwnership,
+  updateMemberRole,
   leaveLedger,
   deleteLedger,
 } from "./actions";

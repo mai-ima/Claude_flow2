@@ -157,6 +157,62 @@ export const transferOwnership = authedAction(
 );
 
 /**
+ * メンバーの役割を変える（編集できる ⇄ 閲覧のみ）。
+ *
+ * これまでは招待時にしか決められず、あとから変えるには一度外して招待し直す
+ * しかなかった。オーナーの付け替えは移譲（transferOwnership）で行うため、
+ * ここでは扱わない。
+ */
+export const updateMemberRole = authedAction(
+  z.object({
+    ledgerId: z.string(),
+    userId: z.string(),
+    role: z.enum(["EDITOR", "VIEWER"]),
+  }),
+  async ({ ledgerId, userId, role }, user) => {
+    await requireLedgerMember(ledgerId, user.id, "OWNER");
+    const ledger = await db.ledger.findUnique({ where: { id: ledgerId } });
+    if (!ledger) throw new Error("NOT_FOUND");
+    if (ledger.type === "PERSONAL") throw new Error("PERSONAL_LEDGER");
+    // 自分を閲覧のみに落とすと、誰も設定を変えられない帳簿ができあがる。
+    if (userId === user.id) throw new Error("SELF_FORBIDDEN");
+
+    const target = await db.ledgerMember.findUnique({
+      where: { ledgerId_userId: { ledgerId, userId } },
+    });
+    if (!target) throw new Error("NOT_A_MEMBER");
+    // オーナーの降格はここではしない（持ち主が居なくなる）。
+    if (target.role === "OWNER" || ledger.ownerId === userId) {
+      throw new Error("CANNOT_REMOVE_OWNER");
+    }
+
+    // 権限が変わったことは相手に伝える。黙って閲覧のみにされると、
+    // 保存できない理由が分からないまま操作することになる。
+    await db.$transaction([
+      db.ledgerMember.update({
+        where: { ledgerId_userId: { ledgerId, userId } },
+        data: { role },
+      }),
+      db.notification.create({
+        data: {
+          userId,
+          ledgerId,
+          type: "SYSTEM",
+          title: "帳簿での権限が変わりました",
+          body:
+            role === "EDITOR"
+              ? `「${ledger.name}」で記録の追加・編集ができるようになりました。`
+              : `「${ledger.name}」は閲覧のみになりました。記録の追加・編集はできません。`,
+          href: "/settings",
+        },
+      }),
+    ]);
+    revalidatePath("/", "layout");
+    return { ok: true };
+  },
+);
+
+/**
  * 帳簿から自分が抜ける。
  * オーナーのまま抜けると帳簿の持ち主が居なくなるため、先に移譲を求める。
  */
