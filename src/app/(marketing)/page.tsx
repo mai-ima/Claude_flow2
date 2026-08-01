@@ -15,6 +15,8 @@ import {
   ShieldIcon,
   StarIcon,
   TargetIcon,
+  CalendarIcon,
+  HeartIcon,
 } from "@/components/icons";
 import { pageMetadata, SITE, jsonLd } from "@/lib/seo";
 import { formatMoney } from "@/lib/money";
@@ -48,6 +50,21 @@ const FEATURES = [
     icon: WalletIcon,
     title: "家計簿",
     body: "収入も支出も、ハーフシートから片手でサッと。繰り返し取引や一括編集で、記録の手間を限りなくゼロへ。",
+  },
+  {
+    icon: CalendarIcon,
+    title: "カレンダー表示",
+    body: "1ヶ月の収支をカレンダーで一覧。どの日にいくら使ったかが、めくるだけで分かります。リスト表示とワンタップで切り替え。",
+  },
+  {
+    icon: ChartIcon,
+    title: "8つの切り口の分析",
+    body: "支出・収入・収支・年間・貯蓄・貯蓄率・予算。タブを切り替えるだけで、目的に合ったグラフが出ます。",
+  },
+  {
+    icon: HeartIcon,
+    title: "家計の健康度",
+    body: "貯蓄率・予算の守り方・固定費の重さ・記録の続き方を点数に。なぜその点数なのか、根拠も一緒に出します。",
   },
   {
     icon: RepeatIcon,
