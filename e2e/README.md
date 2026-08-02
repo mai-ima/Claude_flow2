@@ -41,13 +41,20 @@ npm run build:next
 DATABASE_URL="postgresql://.../tsumiki_e2e" npx next start -p 3000 &
 
 # 3. 実行（全て通れば終了コード 0）
-E2E_BASE=http://127.0.0.1:3000 python3 e2e/two_factor.py
+E2E_BASE=http://127.0.0.1:3000 \
+DATABASE_URL="postgresql://.../tsumiki_e2e" python3 e2e/two_factor.py
 ```
+
+一部の検査はデータベースを直接覗く（メールのトークン、メンテナンス設定など）。
+その接続先は起動したサーバーと必ず同じにする。`DATABASE_URL` を渡していれば
+そこから読むので、上のように同じ値を渡すのが確実。
 
 環境変数:
 
 - `E2E_BASE` — 対象の URL（既定 `http://127.0.0.1:3000`）
-- `E2E_DB` — psql で覗くデータベース名（既定 `tsumiki_e2e`）
+- `DATABASE_URL` — psql の接続先。ホスト・ポート・データベース名をここから読む
+- `E2E_DB` / `E2E_DB_HOST` / `E2E_DB_PORT` — 上を個別に上書きする
+  （既定は `tsumiki_e2e` / `127.0.0.1` / `5432`）
 - `E2E_CHROMIUM` — Chromium の実行ファイル。Playwright が同梱の
   headless shell を持たない環境で指定する
 

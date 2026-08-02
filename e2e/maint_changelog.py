@@ -4,13 +4,21 @@ import subprocess
 import os
 import sys
 import time
+from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("E2E_BASE", "http://127.0.0.1:3000")
 EMAIL = f"maint{int(time.time())}@example.test"
 PW = "password1234"
 
-DB_NAME = os.environ.get("E2E_DB", "tsumiki_e2e")
+# 覗きに行くデータベースの場所。DATABASE_URL があればそこから読み、
+# 無ければ E2E_DB_HOST / E2E_DB_PORT / E2E_DB で上書きできる。
+# 以前は 127.0.0.1:5433 を直接書いていたため、別のポートでサーバーを
+# 動かすと psql が空を返すだけで、検査は素通りしていた。
+_DB = urlparse(os.environ.get("DATABASE_URL") or "")
+DB_HOST = os.environ.get("E2E_DB_HOST") or _DB.hostname or "127.0.0.1"
+DB_PORT = str(os.environ.get("E2E_DB_PORT") or _DB.port or 5432)
+DB_NAME = os.environ.get("E2E_DB") or _DB.path.lstrip("/") or "tsumiki_e2e"
 
 results = []
 
@@ -22,9 +30,12 @@ def check(name, ok, detail=""):
 
 def psql(sql, db=None):
     out = subprocess.run(
-        ["psql", "-h", "127.0.0.1", "-p", "5433", "-U", "postgres", "-tAc", sql, db or DB_NAME],
+        ["psql", "-h", DB_HOST, "-p", DB_PORT, "-U", "postgres", "-tAc", sql, db or DB_NAME],
         capture_output=True, text=True,
     )
+    # つながらないまま先へ進むと、検査が無条件に通ってしまう。
+    if out.returncode != 0:
+        sys.exit(f"psql に失敗しました（{DB_HOST}:{DB_PORT}/{db or DB_NAME}）: {out.stderr.strip()}")
     return out.stdout.strip()
 
 
