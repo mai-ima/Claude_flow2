@@ -88,6 +88,8 @@ export interface ReportsData {
   /** 今月の着地予測。月初は日数が足りず出せないので null。 */
   forecast: number | null;
   dailyAvg: number;
+  /** 今月の経過日数。平均が何日ぶんかを添えるために使う。 */
+  elapsedDays: number;
   budgets: { total: BudgetRowItem | null; categories: BudgetRowItem[] };
   goals: GoalItem[];
   /** 家計の健康度。ルールベースで出した点数と、その内訳。 */
@@ -198,6 +200,7 @@ export function ReportsClient({ data }: { data: ReportsData }) {
     prev,
     forecast,
     dailyAvg,
+    elapsedDays,
     budgets,
     goals,
     health,
@@ -283,7 +286,9 @@ export function ReportsClient({ data }: { data: ReportsData }) {
                   <div className="mt-0.5 text-[18px] font-bold tabular-nums">
                     {formatMoney(dailyAvg, currency)}
                   </div>
-                  <div className="mt-0.5 text-[12px] text-text-tertiary">今月の平均</div>
+                  <div className="mt-0.5 text-[12px] text-text-tertiary">
+                    今月の平均（{elapsedDays}日ぶん）
+                  </div>
                 </div>
                 <div className="rounded-xl bg-surface-2 px-4 py-3">
                   <div className="text-[12px] text-text-tertiary">最多カテゴリ</div>

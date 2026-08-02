@@ -24,7 +24,7 @@ export function ExportButton({ enabled }: { enabled: boolean }) {
       if (!res.ok) {
         let message = "書き出しに失敗しました。時間をおいてお試しください。";
         if (res.status === 429) message = API_MESSAGE.RATE_LIMITED;
-        else if (res.status === 403) message = "CSV エクスポートは PRO プランの機能です。";
+        else if (res.status === 403) message = "CSV の書き出しは PRO プランの機能です。";
         else if (res.status === 401) message = API_MESSAGE.UNAUTHORIZED;
         toast.error(message);
         return;

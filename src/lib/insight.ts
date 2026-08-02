@@ -1,4 +1,4 @@
-import { getDate, getDaysInMonth } from "date-fns";
+import { dayOfMonthJST, daysInMonthJST } from "./date";
 
 /**
  * 予測を出すのに要る最低の経過日数。
@@ -20,8 +20,10 @@ export const FORECAST_MIN_DAYS = 3;
  * 当てにならない数字を出すより正直でいられる。
  */
 export function monthEndForecast(spent: number, now: Date = new Date()): number | null {
-  const day = getDate(now);
-  const days = getDaysInMonth(now);
+  // 日にちと日数は日本時間で数える。サーバーが UTC のままだと、
+  // 日本時間の朝9時までは前日として数えられ、予測が1日ぶんずれる。
+  const day = dayOfMonthJST(now);
+  const days = daysInMonthJST(now);
   // 日数の判定を先に行う。支出0を先に見ると、月の1日目で
   // 「￥0・このペースが続いた場合」と出て、今月は0円で終わると読める。
   if (day < FORECAST_MIN_DAYS) return null;

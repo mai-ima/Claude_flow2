@@ -459,9 +459,10 @@ export async function expenseSoFar(
   now: Date = new Date(),
 ): Promise<number> {
   const { start, end } = monthRange(month);
+  // 「今日の終わり」は日本時間で切る。
   const until =
     now > start && now < end
-      ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+      ? new Date(startOfDayJST(now).getTime() + 24 * 60 * 60 * 1000 - 1)
       : end;
   const agg = await db.transaction.aggregate({
     where: { ledgerId, type: "EXPENSE", occurredAt: { gte: start, lte: until } },

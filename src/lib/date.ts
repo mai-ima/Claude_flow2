@@ -188,6 +188,12 @@ export function dayOfWeekJST(date: Date = new Date()): number {
   return asJst(date).getUTCDay();
 }
 
+/** 日本時間で見た、その月の日数（28〜31）。 */
+export function daysInMonthJST(date: Date = new Date()): number {
+  const j = asJst(date);
+  return new Date(Date.UTC(j.getUTCFullYear(), j.getUTCMonth() + 1, 0)).getUTCDate();
+}
+
 /** 日本時間で見た日（1〜31）。 */
 export function dayOfMonthJST(date: Date = new Date()): number {
   return asJst(date).getUTCDate();

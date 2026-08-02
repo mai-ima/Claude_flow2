@@ -24,9 +24,8 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { clientEnv } from "@/lib/env";
 import { monthEndForecast } from "@/lib/insight";
 import { healthScore } from "@/lib/health-score";
-import { formatMonth } from "@/lib/date";
+import { formatMonth, dayOfMonthJST } from "@/lib/date";
 import { pageMetadata } from "@/lib/seo";
-import { getDate } from "date-fns";
 import { ExportButton } from "@/modules/transactions";
 
 export const metadata: Metadata = pageMetadata({ title: "分析", noindex: true });
@@ -110,7 +109,8 @@ export default async function ReportsPage() {
               summary,
               prev,
               forecast: monthEndForecast(spentSoFar, now),
-              dailyAvg: Math.round(summary.expense / getDate(now)),
+              dailyAvg: Math.round(summary.expense / dayOfMonthJST(now)),
+              elapsedDays: dayOfMonthJST(now),
               budgets,
               goals: goals.map((g) => ({
                 id: g.id,
@@ -148,7 +148,7 @@ export default async function ReportsPage() {
 
           <Card className="mt-3 p-5">
             <div className="flex items-center justify-between">
-              <div className="text-[12px] text-text-tertiary">CSV エクスポート</div>
+              <div className="text-[12px] text-text-tertiary">CSV の書き出し</div>
               {tier !== "PRO" && <Badge tone="pod" size="sm">PRO</Badge>}
             </div>
             <ExportButton enabled={tier === "PRO"} />
