@@ -43,7 +43,7 @@ export function SiteHeader() {
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+        <Link href="/" className="tap-target flex items-center gap-2 font-semibold tracking-tight">
           <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-accent-solid text-white">
             <LogoMark size={20} />
           </span>
@@ -62,7 +62,7 @@ export function SiteHeader() {
                 href={n.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-[14px] transition",
+                  "tap-target rounded-lg px-3 py-1.5 text-[14px] transition",
                   active
                     ? "bg-surface-2 font-medium text-text-primary"
                     : "text-text-secondary hover:bg-surface-2 hover:text-text-primary",
@@ -77,7 +77,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="hidden rounded-lg px-3 py-1.5 text-[14px] font-medium text-text-secondary transition hover:text-text-primary sm:block"
+            className="tap-target hidden rounded-lg px-3 py-1.5 text-[14px] font-medium text-text-secondary transition hover:text-text-primary sm:block"
           >
             ログイン
           </Link>

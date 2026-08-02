@@ -184,7 +184,7 @@ export function FeedbackSheet({
               type="checkbox"
               checked={wantReply}
               onChange={(e) => setWantReply(e.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent-solid)]"
+              className="tap-target mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent-solid)]"
             />
             <span className="min-w-0 text-[13px] leading-relaxed">
               返信を希望する

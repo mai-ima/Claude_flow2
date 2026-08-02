@@ -87,7 +87,7 @@ export function ReleaseCard({
                   aria-pressed={detailed === value}
                   onClick={() => setDetailed(value)}
                   className={
-                    "min-h-9 rounded-[10px] px-3.5 text-[13px] font-medium transition duration-[var(--dur-1)] ease-spring " +
+                    "tap-target min-h-9 rounded-[10px] px-3.5 text-[13px] font-medium transition duration-[var(--dur-1)] ease-spring " +
                     (detailed === value
                       ? "bg-surface-1 text-text-primary shadow-sm"
                       : "text-text-secondary hover:text-text-primary")

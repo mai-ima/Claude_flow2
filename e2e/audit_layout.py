@@ -30,6 +30,16 @@ PAGES = [
     ("/reports/monthly", "monthly"),
     ("/settings", "settings"),
     ("/settings/ledger", "settings-ledger"),
+    # あとから増えた画面。監査の対象に入れ忘れると、崩れても気づけない。
+    ("/transactions/recurring", "recurring"),
+    ("/subscriptions/price-changes", "price-changes"),
+    ("/settlement", "settlement"),
+    ("/settings/sharing", "settings-sharing"),
+    ("/settings/security", "settings-security"),
+    ("/settings/advanced", "settings-advanced"),
+    ("/settings/feedback", "settings-feedback"),
+    ("/billing", "billing"),
+    ("/changelog", "changelog"),
 ]
 
 WIDTHS = [("sp", 390, 844), ("pc", 1440, 900)]

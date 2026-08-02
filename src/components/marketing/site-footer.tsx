@@ -62,7 +62,7 @@ export function SiteFooter() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-[14px] text-text-secondary transition hover:text-text-primary"
+                    className="tap-target inline-block text-[14px] text-text-secondary transition hover:text-text-primary"
                   >
                     {l.label}
                   </Link>
