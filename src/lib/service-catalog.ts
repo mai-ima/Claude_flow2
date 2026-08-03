@@ -23,7 +23,7 @@ export const SERVICE_CATALOG: CatalogService[] = [
     cancelSteps: [
       "Netflix にログイン",
       "「アカウント」→「メンバーシップのキャンセル」を開く",
-      "「キャンセル手続きの完了」を押す",
+      "「キャンセル手続きの完了」を選択する",
     ],
   },
   {
@@ -71,7 +71,7 @@ export const SERVICE_CATALOG: CatalogService[] = [
     cancelSteps: [
       "「設定」→ 自分の名前 →「サブスクリプション」",
       "Apple Music を選択",
-      "「サブスクリプションをキャンセル」を押す",
+      "「サブスクリプションをキャンセル」を選択する",
     ],
   },
   {

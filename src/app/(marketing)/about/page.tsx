@@ -21,8 +21,8 @@ const VALUES = [
   },
   {
     icon: SparklesIcon,
-    title: "美しく、わかりやすく",
-    body: "数字の羅列ではなく、ひと目で伝わる可視化を。リングやグラフで、お金の流れを直感的に。",
+    title: "美しく、分かりやすく",
+    body: "数字の羅列ではなく、ひと目で伝わる形に。円形のグラフや推移のグラフで、お金の流れを直感的に。",
   },
   {
     icon: ChartIcon,
@@ -69,7 +69,7 @@ export default function AboutPage() {
         <Card className="mt-10 p-8 sm:p-10">
           <h2 className="text-[22px] font-bold tracking-tight">ベータ版として、育てています</h2>
           <p className="mt-3 text-[15px] leading-relaxed text-text-secondary">
-            {SITE.name} は現在ベータ版です。実際に使ってくださる方の声を聞きながら、機能とデザインを少しずつ磨いています。「あったらいいな」や気づいた点があれば、ぜひ
+            {SITE.name} は現在ベータ版です。実際にお使いくださる方の声をうかがいながら、機能とデザインを少しずつ磨いています。ご要望やお気づきの点がございましたら、
             <a href={`mailto:${CONTACT.feedback}`} className="text-accent underline">
               {CONTACT.feedback}
             </a>

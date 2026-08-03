@@ -291,7 +291,7 @@ export function TransactionsClient({
         <EmptyState
           icon={<WalletIcon size={28} />}
           title="まだ記録がありません"
-          description="右下のボタンから、最初の収支を追加しましょう。"
+          description="右下のボタンから、最初の収支をご登録ください。"
         />
       ) : (
         <div className="space-y-5">

@@ -88,7 +88,7 @@ export function usagePeriod(
   const years = Math.floor(months / 12);
   const rest = months % 12;
   const label =
-    years > 0 ? (rest > 0 ? `${years}年${rest}ヶ月` : `${years}年`) : `${Math.max(months, 0)}ヶ月`;
+    years > 0 ? (rest > 0 ? `${years}年${rest}か月` : `${years}年`) : `${Math.max(months, 0)}か月`;
   return { months, label };
 }
 
@@ -121,7 +121,7 @@ export function reviewAge(
   if (days === 0) return { days, label: "今日" };
   if (days < 31) return { days, label: `${days}日前` };
   const months = Math.floor(days / 30);
-  if (months < 12) return { days, label: `${months}ヶ月前` };
+  if (months < 12) return { days, label: `${months}か月前` };
   return { days, label: `${Math.floor(months / 12)}年前` };
 }
 

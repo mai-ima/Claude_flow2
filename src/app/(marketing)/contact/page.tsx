@@ -7,7 +7,7 @@ import { isEmailEnabled } from "@/lib/env";
 
 export const metadata: Metadata = pageMetadata({
   title: "お問い合わせ",
-  description: "Tsumiki へのお問い合わせ・ご要望・不具合報告はこちら。フォームから直接ご連絡いただけます。",
+  description: "Tsumiki へのお問い合わせ・ご要望・不具合のご報告を承ります。フォームから直接ご連絡いただけます。",
   path: "/contact",
 });
 
@@ -49,7 +49,7 @@ export default function ContactPage() {
       </div>
 
       <p className="mt-8 text-center text-[13px] text-text-tertiary">
-        <Link href="/" className="hover:text-text-secondary">← トップにもどる</Link>
+        <Link href="/" className="hover:text-text-secondary">← トップへ戻る</Link>
       </p>
     </div>
   );

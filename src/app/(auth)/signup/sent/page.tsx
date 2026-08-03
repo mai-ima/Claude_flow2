@@ -47,7 +47,7 @@ export default function SignupSentPage() {
         </Card>
         <p className="mt-6 text-center text-[13px] text-text-tertiary">
           <Link href="/" className="hover:text-text-secondary">
-            ← トップにもどる
+            ← トップへ戻る
           </Link>
         </p>
       </div>

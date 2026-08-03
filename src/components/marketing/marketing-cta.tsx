@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
  * 文言・副ボタンを差し替え可能（既定は新規登録 + 機能ページ導線）。
  */
 export function MarketingCta({
-  title = "今日から、積み上げよう。",
+  title = "今日から、積み上げる。",
   subtitle = "無料で始めて、必要になったらアップグレード。",
   secondaryHref = "/features",
   secondaryLabel = "機能を見る",

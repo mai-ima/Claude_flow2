@@ -56,7 +56,7 @@ export default async function VerifyEmailPage({
           <p className="mt-2 mb-6 text-[14px] leading-relaxed text-text-secondary">
             {ok
               ? "メールアドレスの確認が完了しました。ご利用ありがとうございます。"
-              : "このリンクは使えません。期限が切れているか、すでに使用済みです。設定画面から確認メールを再送できます。"}
+              : "このリンクはご利用いただけません。期限が切れているか、すでに使用済みです。設定画面から確認メールを再度お送りいただけます。"}
           </p>
           <Link href={ok ? "/dashboard" : "/settings"} className="block">
             <Button full size="lg">

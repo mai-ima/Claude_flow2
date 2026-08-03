@@ -52,7 +52,7 @@ export function OnboardingCard({
       title: "予算を決める",
       body:
         suggestedBudget > 0
-          ? `直近3ヶ月の支出は月あたり およそ ${formatMoney(suggestedBudget, currency)} でした。まずはこの額を目安にできます。`
+          ? `直近3か月の支出は月あたり およそ ${formatMoney(suggestedBudget, currency)} でした。この額を目安としてご設定いただけます。`
           : "月にいくらまで使うかを決めると、使いすぎたときにお知らせします。",
       href: "/budgets",
       cta: "予算を決める",

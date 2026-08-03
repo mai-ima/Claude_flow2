@@ -161,8 +161,8 @@ export function GoalsClient({
       {goals.length === 0 ? (
         <EmptyState
           icon={<TargetIcon size={28} />}
-          title="目標を立てましょう"
-          description="旅行や新しい家電など、貯めたい金額と期日を決めて、コツコツ積み立て。"
+          title="貯金目標がまだありません"
+          description="旅行や新しい家電など、貯めたい金額と期日をお決めいただくと、毎月少しずつ積み立てられます。"
           action={canEdit ? <Button onClick={openNew}><PlusIcon size={18} /> 目標を追加</Button> : undefined}
         />
       ) : (
@@ -244,7 +244,7 @@ export function GoalsClient({
                       </div>
                     ) : !done && g.monthlyNeeded !== null ? (
                       <div className="mt-1 text-[12px] text-text-secondary">
-                        あと{g.monthsLeft}ヶ月 ・ 月{" "}
+                        あと{g.monthsLeft}か月 ・ 月{" "}
                         <b className="tabular-nums">{formatMoney(g.monthlyNeeded, currency)}</b> で達成
                       </div>
                     ) : null}

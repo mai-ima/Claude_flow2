@@ -27,7 +27,7 @@ export const PLANS: Record<PlanTier, Plan> = {
   FREE: {
     tier: "FREE",
     name: "フリー",
-    tagline: "まずは気軽に、家計とサブスクの全体像を。",
+    tagline: "はじめての方へ。家計とサブスクの全体像を。",
     monthly: 0,
     yearly: 0,
     highlights: [

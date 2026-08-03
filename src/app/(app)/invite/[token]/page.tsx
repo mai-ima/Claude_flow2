@@ -49,7 +49,7 @@ export default async function InvitePage({
           <p className="mt-3 text-[14px] leading-relaxed text-text-secondary">
             {message}
             <br />
-            お手数ですが、招待した方にもう一度送ってもらってください。
+            お手数ですが、招待した方へ、もう一度お送りいただくようご依頼ください。
           </p>
           <Link href="/dashboard" className="mt-6 block">
             <Button full size="lg">

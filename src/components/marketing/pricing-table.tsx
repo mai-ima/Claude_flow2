@@ -45,7 +45,7 @@ export function PricingTable({ stripeEnabled }: { stripeEnabled: boolean }) {
           onChange={setCycle}
           options={[
             { value: "monthly", label: "月払い" },
-            { value: "yearly", label: "年払い（2ヶ月分お得）" },
+            { value: "yearly", label: "年払い（2か月分 割安）" },
           ]}
         />
       </div>
@@ -86,7 +86,7 @@ export function PricingTable({ stripeEnabled }: { stripeEnabled: boolean }) {
               {!isFree && cycle === "yearly" && plan.monthly * 12 > plan.yearly && (
                 <p className="mt-1 text-[13px] font-medium text-income">
                   月あたり {formatMoney(Math.round(plan.yearly / 12))}・年間{" "}
-                  {formatMoney(plan.monthly * 12 - plan.yearly)} お得
+                  {formatMoney(plan.monthly * 12 - plan.yearly)} 割安
                 </p>
               )}
 

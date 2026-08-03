@@ -31,7 +31,7 @@ export default async function LoginPage() {
         <Card className="p-7">
           <h1 className="text-center text-[22px] font-bold tracking-tight">ログイン</h1>
           <p className="mt-1.5 mb-6 text-center text-[14px] text-text-secondary">
-            おかえりなさい。アカウントにサインインします。
+            アカウントにログインします。
           </p>
           <Suspense>
             <LoginForm />
@@ -53,12 +53,12 @@ export default async function LoginPage() {
             </button>
           </form>
           <p className="mt-2 text-center text-[12px] text-text-tertiary">
-            登録不要。山田太郎さんの家計簿をそのまま体験できます。
+            登録は不要です。山田太郎さんの家計簿を、そのままお試しいただけます。
           </p>
         </Card>
         <p className="mt-6 text-center text-[13px] text-text-tertiary">
           <Link href="/" className="hover:text-text-secondary">
-            ← トップにもどる
+            ← トップへ戻る
           </Link>
         </p>
       </div>

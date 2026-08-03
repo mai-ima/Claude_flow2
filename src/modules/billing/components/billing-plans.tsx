@@ -61,7 +61,7 @@ export function BillingPlans({
           onChange={setCycle}
           options={[
             { value: "monthly", label: "月払い" },
-            { value: "yearly", label: "年払い（お得）" },
+            { value: "yearly", label: "年払い（割安）" },
           ]}
         />
       </div>

@@ -245,7 +245,7 @@ export function TransactionFilters({
               </button>
               <button
                 onClick={() => removeSaved(s.id)}
-                aria-label={`「${s.name}」の保存を消す`}
+                aria-label={`保存した条件「${s.name}」を削除する`}
                 className="tap-target grid h-9 w-8 place-items-center rounded-full text-text-tertiary hover:text-expense"
               >
                 <XIcon size={13} />

@@ -106,7 +106,7 @@ export default async function AdminAuditPage({
 
       <LogSection
         title="操作の記録"
-        description="証跡として残すものなので、1件ずつは削除できません。30日より古いものを、理由を添えてまとめて削除できます。削除できるのは最高責任者のみで、削除したこと自体も記録に残ります。"
+        description="証跡として残すものであるため、1件ずつは削除できません。30日より古いものを、理由を添えてまとめて削除できます。削除できるのは最高責任者のみで、削除したこと自体も記録に残ります。"
         kind="AUDIT"
         items={items}
         total={counts.audit}

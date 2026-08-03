@@ -235,7 +235,7 @@ export function BudgetsClient({
       {!hasAny ? (
         <EmptyState
           icon={<TargetIcon size={28} />}
-          title="予算を設定しましょう"
+          title="予算がまだ設定されていません"
           description="全体やカテゴリごとに月の予算を決めると、使いすぎを早めに防げます。"
           action={
             canEdit ? (
@@ -383,7 +383,7 @@ export function BudgetsClient({
               className="flex min-h-11 w-full items-center justify-between rounded-xl bg-surface-2 px-4 py-2.5 text-left transition hover:bg-surface-3"
             >
               <span className="text-[13px] text-text-secondary">
-                過去3ヶ月の平均: <b className="tabular-nums text-text-primary">{formatMoney(suggested, currency)}</b>
+                過去3か月の平均: <b className="tabular-nums text-text-primary">{formatMoney(suggested, currency)}</b>
               </span>
               <span className="text-[13px] font-medium text-accent">適用</span>
             </button>

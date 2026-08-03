@@ -369,7 +369,7 @@ export function FeedbackTable({
                     setReply(r.replyBody ?? "");
                   }}
                 >
-                  {r.replyBody ? "返信を直す" : "返信する"}
+                  {r.replyBody ? "返信を編集する" : "返信する"}
                 </Button>
                 <Button
                   size="sm"

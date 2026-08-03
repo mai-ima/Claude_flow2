@@ -145,7 +145,7 @@ function fixedFactor(subscriptionMonthly: number, expense: number): HealthFactor
       max: MAX,
       level: "unknown",
       evidence: "この月の支出の記録がないため、割合を出せません。",
-      advice: "支出を記録すると、そのうち固定費がどれだけかを出せます。",
+      advice: "支出を記録いただくと、そのうち固定費が占める割合を算出できます。",
     };
   }
   const ratio = subscriptionMonthly / expense;
@@ -234,7 +234,7 @@ export function healthScore(input: HealthInput): HealthScore {
 
 export const LEVEL_LABEL: Record<Level, string> = {
   good: "良好",
-  fair: "ふつう",
+  fair: "標準",
   poor: "見直したい",
   unknown: "判定できません",
 };

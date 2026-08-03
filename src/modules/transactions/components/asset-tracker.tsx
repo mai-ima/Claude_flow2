@@ -84,8 +84,8 @@ export function AssetTracker({
 
   async function remove(row: AssetRow) {
     const ok = await confirm({
-      title: `${row.monthLabel} の記録を消しますか？`,
-      confirmText: "消す",
+      title: `${row.monthLabel} の記録を削除しますか？`,
+      confirmText: "削除する",
       danger: true,
     });
     if (!ok) return;
@@ -181,11 +181,11 @@ export function AssetTracker({
                           onClick={() => openNew(r)}
                           className="px-2 py-2 text-[12px] font-medium text-accent"
                         >
-                          直す
+                          編集する
                         </button>
                         <button
                           onClick={() => remove(r)}
-                          aria-label={`${r.monthLabel} の記録を消す`}
+                          aria-label={`${r.monthLabel} の記録を削除する`}
                           className="tap-target grid h-9 w-9 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                         >
                           <TrashIcon size={16} />
@@ -216,7 +216,7 @@ export function AssetTracker({
         <div className="space-y-4">
           <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-[12px] leading-relaxed text-text-secondary">
             預金・現金・証券などを合わせた、その月の残高を入れてください。
-            同じ月に入れ直すと上書きします。
+            同じ月を再度ご登録いただくと、上書きされます。
           </p>
           <Field label="対象の月">
             <Input

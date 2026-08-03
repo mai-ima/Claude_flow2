@@ -124,7 +124,7 @@ export function NotificationBell({
               <span className="ml-auto flex items-center gap-3">
                 {unread > 0 && (
                   <button onClick={readAll} className="tap-target text-[12px] font-medium text-accent">
-                    すべて既読
+                    すべて既読にする
                   </button>
                 )}
                 {items.some((i) => i.read) && (
@@ -132,7 +132,7 @@ export function NotificationBell({
                     onClick={removeRead}
                     className="tap-target text-[12px] font-medium text-text-tertiary hover:text-expense"
                   >
-                    読んだものを消す
+                    既読を削除
                   </button>
                 )}
               </span>
@@ -140,7 +140,7 @@ export function NotificationBell({
             <div className="max-h-[60dvh] overflow-y-auto overscroll-contain">
               {items.length === 0 ? (
                 <div className="px-4 py-10 text-center text-[13px] text-text-tertiary">
-                  通知はありません
+                  お知らせはありません
                 </div>
               ) : (
                 items.map((it) => {
@@ -177,7 +177,7 @@ export function NotificationBell({
                       </button>
                       <button
                         onClick={(e) => removeOne(e, it.id)}
-                        aria-label={`「${it.title}」を消す`}
+                        aria-label={`「${it.title}」を削除する`}
                         className="tap-target mt-2.5 grid h-8 w-8 shrink-0 place-items-center rounded-full text-text-tertiary hover:bg-expense/10 hover:text-expense"
                       >
                         <TrashIcon size={14} />

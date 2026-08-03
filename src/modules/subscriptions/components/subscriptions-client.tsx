@@ -355,8 +355,8 @@ export function SubscriptionsClient({
       {items.length === 0 ? (
         <EmptyState
           icon={<RepeatIcon size={28} />}
-          title="サブスクを登録しましょう"
-          description="毎月の固定費をまとめて管理。更新日も自動で記帳されます。"
+          title="サブスクがまだ登録されていません"
+          description="毎月の固定費をまとめて管理いただけます。更新日には自動で記帳されます。"
         />
       ) : view === "list" ? (
         listItems.length === 0 ? (

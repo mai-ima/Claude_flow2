@@ -22,12 +22,12 @@ const FAQ = [
     a: "いつでも解約いただけます。解約後も次回更新日まではプランの機能をご利用いただけます。",
   },
   {
-    q: "年払いはどのくらいお得ですか？",
-    a: "年払いは月払いの約10ヶ月分の料金です。実質2ヶ月分がお得になります。",
+    q: "年払いはどの程度、割安になりますか？",
+    a: "年払いは月払いの約10か月分の料金です。実質2か月分の割安となります。",
   },
   {
     q: "ファミリー共有とは何ですか？",
-    a: "家族で1つの共有帳簿を持ち、誰が・何に・いくらサブスクしているかをまとめて把握できる機能です。プラスは2人、プロは5人まで共有できます。",
+    a: "家族で1つの共有帳簿を持ち、誰が・何に・いくら払っているかをまとめて把握できる機能です。プラスは2人、プロは5人まで共有できます。",
   },
 ];
 
@@ -52,7 +52,7 @@ export default function PricingPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-[clamp(2rem,5vw,3rem)] font-bold tracking-tight">
-          あなたに合う、ちょうどいいプラン。
+          あなたに合う、ちょうどよいプラン。
         </h1>
         <p className="mt-4 text-[18px] text-text-secondary">
           無料で始めて、必要になったらいつでもアップグレード。
@@ -86,7 +86,7 @@ export default function PricingPage() {
       </div>
 
       <MarketingCta
-        title="まずは無料で、はじめよう。"
+        title="まずは無料で、はじめる。"
         subtitle="フリープランは無期限。必要になったら、いつでもアップグレードできます。"
       />
     </div>

@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   title: "準備中",
-  description: "この機能は現在開発中です。もうしばらくお待ちください。",
+  description: "この機能は現在開発中です。公開まで、いましばらくお待ちください。",
   path: "/coming-soon",
   noindex: true,
 });
@@ -19,7 +19,7 @@ export default function ComingSoonPage() {
         </div>
         <h1 className="mt-6 text-[28px] font-bold tracking-tight">準備中です</h1>
         <p className="mx-auto mt-3 max-w-sm text-[16px] leading-relaxed text-text-secondary">
-          この機能は現在開発中です。よりよい体験をお届けできるよう、丁寧に作り込んでいます。公開まで、もうしばらくお待ちください。
+          この機能は現在開発中です。よりよい体験をお届けできるよう、丁寧に作り込んでいます。公開まで、いましばらくお待ちください。
         </p>
         <div className="mt-8 flex justify-center gap-3">
           <ButtonLink href="/">トップへ</ButtonLink>

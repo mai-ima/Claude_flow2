@@ -35,7 +35,7 @@ export default function ResetPasswordPage() {
         </Card>
         <p className="mt-6 text-center text-[13px] text-text-tertiary">
           <Link href="/login" className="hover:text-text-secondary">
-            ← ログインにもどる
+            ← ログインへ戻る
           </Link>
         </p>
       </div>

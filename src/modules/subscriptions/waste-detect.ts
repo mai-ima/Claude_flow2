@@ -21,7 +21,7 @@ export function wasteMessage(lastUsedAt: Date | null): string | null {
   const days = daysSince(lastUsedAt);
   if (days === null) return null;
   if (days >= WASTE_THRESHOLD_DAYS) {
-    return `${days}日間 利用記録がありません。見直しの好機かもしれません。`;
+    return `${days}日間 利用記録がありません。見直しをおすすめします。`;
   }
   if (days >= WASTE_THRESHOLD_DAYS / 2) {
     return `最終利用から${days}日。最近の利用は控えめです。`;

@@ -31,7 +31,7 @@ const VOICES = [
     name: "34歳・フリーランス",
   },
   {
-    quote: "家族で共有して、誰が何に払っているかひと目で把握でき。重複した契約を解約できました。",
+    quote: "家族で共有し、誰が何に払っているかをひと目で把握できました。重複した契約も解約できました。",
     name: "41歳・主婦",
   },
 ];
@@ -49,12 +49,12 @@ const FEATURES = [
   {
     icon: WalletIcon,
     title: "家計簿",
-    body: "収入も支出も、ハーフシートから片手で手早く。繰り返し取引や一括編集で、記録の手間を限りなくゼロへ。",
+    body: "収入も支出も、画面の下から開く入力欄で片手のまま。繰り返しの記録や一括編集で、入力の手間を限りなく小さく。",
   },
   {
     icon: CalendarIcon,
     title: "カレンダー表示",
-    body: "1ヶ月の収支をカレンダーで一覧。どの日にいくら使ったかが、めくるだけで分かります。リスト表示とワンタップで切り替えられます。",
+    body: "1か月の収支をカレンダーで一覧。どの日にいくら使ったかが、めくるだけで分かります。一覧表示とは、一度の操作で切り替えられます。",
   },
   {
     icon: ChartIcon,
@@ -249,14 +249,14 @@ export default function LandingPage() {
             3ステップで、すぐに。
           </h2>
           <p className="mt-4 text-[17px] text-text-secondary">
-            むずかしい設定はいりません。今日から始められます。
+            難しい設定は必要ありません。本日からお使いいただけます。
           </p>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-3">
           {[
-            { n: "01", icon: WalletIcon, title: "記録する", body: "収支とサブスクを、ハーフシートから手早く入力。" },
-            { n: "02", icon: ChartIcon, title: "見える化", body: "予算は円グラフ、進捗はアクティビティリングで一目に。" },
-            { n: "03", icon: SparklesIcon, title: "見直す", body: "無駄なサブスクを発見して、固定費を最適化。" },
+            { n: "01", icon: WalletIcon, title: "記録する", body: "収支とサブスクを、画面の下から開く入力欄ですばやく登録。" },
+            { n: "02", icon: ChartIcon, title: "見て確かめる", body: "予算は円グラフ、進捗は円形のグラフでひと目に。" },
+            { n: "03", icon: SparklesIcon, title: "見直す", body: "使っていないサブスクを見つけ、固定費を整えます。" },
           ].map((s) => (
             <Card key={s.n} className="relative p-7 hover-lift">
               <span className="text-[13px] font-bold text-accent">{s.n}</span>
@@ -280,7 +280,7 @@ export default function LandingPage() {
           </div>
           <div className="mt-10 grid gap-8 sm:grid-cols-3">
             {[
-              { title: "美しさは、続く力。", body: "毎日ひらきたくなる UI。だから記録が習慣になります。" },
+              { title: "美しさは、続く力。", body: "毎日ひらきたくなる画面が、記録を習慣に変えます。" },
               { title: "サブスクに、強い。", body: "更新日・年額・無駄検出まで。固定費の管理は群を抜きます。" },
               { title: "プライバシー第一。", body: "口座連携に頼らない設計。データを広告に売りません。" },
             ].map((v) => (
@@ -367,7 +367,7 @@ export default function LandingPage() {
       <section className="mx-auto max-w-3xl px-5 py-20 text-center">
         <ChartIcon size={40} className="mx-auto text-accent" />
         <h2 className="mt-5 text-[clamp(1.8rem,4vw,2.8rem)] font-bold tracking-tight">
-          今日から、積み上げよう。
+          今日から、積み上げる。
         </h2>
         <p className="mt-4 text-[17px] text-text-secondary">
           無料で始めて、必要になったらアップグレード。

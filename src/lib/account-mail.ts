@@ -45,7 +45,7 @@ export async function sendEmailVerification(email: string) {
     kind: "VERIFY",
     html: emailLayout(
       "メールアドレスの確認",
-      `<p>下のボタンを押すと、このメールアドレスの確認が完了します。</p>
+      `<p>下のボタンを選択すると、このメールアドレスの確認が完了します。</p>
        <p style="margin:20px 0">
          <a href="${escapeHtml(url)}" style="display:inline-block;background:#0b6cf0;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-weight:600">メールアドレスを確認する</a>
        </p>

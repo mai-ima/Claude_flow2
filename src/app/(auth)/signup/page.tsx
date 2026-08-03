@@ -31,7 +31,7 @@ export default async function SignupPage() {
         <Card className="p-7">
           <h1 className="text-center text-[22px] font-bold tracking-tight">新規登録</h1>
           <p className="mt-1.5 mb-6 text-center text-[14px] text-text-secondary">
-            無料でアカウントを作成して、今日から始めましょう。
+            無料でアカウントを作成し、本日からご利用いただけます。
           </p>
           <Suspense>
             <SignupForm />
@@ -53,12 +53,12 @@ export default async function SignupPage() {
             </button>
           </form>
           <p className="mt-2 text-center text-[12px] text-text-tertiary">
-            登録不要。サンプルデータ入りですぐ体験できます。
+            登録は不要です。サンプルデータ入りで、すぐにお試しいただけます。
           </p>
         </Card>
         <p className="mt-6 text-center text-[13px] text-text-tertiary">
           <Link href="/" className="hover:text-text-secondary">
-            ← トップにもどる
+            ← トップへ戻る
           </Link>
         </p>
       </div>

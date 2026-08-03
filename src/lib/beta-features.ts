@@ -17,7 +17,7 @@ export const BETA_FEATURES = [
   {
     key: "swipe_duplicate",
     label: "スワイプで複製",
-    description: "取引を左スワイプして、同じ内容を今日の記録として追加できます。",
+    description: "取引を左へスワイプ（指でなぞる操作）すると、同じ内容を今日の記録として追加いただけます。",
   },
   {
     key: "haptics",

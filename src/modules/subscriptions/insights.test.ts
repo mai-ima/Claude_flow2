@@ -101,7 +101,7 @@ describe("cancelImpact", () => {
 
 describe("usagePeriod", () => {
   it("年と月で表す", () => {
-    expect(usagePeriod(at(2024, 3, 10), at(2026, 6, 15))?.label).toBe("2年3ヶ月");
+    expect(usagePeriod(at(2024, 3, 10), at(2026, 6, 15))?.label).toBe("2年3か月");
   });
 
   it("ちょうど年なら月を出さない", () => {
@@ -109,7 +109,7 @@ describe("usagePeriod", () => {
   });
 
   it("1年未満は月だけ", () => {
-    expect(usagePeriod(at(2026, 1, 10), at(2026, 6, 15))?.label).toBe("5ヶ月");
+    expect(usagePeriod(at(2026, 1, 10), at(2026, 6, 15))?.label).toBe("5か月");
   });
 
   it("日をまたいでいない月は数えない", () => {
@@ -152,7 +152,7 @@ describe("reviewAge / needsReview", () => {
   });
 
   it("1ヶ月以上は月数", () => {
-    expect(reviewAge(at(2026, 3, 15), now)?.label).toBe("3ヶ月前");
+    expect(reviewAge(at(2026, 3, 15), now)?.label).toBe("3か月前");
   });
 
   it("1年以上は年数", () => {

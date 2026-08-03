@@ -26,7 +26,7 @@ export default async function BudgetsPage() {
           </div>
           <h2 className="text-[20px] font-bold tracking-tight">予算管理はプラス以上の機能です</h2>
           <p className="max-w-sm text-[15px] text-text-secondary">
-            全体やカテゴリごとに月の予算を決めて、使いすぎを防ぎましょう。プラスにアップグレードするとご利用いただけます。
+            全体やカテゴリごとに月の予算を決めて、使いすぎを防げます。プラスにアップグレードするとご利用いただけます。
           </p>
           <ButtonLink href="/billing">アップグレード</ButtonLink>
         </Card>

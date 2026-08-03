@@ -102,9 +102,9 @@ export function FeedbackSheet({
 
   const placeholder =
     kind === "BUG"
-      ? "例: 予算の画面で金額を入れて保存を押しても、何も起きません。iPhone の Safari です。"
+      ? "例: 予算の画面で金額を入力し、保存を選択しても、何も起きません。iPhone の Safari です。"
       : kind === "REQUEST"
-        ? "例: 週ごとの支出も見られるようにしてほしいです。"
+        ? "例: 週ごとの支出もご覧いただけるようにしていただきたいです。"
         : "お気づきの点をご自由にご記入ください。";
 
   const tooShort = body.trim().length < 5;

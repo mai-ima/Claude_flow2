@@ -328,7 +328,7 @@ export function ReportsClient({ data }: { data: ReportsData }) {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>収支の推移（6ヶ月）</CardTitle>
+                <CardTitle>収支の推移（6か月）</CardTitle>
                 {expensePct !== null && (
                   <Badge tone={expenseDelta > 0 ? "expense" : "income"} size="sm">
                     支出 前月比 {expenseDelta > 0 ? "+" : ""}
